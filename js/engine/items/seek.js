@@ -61,7 +61,7 @@
       radius: r, start: start, headTurn: hp && breadth >= 0.5 };
     var audio = { out: { db: -20 }, spatial: hp ? 'hrtf' : 'ild', parts: [], beds: [], room: null, live: live };
     var pc = X.idx().poolCache = X.idx().poolCache || {}, dist = phrase ? pc['seek:dist'] || (pc['seek:dist'] = C.answerDist(A.callsign(), function (p) { return p.word; })) : null;
-    var w2 = C.slot(rng, { label: 'Which word was it calling?', answer: tw, spoken: decoys.map(function (d) { return d.word; }), pool: dist ? dist.support : nouns, draw: dist && dist.draw, neighbours: X.neighbours });
+    var w2 = C.slot(rng, { label: 'Which word was it calling?', answer: tw, spoken: decoys.map(function (d) { return d.word; }), pool: dist ? dist.support : nouns, draw: dist && dist.draw, freq: dist && dist.freq, neighbours: X.neighbours });
     var loc = { label: 'Find the voice', kind: 'locate', answer: { x: tpos.x, y: tpos.y, r: r }, gamma: Math.round(Math.PI * r * r / 4 * 1000) / 1000, options: [], foils: {} };
     return {
       id: 'seek-' + C.seedOf(rng).toString(36), ex: 'seek', seed: setting.seed || null,

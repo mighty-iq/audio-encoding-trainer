@@ -57,7 +57,7 @@
     var idx = X.idx(); idx.poolCache = idx.poolCache || {};
     var dk = 'repair:dist:' + hit.item.pred + ':' + (breadth < 0.4 ? 'late' : 'any') + ':' + lvlItems.length;
     var dist = idx.poolCache[dk] || (idx.poolCache[dk] = C.answerDist(lvlItems, function (it) { return C.norm(it.words[it.key]); }));
-    var s1 = C.slot(rng, { label: 'Lost word', answer: key, pool: hit.item.foils ? dist.support.concat(hit.item.foils) : dist.support, draw: dist.draw, neighbours: X.neighbours, context: hit.item.alts || [], prefer: hit.item.foils || null,
+    var s1 = C.slot(rng, { label: 'Lost word', answer: key, pool: hit.item.foils ? dist.support.concat(hit.item.foils) : dist.support, draw: dist.draw, freq: dist.freq, neighbours: X.neighbours, context: hit.item.alts || [], prefer: hit.item.foils || null,
       avoid: hit.item.words.filter(function (w, i) { return i !== hit.item.key; }) });
     C.remember(ctx, hit.voice, null);
     var shown = hit.item.words.map(function (w, i) { return i === hit.item.key ? '[' + w + ']' : w; }).join(' ');

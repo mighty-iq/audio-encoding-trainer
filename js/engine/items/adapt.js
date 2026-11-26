@@ -49,10 +49,13 @@
   // Crowd, Seek and Voices use call-sign phrases when the build has no separate word clips.
   function phraseMode() { return !hasWordClips() && callsign().length > 0; }
 
+  // Only content that has clips in this build counts; otherwise the exercise falls back to the call-sign phrases.
+  function withClips(list) { return list.filter(function (it) { return clipsOf(it).length > 0; }); }
   function farItems() {
     return memo('far', function () {
       var V = X.idx().vocab || {};
-      if (V.phrases && V.phrases.length) return V.phrases.map(function (it) { return { id: it.id, text: it.text, words: it.words || words(it.text), keys: it.keys, kind: 'sentence' }; });
+      var own = withClips((V.phrases || []).map(function (it) { return { id: it.id, text: it.text, words: it.words || words(it.text), keys: it.keys, kind: 'sentence' }; }));
+      if (own.length) return own;
       // the build's call-sign phrases, unique by text: ask for the word and the number
       var seen = {}, out = [];
       callsign().forEach(function (p) { var k = C.norm(p.text); if (!seen[k]) { seen[k] = 1; out.push({ id: 'cs:' + k, text: p.text, words: p.words, keys: [1, 2], kind: 'phrase' }); } });
@@ -68,7 +71,7 @@
           keys = [w.indexOf(C.norm(a)), w.lastIndexOf(C.norm(b))];
         }
         return { id: it.id, text: it.text, words: w, keys: keys, kind: 'sentence' };
-      }).filter(function (it) { return it.keys.length >= 2 && it.keys[0] >= 0 && it.keys[1] >= 0 && it.keys[0] !== it.keys[1]; });
+      }).filter(function (it) { return it.keys.length >= 2 && it.keys[0] >= 0 && it.keys[1] >= 0 && it.keys[0] !== it.keys[1] && clipsOf(it).length > 0; });
     });
   }
   function repairItems() {
@@ -82,7 +85,7 @@
           if (k >= 0) out.push({ id: it.id + ':' + p, text: it[p], words: w, key: k, pred: p, alts: it.alts || [], foils: it.foils || null, kind: 'sentence' });
         });
       });
-      return out;
+      return withClips(out);
     });
   }
   function echoItems() {
@@ -90,12 +93,13 @@
       return ((X.idx().vocab || {}).echo || []).map(function (it) {
         var facts = it.facts || (it.slots || []).map(function (s) { return { cat: s.type || s.cat, value: s.value, q: s.q }; });
         return { id: it.id, text: it.text, words: it.words || words(it.text), facts: facts, kind: 'sentence' };
-      }).filter(function (it) { return it.facts.length >= 2; });
+      }).filter(function (it) { return it.facts.length >= 2 && clipsOf(it).length > 0; });
     });
   }
   // Fallback material when an exercise's own sentences are missing: the call-sign phrases as items (word = key 1).
-  function fallbackItems() { return farItems().filter(function (it) { return it.kind === 'phrase'; }).length ? farItems().filter(function (it) { return it.kind === 'phrase'; })
-    : memo('fb', function () { var seen = {}, out = []; callsign().forEach(function (p) { var k = C.norm(p.text); if (!seen[k]) { seen[k] = 1; out.push({ id: 'cs:' + k, text: p.text, words: p.words, keys: [1, 2], kind: 'phrase' }); } }); return out; }); }
+  function fallbackItems() {
+    return memo('fb', function () { var seen = {}, out = []; callsign().forEach(function (p) { var k = C.norm(p.text); if (!seen[k]) { seen[k] = 1; out.push({ id: 'cs:' + k, text: p.text, words: p.words, keys: [1, 2], kind: 'phrase' }); } }); return out; });
+  }
   // Clips for an item's text, in any of the kinds a build may use for sentences.
   var SENT = ['sentence', 'phrase'];
   function clipsOf(it) {
@@ -127,6 +131,6 @@
   }
   function voicesCount(list) { var s = {}; list.forEach(function (p) { s[p.voice] = 1; }); return Object.keys(s).length; }
 
-  I.adapt = { fallbackItems: fallbackItems, isNative: isNative, callsign: callsign, callsignBy: callsignBy, phraseMode: phraseMode, farItems: farItems, susItems: susItems,
+  I.adapt = { withClips: withClips, fallbackItems: fallbackItems, isNative: isNative, callsign: callsign, callsignBy: callsignBy, phraseMode: phraseMode, farItems: farItems, susItems: susItems,
     repairItems: repairItems, echoItems: echoItems, clipsOf: clipsOf, voicesWith: voicesWith, ready: ready, anyClips: anyClips, words: words };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -36,7 +36,7 @@ function exercise(ES, assert, n, label) {
 export const tests = [
   { name: 'real data: every ready generator, random and tutorial settings', fn(ES, assert) {
     const R = real(); if (!R) return;
-    assert.ok(R.engine.items.crowd.ready(), 'crowd is ready on the build');
+    for (const ex of R.engine.exercises) assert.ok(R.engine.items[ex].ready(), ex + ' is ready on the build (own material or the call-sign fallback)');
     exercise(R, assert, 200, 'real');
   } },
   { name: 'real data, one voice per sex: still valid trials, never a throw', fn(ES, assert) {

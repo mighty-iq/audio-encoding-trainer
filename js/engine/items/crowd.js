@@ -124,8 +124,8 @@
     var audio = { out: { db: -20 }, dur: Math.round((end + 0.6) * 100) / 100, spatial: hp ? 'hrtf' : 'mono', parts: parts, beds: beds, room: room };
     var side = tAz < -10 ? 'on your left' : tAz > 10 ? 'on your right' : 'in front of you', CS = cap(T.name);
     var prompt = cue === 'preview' ? 'What did the voice you heard first say next?' : cue === 'location' ? 'What did the voice ' + side + ' say?' : 'What did ' + CS + ' say?';
-    var s1 = C.slot(rng, { label: 'Word', answer: T.word, spoken: tal.map(function (m) { return m.word; }), pool: dist ? dist[0].support : nouns, draw: dist && dist[0].draw, neighbours: X.neighbours });
-    var s2 = C.slot(rng, { label: 'Number', answer: T.num, spoken: tal.map(function (m) { return m.num; }), pool: dist ? dist[1].support : nums, draw: dist && dist[1].draw, neighbours: X.neighbours });
+    var s1 = C.slot(rng, { label: 'Word', answer: T.word, spoken: tal.map(function (m) { return m.word; }), pool: dist ? dist[0].support : nouns, draw: dist && dist[0].draw, freq: dist && dist[0].freq, neighbours: X.neighbours });
+    var s2 = C.slot(rng, { label: 'Number', answer: T.num, spoken: tal.map(function (m) { return m.num; }), pool: dist ? dist[1].support : nums, draw: dist && dist[1].draw, freq: dist && dist[1].freq, neighbours: X.neighbours });
     var others = tal.map(function (m) { return '“' + m.word + ', ' + m.num + '”'; }).join(' and '), said = { v0: [T.name, T.word, T.num] };
     tal.forEach(function (m, i) { said['v' + (i + 1)] = [m.name, m.word, m.num]; });
     var offs = targetParts.map(function (p) { var c = meta(p.clip); return (c && c.diff) || 0; });

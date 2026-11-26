@@ -80,7 +80,7 @@
       var idx = X.idx(), dk = 'echo:dist:' + actual + ':' + f.cat;
       var dist = idx.poolCache[dk] || (idx.poolCache[dk] = C.answerDist(cand.filter(function (m) { return m.facts.length === actual; }), function (m) {
         var g = m.facts.filter(function (x) { return x.cat === f.cat; })[0]; return g ? g.value : undefined; }));
-      var sl = C.slot(rng, { label: f.q, answer: f.value, pool: dist.support.length >= 4 ? dist.support : cats[f.cat], draw: dist.draw, neighbours: X.neighbours, avoid: others });
+      var sl = C.slot(rng, { label: f.q, answer: f.value, pool: dist.support.length >= 4 ? dist.support : cats[f.cat], draw: dist.draw, freq: dist.freq, neighbours: X.neighbours, avoid: others });
       Object.keys(sl.foils).forEach(function (o) { if (contains(it.text, o)) sl.foils[o] = 'context'; });
       sl.cat = f.cat;
       return sl;

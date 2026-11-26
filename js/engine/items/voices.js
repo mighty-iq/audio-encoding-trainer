@@ -100,7 +100,7 @@
         }
       });
       var pcv = X.idx().poolCache = X.idx().poolCache || {}, dv = phr ? pcv['voices:dist'] || (pcv['voices:dist'] = C.answerDist(A.callsign(), function (p) { return p.word; })) : null;
-      slots = [C.slot(rng, { label: 'What did ' + nameOf(target) + ' say?', answer: tw, spoken: spoken, pool: dv ? dv.support : nouns, draw: dv && dv.draw, neighbours: X.neighbours })];
+      slots = [C.slot(rng, { label: 'What did ' + nameOf(target) + ' say?', answer: tw, spoken: spoken, pool: dv ? dv.support : nouns, draw: dv && dv.draw, freq: dv && dv.freq, neighbours: X.neighbours })];
       prompt = 'Find ' + nameOf(target) + ' in the crowd.';
       fb = nameOf(target) + ' said “' + tw + '”.';
     }

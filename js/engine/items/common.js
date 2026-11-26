@@ -68,7 +68,15 @@
       return true;
     }
     function add(w) { if (w !== undefined && out.length < n && ok(w)) { out.push(w); used[norm(w)] = 1; return true; } return false; }
-    function nbOf(w) { return shuffle(rng, ((o.neighbours ? o.neighbours(w) : []) || []).filter(ok)); }
+    // neighbours in a random order weighted by how often each is an answer for this slot (o.freq), so a neighbour
+    // foil is not systematically a rarer answer than the target
+    function nbOf(w) {
+      var a = ((o.neighbours ? o.neighbours(w) : []) || []).filter(ok);
+      if (!o.freq) return shuffle(rng, a);
+      var keyed = a.map(function (x) { return { x: x, k: Math.pow(rng.next(), 1 / Math.max(0.01, o.freq[norm(x)] || 0.01)) }; });
+      keyed.sort(function (p, q) { return q.k - p.k; });
+      return keyed.map(function (e) { return e.x; });
+    }
     function randomOne() {
       // foils follow the answer distribution of this slot (item-sampled), so no option is more often "an answer"
       if (o.draw) for (var d = 0; d < 30; d++) { var dw = o.draw(rng); if (dw !== undefined && ok(dw) && !nbTset[norm(dw)]) return dw; }
@@ -129,9 +137,9 @@
   }
   // Answer support and sampler for one slot from eligible items: getAns(item) → the slot's answer in that item.
   function answerDist(items, getAns) {
-    var list = [], seen = {}, support = [];
-    items.forEach(function (it) { var a = getAns(it); if (a === undefined || a === null) return; list.push(a); var k = norm(a); if (!seen[k]) { seen[k] = 1; support.push(a); } });
-    return { support: support, draw: function (rng) { return list.length ? list[ri(rng, list.length)] : undefined; } };
+    var list = [], seen = {}, support = [], freq = {};
+    items.forEach(function (it) { var a = getAns(it); if (a === undefined || a === null) return; list.push(a); var k = norm(a); freq[k] = (freq[k] || 0) + 1; if (!seen[k]) { seen[k] = 1; support.push(a); } });
+    return { support: support, freq: freq, draw: function (rng) { return list.length ? list[ri(rng, list.length)] : undefined; } };
   }
   // Per-set memory for callers that pass the planner's set object as ctx.set (the shell): the controller keeps its
   // counters there and generators remember recent voices and the last room. Non-enumerable, so never logged.
