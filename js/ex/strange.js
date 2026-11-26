@@ -109,7 +109,7 @@
     return [
       { kind: 'caption', minMs: 3000, then: 'tap',
         text: 'Each phrase comes from an unusual voice. Tap the words you heard. Then the words appear and the voice plays again: that replay is where your ear retunes.' },
-      { kind: 'demo', force: { dials: { fast: 0 } },
+      { kind: 'demo', force: { dials: { fast: 0 } }, notes: { neighbour: 'sounds alike', random: 'not in the phrase' },
         text: 'An example first: a fast talker, at ' + lv('fast', 0, '1.3×') + ' speed.' },
       { kind: 'practice', force: { dials: { fast: 0 }, answerAt: [2, 1] },
         text: 'Your turn: the same speed, a new phrase.' },

@@ -156,6 +156,7 @@
     { kind: 'caption', minMs: 3000, then: 'tap',
       text: 'One voice says a call sign, then a word and a number. It is the red dot. Follow it and tap what it says.' },
     { kind: 'demo', force: { dials: { tmr: 12, talkers: 0, similar: 0 } },
+      notes: { masker: 'the blue voice said this', neighbour: 'sounds alike', random: 'not said' },
       text: 'An example first. The blue voice talks quietly over the red one.' },
     { kind: 'practice', force: { dials: { tmr: 12, talkers: 0, similar: 0 }, answerAt: [2, 0] },
       text: 'Your turn. Listen for the call sign, then tap what that voice says.' },

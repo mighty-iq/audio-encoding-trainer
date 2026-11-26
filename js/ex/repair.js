@@ -31,7 +31,8 @@
     ],
     helpData: function () {
       return {
-        goal: 'One word in each sentence is lost under a burst of noise or a gap. Hold the whole sentence in mind, then tap the word that was there.',
+        goal: sentences() ? 'One word in each sentence is lost under a burst of noise or a gap. Hold the whole sentence in mind, then tap the word that was there.'
+          : 'A voice says a name, a word and a number, and one word is lost under a burst of noise or a gap. Listen to the whole phrase, then tap the word that was there.',
         dials: {
           gap: 'How much of the lost word is covered.',
           context: 'How strongly the rest of the sentence points to the word.',
@@ -43,6 +44,12 @@
     }
   };
 
+  /** True when the build has Repair sentences (with context) to play; false while only call-sign phrases exist. */
+  function sentences() {
+    var A = ES.engine && ES.engine.items && ES.engine.items.adapt;
+    if (!A || typeof A.voicesWith !== 'function' || typeof A.repairItems !== 'function') return true;
+    try { return A.voicesWith(A.repairItems()).length > 0; } catch (e) { return true; }
+  }
   function lostWord(t) { var m = t.meta || {}; return m.items && m.items[0] ? String(m.items[0]) : null; }
   /** "she poured the milk into a [cup]": the generator's version when it gives one, else built from meta.text. */
   function marked(t) {
@@ -52,12 +59,19 @@
     var w = String(m.text).split(/\s+/), key = lostWord(t), at = -1;
     if (typeof m.key === 'number') at = m.key;
     else if (key) for (var i = w.length - 1; i >= 0; i--) if (w[i].toLowerCase().replace(/[^a-z0-9']/g, '') === key.toLowerCase()) { at = i; break; }
-    if (at >= 0 && at < w.length) w[at] = '[' + w[at] + ']';
+    if (at >= 0 && at < w.length) w[at] = w[at].replace(/^([^A-Za-z0-9']*)(.*?)([^A-Za-z0-9']*)$/, '$1[$2]$3');
     return w.join(' ');
+  }
+  /** Whether the rest of the utterance carries a clue (a real sentence with some context, not a call-sign phrase). */
+  function hasContext(t) {
+    var m = t.meta || {};
+    if ((m.relaxed || []).some(function (r) { return /call-sign/.test(r); })) return false;
+    return m.pred === 'hi' || m.pred === 'mid';
   }
   /** Whether the clue came after the gap (the lost word sits in the first half of the sentence). */
   function clueAfter(t) {
     var m = t.meta || {};
+    if (!hasContext(t)) return false;
     if (m.ctx) return m.ctx === 'after';
     return typeof m.keyPos === 'number' ? m.keyPos < 0.5 : false;
   }
@@ -74,13 +88,14 @@
     var k = K();
     if (!t || !k || t._exA || t.ex !== 'repair') return t;
     t._exA = true;
-    if (t.question) t.question.prompt = 'One word is lost. Hold the whole sentence, then tap the word that was there.';
+    if (t.question) t.question.prompt = hasContext(t) ? 'One word is lost. Hold the whole sentence, then tap the word that was there.'
+      : 'One word is lost. Tap the word that was there.';
     t.picture = { voices: [{ id: 'v0', role: 'target', az: 0, dist: 1, label: '' }], maxDist: 2.4, compact: false,
       title: 'One voice ahead of you; one of its words is lost' };
     t.feedback = t.feedback || {};
     var whole = k.findReplay(t, /whole|clear/i), again = k.findReplay(t, /again|gap|broken/i);
     t.feedback.replays = [
-      { label: 'The whole sentence', audio: whole ? whole.audio : k.audioClean(t.audio) },
+      { label: hasContext(t) ? 'The whole sentence' : 'The whole phrase', audio: whole ? whole.audio : k.audioClean(t.audio) },
       { label: 'Again with the gap', audio: again ? again.audio : t.audio, showText: true }
     ];
     return t;
@@ -104,10 +119,12 @@
     return d && d.levels && d.levels[i] != null ? String(d.levels[i]) : fallback;
   }
   function steps() {
+    if (!sentences()) return phraseSteps();
     return [
       { kind: 'caption', minMs: 3000, then: 'tap',
         text: 'In each sentence one word is lost under a burst of noise. Hold the whole sentence in mind, then tap the word that was there.' },
       { kind: 'demo', force: { dials: { gap: 0, context: 0, gate: 0, fill: 0 } },
+        notes: { context: 'fits the sentence, not the sound', neighbour: 'sounds alike', random: 'not in the sentence' },
         text: 'An example first: ' + lv('gap', 0, '30 %') + ' of the word is covered, and the sentence gives a strong clue.' },
       { kind: 'practice', force: { dials: { gap: 0, context: 0, gate: 0, fill: 0 }, answerAt: [1] },
         text: 'Your turn. Listen to the whole sentence first.' },
@@ -117,6 +134,24 @@
         text: 'The clue is weaker now. Wait for the end of the sentence before you choose.' },
       { kind: 'caption', minMs: 3500, then: 'tap',
         text: 'From here the gaps grow, the clues thin out and whole sentences break up as you improve. After each answer you can hear the sentence whole, then broken again with its words.' }
+    ];
+  }
+  /** While the build has only call-sign phrases ("Tyler, drum, eight."), the tutorial talks about phrases and gaps. */
+  function phraseSteps() {
+    return [
+      { kind: 'caption', minMs: 3000, then: 'tap',
+        text: 'A voice says a name, a word and a number. One word is lost under a burst of noise. Listen to the whole phrase, then tap the word that was there.' },
+      { kind: 'demo', force: { dials: { gap: 0, context: 0, gate: 0, fill: 0 } },
+        notes: { context: 'fits, but was not said', neighbour: 'sounds alike', random: 'not in the phrase' },
+        text: 'An example first: ' + lv('gap', 0, '30 %') + ' of the word is covered.' },
+      { kind: 'practice', force: { dials: { gap: 0, context: 0, gate: 0, fill: 0 }, answerAt: [1] },
+        text: 'Your turn. Listen to the whole phrase first.' },
+      { kind: 'practice', force: { dials: { gap: 2, context: 0, gate: 0, fill: 0 }, answerAt: [3] },
+        text: 'More of the word is lost now: ' + lv('gap', 2, '60 %') + '.' },
+      { kind: 'practice', force: { dials: { gap: 3, context: 0, gate: 0, fill: 1 }, answerAt: [0] },
+        text: 'Now ' + lv('gap', 3, '75 %') + ' is lost, under softer noise.' },
+      { kind: 'caption', minMs: 3500, then: 'tap',
+        text: 'From here the gaps grow and the phrase breaks up as you improve. After each answer you can hear it whole, then broken again with its words.' }
     ];
   }
   M.tutorial = {};

@@ -114,7 +114,7 @@
     return [
       { kind: 'caption', minMs: 3000, then: 'tap',
         text: 'Someone in a room says two phrases. The first lets you hear the room. Then tap what you heard in the second.' },
-      { kind: 'demo', force: { dials: { dist: 1, rt60: 0, noise: 30 } },
+      { kind: 'demo', force: { dials: { dist: 1, rt60: 0, noise: 30 } }, notes: { neighbour: 'sounds alike', random: 'not in the phrase' },
         text: 'An example first: a talker ' + lv('dist', 1, '1.5 m') + ' away in a small room.' },
       { kind: 'practice', force: { dials: { dist: 1, rt60: 0, noise: 30 }, answerAt: [1, 3] },
         text: 'Your turn. Listen to the room, then catch the second phrase.' },

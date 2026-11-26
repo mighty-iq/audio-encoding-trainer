@@ -36,7 +36,8 @@
     if (d.unit === 'm') return U().fmtM(v);
     return U().fmtNum(v, 1) + (d.unit ? ' ' + d.unit : '');
   }
-  function range(d) { return fmt(d, easyEnd(d)) + ' → ' + fmt(d, hardEnd(d)); }
+  function nb(s) { return String(s).replace(/ /g, '\u00a0'); }   // keep "−15 dB" or "3 other voices" on one line
+  function range(d) { return nb(fmt(d, easyEnd(d))) + ' → ' + nb(fmt(d, hardEnd(d))); }
   /** The player's current edge on a dial in real units, once the learner has seen enough trials (else null). */
   function edge(ex, id) {
     var L = ES.engine && ES.engine.learner;
