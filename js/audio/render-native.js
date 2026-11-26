@@ -16,14 +16,25 @@
     if (!O) throw new Error('OfflineAudioContext is not available');
     try { return new O({ numberOfChannels: ch, length: len, sampleRate: sr }); } catch (e) { return new O(ch, len, sr); }
   }
-  function startRendering(oc) {
+  /* Contexts in flight are held here until they finish (an unreferenced context must not be collected mid-render),
+     and a render that never completes rejects after a timeout, so the caller falls back instead of waiting forever. */
+  var inflight = [];
+  N.inflight = function () { return inflight.length; };
+  function startRendering(oc, timeoutMs) {
+    inflight.push(oc);
     return new Promise(function (res, rej) {
-      var done = false;
-      oc.oncomplete = function (e) { if (!done) { done = true; res(e.renderedBuffer); } };
+      var done = false, to = setTimeout(function () { fin(null, new Error('offline render timed out')); }, timeoutMs || 10000);
+      function fin(b, e) {
+        if (done) return;
+        done = true; clearTimeout(to);
+        var i = inflight.indexOf(oc); if (i >= 0) inflight.splice(i, 1);
+        if (e) rej(e); else res(b);
+      }
+      oc.oncomplete = function (ev) { fin(ev.renderedBuffer); };
       try {
         var p = oc.startRendering();
-        if (p && typeof p.then === 'function') p.then(function (b) { if (!done) { done = true; res(b); } }, function (e) { if (!done) { done = true; rej(e); } });
-      } catch (e) { if (!done) { done = true; rej(e); } }
+        if (p && typeof p.then === 'function') p.then(function (b) { fin(b); }, function (e) { fin(null, e || new Error('offline render failed')); });
+      } catch (e) { fin(null, e); }
     });
   }
   // AudioBuffer from channel arrays (constructor where available, else createBuffer on a scratch context).
@@ -55,9 +66,10 @@
     var batches = [], B = 16;
     for (var i = 0; i < jobs.length; i += B) batches.push(jobs.slice(i, i + B));
     var needPan = jobs.some(function (j) { return j.type === 'pan'; });
-    return (needPan ? N.hrtfLatency(sr) : Promise.resolve(0)).then(function (lat) {
-      return Promise.all(batches.map(function (b) { return runBatch(b, len, sr, lat); }));
-    }).then(function (parts) { return [].concat.apply([], parts); });
+    function go(lat) { return Promise.all(batches.map(function (b) { return runBatch(b, len, sr, lat); })).then(function (parts) { return [].concat.apply([], parts); }); }
+    // with the latency known, rendering starts now (synchronously), so the caller's JS work overlaps the audio thread
+    if (!needPan || latCache[sr] != null) { try { return go(needPan ? latCache[sr] : 0); } catch (e) { return Promise.reject(e); } }
+    return N.hrtfLatency(sr).then(go);
   };
   function runBatch(jobs, len, sr, lat) {
     var oc = offline(2 * jobs.length, len, sr), merger = oc.createChannelMerger(2 * jobs.length);
@@ -81,10 +93,53 @@
       if (at >= 0) src.start(at / sr);
       else src.start(0, -at / sr);
     });
-    return startRendering(oc).then(function (out) {
+    return startRendering(oc, 4000 + 3000 * len / sr).then(function (out) {
       return jobs.map(function (job, k) { return [out.getChannelData(2 * k), out.getChannelData(2 * k + 1)]; });
     });
   }
+
+  /* HRIR table: for a static source the HRTF panner is a fixed filter, so its impulse response is captured once per
+     5 degrees of azimuth (72 pairs, a few small offline renders) and trials apply it in JS (dsp: convStereo). This
+     keeps the browser's own HRTF while each trial skips the native pass. Kernels: HRIR_LEN samples starting HRIR_PRE
+     samples before the latency-compensated arrival (at 16 kHz the panner's energy lies within ~70 samples).
+     Resolves {get(az) -> {az, L, R}, lat, pre}; rejects (and can be retried) when the panner gives no output. */
+  N.HRIR_STEP = 5; N.HRIR_LEN = 128; N.HRIR_PRE = 16;
+  var tables = {};
+  N.hrirTable = function (sr) {
+    if (tables[sr]) return tables[sr];
+    var p = tables[sr] = N.hrtfLatency(sr).then(function (lat) {
+      if (N.hrtfOk === false) throw new Error('HRTF panner gives no output');
+      var azs = [], batches = [], at = 64, len = at + lat + N.HRIR_LEN + 64, one = new Float32Array(1), az;
+      one[0] = 1;
+      for (az = -180; az < 180; az += N.HRIR_STEP) azs.push(az);
+      for (var i = 0; i < azs.length; i += 16) batches.push(azs.slice(i, i + 16));
+      return Promise.all(batches.map(function (b) {
+        var oc = offline(2 * b.length, len, sr), merger = oc.createChannelMerger(2 * b.length), imp = N.makeBuffer([one], sr);
+        merger.connect(oc.destination);
+        b.forEach(function (a, k) {
+          var src = oc.createBufferSource(), pn = panner(oc, a), sp = oc.createChannelSplitter(2);
+          src.buffer = imp; src.connect(pn); pn.connect(sp); sp.connect(merger, 0, 2 * k); sp.connect(merger, 1, 2 * k + 1);
+          src.start(at / sr);
+        });
+        return startRendering(oc, 20000).then(function (out) {
+          var s0 = at + lat - N.HRIR_PRE;
+          return b.map(function (a, k) {
+            return { az: a, L: out.getChannelData(2 * k).slice(s0, s0 + N.HRIR_LEN), R: out.getChannelData(2 * k + 1).slice(s0, s0 + N.HRIR_LEN) };
+          });
+        });
+      })).then(function (lists) {
+        var map = {}, ok = true;
+        [].concat.apply([], lists).forEach(function (e) { map[e.az] = e; if (!(A.dsp.energy([e.L, e.R]) > 0)) ok = false; });
+        if (!ok) throw new Error('HRTF panner gives no output');
+        return { lat: lat, pre: N.HRIR_PRE, step: N.HRIR_STEP, get: function (a) {
+          var k = Math.round((((+a || 0) % 360 + 540) % 360 - 180) / N.HRIR_STEP) * N.HRIR_STEP;
+          return map[k >= 180 ? k - 360 : k];
+        } };
+      });
+    });
+    p.catch(function () { if (tables[sr] === p) delete tables[sr]; });
+    return p;
+  };
 
   // Bulk delay of the HRTF panner at azimuth 0 (samples), measured once per sample rate with an impulse.
   var latCache = {};

@@ -83,6 +83,19 @@ export const tests = [
       assert.ok(10 * Math.log10(d / e) < -40, `channel ${ch}: ${(10 * Math.log10(d / e)).toFixed(1)} dB`);
     }
   } },
+  { name: 'convStereo: block FFT convolution equals direct convolution (any length)', fn(ES, assert) {
+    const D = ES.audio.dsp, k = { L: D.white(128, D.rng('kl')), R: D.white(128, D.rng('kr')) };
+    for (const n of [1, 100, 385, 770, 1001, 5000]) {
+      const x = D.white(n, D.rng('x' + n)), y = D.convStereo(x, k);
+      assert.equal(y[0].length, n + 127, 'length');
+      let e = 0, d = 0;
+      for (const [ch, h] of [[0, k.L], [1, k.R]]) for (let i = 0; i < y[ch].length; i++) {
+        let s = 0; for (let j = Math.max(0, i - n + 1); j <= Math.min(i, 127); j++) s += h[j] * x[i - j];
+        e += s * s; d += (s - y[ch][i]) ** 2;
+      }
+      assert.ok(d / e < 1e-10, `n=${n}: relative error ${(d / e).toExponential(1)}`);
+    }
+  } },
   { name: 'hrtfLite: right source is louder and earlier in the right ear; front is symmetric', fn(ES, assert) {
     const D = ES.audio.dsp, x = D.band(D.white(SR, D.rng(2)), SR, 2000, 6000);
     const [l, r] = D.hrtfLite(x, SR, 90);

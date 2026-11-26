@@ -42,13 +42,16 @@
     var outDb = a.out && a.out.db != null ? +a.out.db : A.ctx.outDb, room = P.roomInfo(a.room);
     var parts = (a.parts || []).filter(function (p) { return p && p.clip; }), beds = (a.beds || []).filter(Boolean);
     var partIds = parts.map(function (p) { return p.clip; });
+    // HRTF: the browser's panner captured once as an HRIR table (render-native.js); without it, the ILD head model
+    var hrir = spatial === 'hrtf' ? N.hrirTable(sr).then(null, function (e) { warn('HRTF unavailable (' + (e && e.message || e) + '); ITD/ILD head model used'); return null; }) : null;
     return Promise.all(A.render.clips(a).map(function (id) {
       return Promise.all([A.assets.samples(id), A.assets.level(id)]).then(function (r) { return { id: id, x: r[0], lev: r[1] }; },
         function (e) { if (partIds.indexOf(id) >= 0) throw e; warn(String(e && e.message || e)); return null; });
-    })).then(function (list) {
-      var clipData = {};
+    }).concat(hrir ? [hrir] : [])).then(function (list) {
+      var clipData = {}, table = hrir ? list.pop() : null;
       list.forEach(function (d) { if (d) clipData[d.id] = d; });
-      var c = { seed: seed, rng: rng, sr: sr, spatial: spatial, outDb: outDb, room: room, warn: warn, opts: opts, tm: {}, tl: t0 };
+      if (spatial === 'hrtf' && !table) spatial = 'ild';
+      var c = { seed: seed, rng: rng, sr: sr, spatial: spatial, outDb: outDb, room: room, warn: warn, opts: opts, tm: {}, tl: t0, hrir: table };
       mark(c, 'load');
       return mixdown(a, parts, beds, clipData, c);
     }).then(function (res) {
@@ -93,15 +96,28 @@
       }
       var st = { kind: 'dir', src: s, role: s.role, eIn: D.energy(dir), airLoss: airLoss,
         want: s.db + (room && room.levels === 'source' ? distDb : 0) };
-      if (c.spatial === 'hrtf') { st.job = jobs.length; jobs.push({ type: 'pan', input: dir, at: s.at, az: +s.p.az || 0 }); }
-      else if (c.spatial === 'ild') { var lr = D.hrtfLite(dir, sr, +s.p.az || 0); st.ch = [D.place(len, lr[0], s.at), D.place(len, lr[1], s.at)]; }
-      else { var m = D.place(len, dir, s.at); st.ch = [m, m]; }
+      st.dirIn = dir;
       stems.push(st); s.dirStem = st;
       if (s.inRoom) { // room sound of this part: reverberated below with every other room source in one batch
         var rv = { kind: 'rev', src: s, role: s.role, dir: st, ch: null };
         roomIn.push({ x: s.u, max: len - s.at, done: function (w) { var rL = D.place(len, w[0], s.at); rv.ch = [rL, c.spatial === 'mono' ? rL : D.place(len, w[1], s.at)]; } });
         stems.push(rv); s.revStem = rv;
       }
+    });
+    // 3. native pass (HRTF) starts first, so the audio thread renders while the JS work below runs
+    var nat = jobs.length ? N.run(jobs, len, sr).catch(function (e) { // an engine that refuses HRTF must not lose the trial
+      warn('HRTF pass failed (' + (e && e.message || e) + '); ITD/ILD head model used');
+      return jobs.map(function () { return null; });
+    }) : Promise.resolve([]);
+    stems.forEach(function (st) {
+      if (!st.dirIn) return;
+      var s = st.src, dir = st.dirIn;
+      if (c.spatial === 'hrtf') { // kernels start HRIR_PRE samples before the arrival
+        var hk = D.convStereo(dir, c.hrir.get(+s.p.az || 0)), at0 = s.at - c.hrir.pre;
+        st.ch = [D.place(len, hk[0], at0), D.place(len, hk[1], at0)];
+      } else if (c.spatial === 'ild') { var lr = D.hrtfLite(dir, sr, +s.p.az || 0); st.ch = [D.place(len, lr[0], s.at), D.place(len, lr[1], s.at)]; }
+      else { var m = D.place(len, dir, s.at); st.ch = [m, m]; }
+      st.dirIn = null;
     });
     var extra = {};
     if (beds.some(function (b) { return (b.kind || 'ssn') === 'ssn' && (b.from === 'target' || b.from === 'parts'); })) {
@@ -129,11 +145,7 @@
       roomIn.forEach(function (r, k) { r.done(wet[k]); });
     }
     mark(c, 'stems');
-    // 3. native pass (HRTF, rooms)
-    return N.run(jobs, len, sr).catch(function (e) { // an engine that refuses the HRTF pass must not lose the trial
-      warn('HRTF pass failed (' + (e && e.message || e) + '); ITD/ILD head model used');
-      return jobs.map(function () { return null; });
-    }).then(function (out) {
+    return nat.then(function (out) {
       mark(c, 'native');
       stems.forEach(function (st) {
         if (st.job == null) return;
@@ -311,6 +323,16 @@
     Object.keys(out).forEach(function (k) { D.applyGain(out[k], gain); });
     return out;
   }
+
+  // Build caches ahead of the first trial (no gesture needed): the HRIR table for 'hrtf' and the FFT tables.
+  // Resolves {hrtf: true|false}; call once after start-up (e.g. after ES.audio.ctx.unlock()).
+  A.warm = function () {
+    var sr;
+    try { sr = A.assets.sampleRate(); } catch (e) { return Promise.resolve({ hrtf: false, error: String(e && e.message || e) }); }
+    D.reverb(new Float32Array(sr), D.roomModel(sr, { rt60: 0.5, size: 'small', seed: 'warm' })); // JIT and FFT tables
+    if (!N.supported()) return Promise.resolve({ hrtf: false });
+    return N.hrirTable(sr).then(function () { return { hrtf: true }; }, function (e) { return { hrtf: false, error: String(e && e.message || e) }; });
+  };
 
   // ---- playback (one trial buffer at a time) ----
   /* A 16 kHz buffer on a 48 kHz device: browsers resample buffers on the fly (Chrome by linear interpolation, which

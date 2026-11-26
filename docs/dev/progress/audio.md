@@ -55,6 +55,30 @@ convolution, hrtfLite, limiter, render pipeline with stubbed assets). Browser: `
 python3 tests/e2e/audio_render.py [--quick]` (fixture `tests/fixtures/audio-fixture.js` from
 `tests/e2e/audio_fixture_build.py`; page `tests/e2e/audio_page.html`; NumPy checker `tests/e2e/audio_p56.py`).
 
-Open: render timing under 4× CPU throttling (next step: measure the JS room path; machine load was 4–5 on 2 cores
-during measurements because of the TTS job and other builders' browser tests).
 Dead end: native ConvolverNode per stem (too slow, see above). An FDN reverb was considered and not needed.
+
+## 2026-11-26 18:50 — speed work and playback
+- Room path: sources reverberate in pairs (two real signals share one forward FFT, separated by conjugate symmetry;
+  one inverse FFT per source gives both ears), outputs stop at the trial end, interpolation has a bounds-free inner
+  loop. Level meter: specialised mono/stereo loops, histogram bins from a fast log2 (quartic, error < 0.001 dB),
+  bins reused while the held maximum does not change. hrtfLite: 8-tap fractional delay.
+- HRTF: for a static source the browser's HRTF panner is a fixed filter, so `ES.audio.native.hrirTable(sr)`
+  captures it once (72 azimuths, 5° apart, 128-sample kernels starting 16 samples before the latency-compensated
+  arrival; at 16 kHz Chrome's HRIR energy lies within ~70 samples) and trials apply it in JS by block FFT
+  convolution (`D.convStereo`, two blocks per forward FFT). No offline render per trial any more; the native pass
+  (`N.run`) stays for 'conv' jobs. `ES.audio.warm()` prebuilds the table. If the table fails (no output, no
+  OfflineAudioContext) renders use hrtfLite with a warning. Offline contexts in flight are held until they finish and
+  time out (reject → fallback) instead of hanging: one full e2e run once stalled on an HRTF render in a long-lived
+  page (not reproducible in 24 repeated renders on a fresh page); the guard makes such a stall impossible.
+- CPU time per render in Node (3 s, room + 3 parts + babble bed in the room): ild ≈ 40 ms (same room), ≈ 60 ms (new
+  room: model ≈ 4.5 ms medium, 16 ms hall, cached per room); mono ≈ 36 ms. Chromium, 4× CPU throttling, fastest
+  of 10 (load average 3.1 on 2 CPUs): hrtf 205 ms, mono 175 ms (before the overlap change); medians are 250–400 ms
+  because other builders' jobs share the 2 CPUs. The e2e check judges the fastest run and prints the load.
+- Playback: `ES.audio.play` upsamples 16 kHz buffers ×k when the device rate is an integer multiple (48 kHz: ×3,
+  Kaiser-windowed sinc, 12 zero crossings; images > 50 dB down at 13 kHz; ≈ 5 ms CPU per channel for 3 s; cached per
+  buffer); other rates are left to the browser. `opts.hq === false` skips it.
+- Requests posted: engine (done), lead (report and spec additions for CONTRACTS §4), shell/lab (ack), shell
+  (replays should reuse the trial's seed, or replay the rendered buffer when the audio object is the trial's own).
+
+Open (for the lead): Safari and Firefox are untested here (HRTF in a 16 kHz OfflineAudioContext, 16 kHz decoding);
+both fall back safely (hrtfLite; a 48/44.1 kHz decode context makes everything render at that rate, slower).

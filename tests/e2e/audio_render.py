@@ -206,6 +206,18 @@ def run_assets(pg):
           'limit 10 s -> %.1f s; limit 60 s -> %.1f s' % (r['afterPreload']['seconds'], r['full']['seconds']))
 
 
+def run_hrir(pg):
+    r = pg.evaluate('''async () => {
+      const w = await ES.audio.warm(), t = await ES.audio.native.hrirTable(16000), D = ES.audio.dsp, db = (x) => D.rmsDb(x);
+      const e = (az) => { const k = t.get(az); return [db(k.L), db(k.R)]; };
+      const rep = (await ES.audio.render({audio: {spatial: 'hrtf', parts: [{clip: 'fx.a.phrase.one', at: 0.3, db: 0, role: 'target', az: 60}]}}, {seed: 1})).report;
+      return {warm: w, a90: e(90), a0: e(0), am90: e(-90), lat: t.lat, spatial: rep.spatial, warnings: rep.warnings}; }''')
+    ild90 = r['a90'][1] - r['a90'][0]
+    check('HRIR table: +90 deg louder in the right ear, front symmetric, mirror', ild90 > 6 and abs(r['a0'][1] - r['a0'][0]) < 0.5
+          and abs((r['am90'][0] - r['am90'][1]) - ild90) < 0.5 and r['warm']['hrtf'], json.dumps(r))
+    check('hrtf renders use the table (spatial hrtf, no warnings)', r['spatial'] == 'hrtf' and not r['warnings'], json.dumps(r['warnings']))
+
+
 SRCDOC_RUN = '''<script>
 ES.audio.render({audio: %s}, {seed: 3}).then(function (r) { parent.postMessage({ok: true, report: r.report, origin: String(location.origin)}, '*'); },
   function (e) { parent.postMessage({ok: false, error: String(e && e.message || e)}, '*'); });
@@ -264,26 +276,42 @@ TIMING = {'spatial': 'hrtf', 'room': {'rt60': 0.8, 'dist': 4, 'size': 'medium', 
           'beds': [{'kind': 'babble', 'db': -3, 'clips': BAB[:4], 'room': True}], 'dur': 3.0}
 
 
+TIME_JS = '''async ([a, n]) => {
+  // same-room and new-room renders interleaved, so both meet the same machine conditions
+  const warm = [], cold = [], stages = {};
+  for (let i = 0; i < n; i++) {
+    for (const vary of [false, true]) {
+      const s = JSON.parse(JSON.stringify(a)); if (vary) s.room.seed = 2000 + i;
+      const t0 = performance.now(), r = await ES.audio.render({audio: s}, {seed: 7 + i});
+      (vary ? cold : warm).push(performance.now() - t0);
+      if (!vary) for (const k in r.report.tm) stages[k] = Math.min(stages[k] == null ? 1e9 : stages[k], r.report.tm[k]);
+    }
+  }
+  return {warm, cold, stages}; }'''
+
+
 def run_timing(pw, quick):
-    """Render time under 4x CPU throttling. The budget is judged on the fastest of n runs: on a shared machine other
-    processes inflate the rest (the load average is printed with the result); the median is reported too."""
+    """Render time under 4x CPU throttling. The budget is judged on the fastest same-room render: on a shared machine
+    other processes inflate the rest (the load average is printed with the result); medians and the new-room times
+    (a room model is built each time) are reported too."""
     import os
     b = pw.chromium.launch()
     pg = b.new_page()
     pg.goto(PAGE.as_uri())
     pg.evaluate('T.ready()')
+    pg.evaluate('ES.audio.warm()')
     cdp = pg.context.new_cdp_session(pg)
     cdp.send('Emulation.setCPUThrottlingRate', {'rate': 4})
-    n = 5 if quick else 9
+    n = 6 if quick else 12
     for spatial in ('hrtf', 'ild', 'mono'):
         audio = dict(TIMING, spatial=spatial)
-        pg.evaluate('a => T.time({audio: a}, {}, 2, false)', audio)  # warm-up (JIT, HRTF database, room model)
-        warm = pg.evaluate('a => T.time({audio: a}, {}, %d, false)' % n, audio)
-        cold = pg.evaluate('a => T.time({audio: a}, {}, %d, true)' % n, audio)
-        load = os.getloadavg()[0]
+        pg.evaluate('a => T.time({audio: a}, {}, 2, false)', audio)  # warm-up (JIT, room model)
+        r = pg.evaluate(TIME_JS, [audio, n])
+        warm, cold, load = r['warm'], r['cold'], os.getloadavg()[0]
         check('timing 4x CPU, %s, room + 3 parts + bed, 3 s: fastest <= 250 ms' % spatial, min(warm) <= 250,
-              'same room: min %.0f, median %.0f ms; new room each time: min %.0f, median %.0f ms; load average %.1f on %d CPUs'
-              % (min(warm), statistics.median(warm), min(cold), statistics.median(cold), load, os.cpu_count()))
+              'same room: min %.0f, median %.0f ms; new room each time: min %.0f, median %.0f ms; stage minima %s; load average %.1f on %d CPUs'
+              % (min(warm), statistics.median(warm), min(cold), statistics.median(cold),
+                 json.dumps({k: round(v) for k, v in r['stages'].items()}), load, os.cpu_count()))
     cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
     b.close()
 
@@ -307,6 +335,7 @@ def main():
         run_determinism(pg)
         run_fx(pg)
         run_assets(pg)
+        run_hrir(pg)
         check('no page errors', not errors, '; '.join(errors[:3]))
         b.close()
         run_srcdoc(pw)

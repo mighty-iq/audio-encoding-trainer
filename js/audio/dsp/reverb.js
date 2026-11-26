@@ -195,6 +195,38 @@
   };
   D.reverb = function (x, model) { return D.reverbMany([x], model)[0]; };
 
+  /* Convolve a mono signal with a short stereo kernel {L, R} (e.g. an HRIR pair) -> [L, R], length n + K - 1.
+     Overlap-add with FFT blocks of 4K; two consecutive blocks share one forward FFT (x_a + i x_b); the kernel's
+     spectrum FFT(L + iR) is cached on the kernel object, and each inverse FFT gives both ears. */
+  D.convStereo = function (x, k) {
+    var K = k.L.length, M = D.nextPow2(4 * K), B = M - K + 1, n = x.length, outLen = n + K - 1, i, j;
+    var G = k.G && k.G[M];
+    if (!G) {
+      var gr = new Float64Array(M), gi = new Float64Array(M);
+      gr.set(k.L); gi.set(k.R); D.fft(gr, gi, false);
+      k.G = k.G || {}; G = k.G[M] = { re: gr, im: gi };
+    }
+    var L = new Float32Array(outLen), R = new Float32Array(outLen), Gr = G.re, Gi = G.im;
+    var wr = new Float64Array(M), wi = new Float64Array(M), ar = new Float64Array(M), ai = new Float64Array(M);
+    for (var s = 0; s < n; s += 2 * B) {
+      var ma = Math.min(B, n - s), mb = Math.max(0, Math.min(B, n - s - B));
+      for (i = 0; i < M; i++) { wr[i] = i < ma ? x[s + i] : 0; wi[i] = i < mb ? x[s + B + i] : 0; }
+      D.fft(wr, wi, false);
+      for (var pass = 0; pass < (mb ? 2 : 1); pass++) {
+        for (i = 0; i < M; i++) {
+          j = (M - i) & (M - 1);
+          var xr = pass ? 0.5 * (wi[i] + wi[j]) : mb ? 0.5 * (wr[i] + wr[j]) : wr[i];
+          var xi = pass ? 0.5 * (wr[j] - wr[i]) : mb ? 0.5 * (wi[i] - wi[j]) : wi[i];
+          ar[i] = xr * Gr[i] - xi * Gi[i]; ai[i] = xr * Gi[i] + xi * Gr[i];
+        }
+        D.fft(ar, ai, true);
+        var o = s + pass * B, lim = Math.min(M, outLen - o);
+        for (i = 0; i < lim; i++) { L[o + i] += ar[i]; R[o + i] += ai[i]; }
+      }
+    }
+    return [L, R];
+  };
+
   // Long-term colour of the room sound as LTAS points (dB re its mean), for stationary beds placed in the room.
   D.roomColour = function (model) {
     if (model.colour) return model.colour;
