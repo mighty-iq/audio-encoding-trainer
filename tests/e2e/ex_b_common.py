@@ -224,6 +224,8 @@ def seek_walk(page, to=None, steps=24, pause=0.02, hold_s=0.0):
     x1, y1 = field_xy(page, to[0], to[1])
     page.mouse.move(x0, y0)
     page.mouse.down()
+    time.sleep(0.25)
+    seek_walk.start_gain = (seek_peek(page) or {}).get('gainDb')
     for i in range(1, steps + 1):
         page.mouse.move(x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps)
         time.sleep(pause)

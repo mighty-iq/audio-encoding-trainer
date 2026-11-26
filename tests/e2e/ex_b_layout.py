@@ -118,6 +118,12 @@ def seek(rep, page, tag, dials, ctx, seed):
 CLEAN = "() => { document.querySelectorAll('#app > .trial').forEach(function (n) { n.remove(); }); document.documentElement.classList.remove('in-trial'); }"
 
 
+def cards(rep, page, tag):
+    got = page.evaluate("""() => ['echo:delay', 'echo:snr', 'seek:snr', 'seek:decoys', 'voices:similar', 'voices:cast'].map(function (k) {
+      var a = k.split(':'), c = ES.ex.strategies.pick(a[0], { dial: a[1] }); return c ? c.id : null; })""")
+    rep.check(tag + ': plateau strategy cards come from exB for its dials', got == ['echo.slot', 'echo.after', 'seek.halve', 'seek.voice', 'voices.cues', 'voices.ten'], got)
+
+
 def helps(rep, page, tag):
     want = {'echo': ['+20 dB → −8 dB', '2 details → 5 details', 'normal → 1.6×', '1 s → 10 s'],
             'voices': ['2 voices → 6 voices', '+30 dB → −6 dB', 'a sentence → one word'],
@@ -179,6 +185,7 @@ def main():
             keyword(rep, page, tag, 'voices', {'cast': 3, 'similar': 0, 'snr': 6, 'length': 0}, {'task': 'find', 'met': cast[:3]}, 'lay-vf', True)
             seek(rep, page, tag, {'snr': 8, 'decoys': 2, 'size': 1, 'gap': 1}, {'headphones': True, 'breadth': 1}, 'lay-s1')
             if not quick or scheme == 'light':
+                cards(rep, page, tag)
                 helps(rep, page, tag)
                 missions(rep, page, tag)
             errs = C.errors(page)

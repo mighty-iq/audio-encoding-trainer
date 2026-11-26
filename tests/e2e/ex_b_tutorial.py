@@ -112,7 +112,10 @@ def seek_scene(page, ex, rep, label, wrong=False):
     to = None
     if wrong:   # stop on the far side of the field from the voice
         to = (-0.8 if pk['answer']['x'] > 0 else 0.8, 0.8 if pk['answer']['y'] < 0 else -0.8)
-    C.seek_walk(page, to=to, steps=18, pause=0.02, hold_s=0.25)
+    before = C.seek_walk(page, to=to, steps=18, pause=0.02, hold_s=0.25)
+    g0, g1 = C.seek_walk.start_gain, before.get('gainDb')
+    if not wrong:
+        rep.check(ex + ': %s the voice gets louder as you close in' % label, g0 is not None and g1 is not None and g1 - g0 >= 8, '%s → %s dB' % (g0, g1))
     page.wait_for_function("() => { var s = ES.ex._seekScene.current; return s && s.peek().phase === 'word'; }", timeout=5000)
     fit = C.fits(page)
     rep.check(ex + ': %s word question fits 360×640' % label, fit['ok'], fit)

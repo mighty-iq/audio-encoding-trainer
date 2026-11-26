@@ -20,7 +20,7 @@
     short: 'Get to know a cast of voices, then pick one out by ear.',
     card: { trains: 'Get to know a cast of voices, then pick your friend out of a crowd. Option: record people you know (stays on your phone).',
       bet: 'fast voice familiarity, trained on voices from your own life' },
-    bet: 'Fast voice familiarity: getting to know new voices quickly, practised on a cast and on voices from your own life.',
+    bet: 'Fast voice familiarity: getting to know new voices quickly, and getting quicker at it, practised on a cast and on voices from your own life.',
     betNew: true,
     view: 'keyword', feedback: 'standard',
     strategies: ['voices.cues', 'voices.ten', 'voices.follow'],

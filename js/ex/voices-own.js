@@ -64,14 +64,11 @@
     Object.keys(mem.voices).forEach(forget);
     mem = { voices: {}, state: {} };
     if (ES.packs && ES.packs.own) Object.keys(ES.packs.own).forEach(function (k) { delete ES.packs.own[k]; });
+    if (db) { try { db.close(); } catch (e) { /* ignore */ } }
+    db = null; mode = null;
     return new Promise(function (res) {
-      if (db) { try { db.close(); } catch (e) { /* ignore */ } }
-      db = null; mode = null;
-      var idb = null;
-      try { idb = root.indexedDB; } catch (e) { res(true); return; }
-      if (!idb) { res(true); return; }
-      try { var r = idb.deleteDatabase(DB); r.onsuccess = function () { res(true); }; r.onerror = function () { res(false); }; r.onblocked = function () { res(false); }; }
-      catch (e) { res(true); }
+      try { var r = root.indexedDB.deleteDatabase(DB); r.onsuccess = function () { res(true); }; r.onerror = r.onblocked = function () { res(false); }; }
+      catch (e) { res(true); }   // no IndexedDB here: nothing was stored
     });
   }
 
@@ -396,13 +393,12 @@
     if (!doc || !doc.head || doc.getElementById('es-own-css')) return;
     var st = doc.createElement('style');
     st.id = 'es-own-css';
-    st.textContent = ['.own-row { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }',
-      '.own-name { min-height: 44px; padding: 0 12px; border: 1px solid var(--rule-2); border-radius: var(--r-1); background: var(--surface); color: var(--ink); font: inherit; }',
-      '.own-consent { flex-direction: row; align-items: flex-start; gap: 10px; } .own-consent input { flex: none; width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--ink); }',
-      '.own-btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; } .own-btns .btn { flex: 1 1 150px; }',
-      '.own-ul { list-style: none; margin: 0 0 12px; padding: 0; border-top: 1px solid var(--rule); }',
-      '.own-li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 10px 0; border-bottom: 1px solid var(--rule); }',
-      '.own-acts { display: flex; gap: 6px; }'].join('\n');
+    st.textContent = '.own-row { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; } .own-btns, .own-acts { display: flex; flex-wrap: wrap; gap: 8px; } ' +
+      '.own-name { min-height: 44px; padding: 0 12px; border: 1px solid var(--rule-2); border-radius: var(--r-1); background: var(--surface); color: var(--ink); font: inherit; } ' +
+      '.own-consent { flex-direction: row; align-items: flex-start; gap: 10px; } .own-consent input { flex: none; width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--ink); } ' +
+      '.own-btns { margin: 8px 0; } .own-btns .btn { flex: 1 1 150px; } .own-acts { gap: 6px; flex-wrap: nowrap; } ' +
+      '.own-ul { list-style: none; margin: 0 0 12px; padding: 0; border-top: 1px solid var(--rule); } ' +
+      '.own-li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 10px 0; border-bottom: 1px solid var(--rule); }';
     doc.head.appendChild(st);
   }
   function unmount() {

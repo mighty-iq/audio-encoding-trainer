@@ -320,6 +320,10 @@
     }
     function finish(out) { if (st.done) return; st.done = true; stopPlayer(); stopScene(); if (st.panel && out.aborted) st.panel.destroy(); resolveDone(out); }
     if (decoys() && !cfg.practice) preview(); else search();
+    function targetGain() {   // the voice's level change from distance now (dB re 1 m), from the live scene
+      try { var v = st.scene && st.scene.state ? st.scene.state().voices.filter(function (x) { return x.role === 'target'; })[0] : null; return v ? Math.round(v.gainDb * 10) / 10 : null; }
+      catch (e) { return null; }
+    }
     var handle = {
       done: done, spec: spec,
       state: function () { return st.paused ? 'paused' : st.phase; },
@@ -337,7 +341,7 @@
       },
       abort: function () { finish({ aborted: true }); },
       peek: function () { return { phase: st.phase, pos: { x: st.pos.x, y: st.pos.y }, h: st.h, answer: ans, word: wordSlot.answer, turn: turn, listening: !!st.scene, paused: st.paused,
-        options: (wordSlot.options || []).map(String), decoys: (live.decoys || []).length, practice: !!cfg.practice }; }
+        options: (wordSlot.options || []).map(String), decoys: (live.decoys || []).length, practice: !!cfg.practice, gainDb: targetGain() }; }
     };
     if (ES.ex._seekScene) ES.ex._seekScene.current = handle;   // the running scene (tests and playtest reports read it)
     return handle;
