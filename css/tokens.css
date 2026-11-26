@@ -1,0 +1,47 @@
+/* Earshot look "Audiogram" (CONTRACTS §8): lab paper with a fine grid; the one voice you follow in signal red,
+   every other voice in audiogram blue; Archivo for text, JetBrains Mono for numbers; a graphite night theme.
+   Red is reserved for the voice to follow: wrong answers use ink and a ✕, right answers green and a ✓. */
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url(../fonts/archivo-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url(../fonts/archivo-latin-600-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url(../fonts/archivo-latin-700-normal.woff2) format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url(../fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url(../fonts/jetbrains-mono-latin-600-normal.woff2) format('woff2'); }
+
+:root {
+  color-scheme: light;
+  --bg: #FAFAF7; --surface: #FFFFFF; --surface-2: #F1F1EC;
+  --ink: #15171B; --ink-2: #474C54; --ink-3: #686E77; --on-ink: #FFFFFF;
+  --rule: #DCDDD7; --rule-2: #C6C7C0; --grid: rgba(21, 23, 27, .055);
+  --red: #C8372B; --red-wash: #FBE9E6; --blue: #2A56CF; --blue-wash: #E6ECFB;
+  --ok: #18744D; --ok-wash: #E2F2EA; --warn: #7A5200; --warn-wash: #FFF3D6; --focus: #2A56CF;
+  --shadow: 0 1px 2px rgba(21, 23, 27, .06); --shadow-2: 0 10px 30px rgba(21, 23, 27, .16); --scrim: rgba(21, 23, 27, .38);
+  --font: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --fs-1: 13px; --fs-2: 15px; --fs-3: 17px; --fs-4: 24px; --fs-5: 36px;
+  --r-1: 8px; --r-2: 12px; --r-3: 16px; --tap: 44px;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111317; --surface: #181B20; --surface-2: #1F2329;
+  --ink: #ECEDEE; --ink-2: #B9BDC3; --ink-3: #8E949C; --on-ink: #111317;
+  --rule: #2B3037; --rule-2: #3A4049; --grid: rgba(236, 237, 238, .06);
+  --red: #FF6B5D; --red-wash: #3A1F1C; --blue: #86A6FF; --blue-wash: #1C2540;
+  --ok: #53C98F; --ok-wash: #15301F; --warn: #F2B544; --warn-wash: #33280F; --focus: #86A6FF;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .5); --shadow-2: 0 12px 34px rgba(0, 0, 0, .6); --scrim: rgba(0, 0, 0, .58);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111317; --surface: #181B20; --surface-2: #1F2329;
+    --ink: #ECEDEE; --ink-2: #B9BDC3; --ink-3: #8E949C; --on-ink: #111317;
+    --rule: #2B3037; --rule-2: #3A4049; --grid: rgba(236, 237, 238, .06);
+    --red: #FF6B5D; --red-wash: #3A1F1C; --blue: #86A6FF; --blue-wash: #1C2540;
+    --ok: #53C98F; --ok-wash: #15301F; --warn: #F2B544; --warn-wash: #33280F; --focus: #86A6FF;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .5); --shadow-2: 0 12px 34px rgba(0, 0, 0, .6); --scrim: rgba(0, 0, 0, .58);
+  }
+}

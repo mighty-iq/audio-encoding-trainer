@@ -6,9 +6,11 @@ RULES.md
 node_modules/
 test-results/
 tests/out/
+dist/
 .cache/
 *.log
 .DS_Store
 # Raw corpora and generated scratch audio never live in the repo
 corpora/
 scratch/
+__pycache__/
