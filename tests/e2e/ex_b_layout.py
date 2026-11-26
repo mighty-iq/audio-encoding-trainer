@@ -170,7 +170,7 @@ def main():
     quick = '--quick' in sys.argv
     rep = C.Report('ex_b_layout' + ('_quick' if quick else ''))
     url = C.build_page('layout.html')
-    combos = [('phone-s', 'light'), ('phone-s', 'dark')] + ([] if quick else [('phone', 'light'), ('desktop', 'dark')])
+    combos = [('phone-s', 'light'), ('phone-s', 'dark')] + ([] if quick else [('phone', 'light'), ('phone', 'dark'), ('desktop', 'dark'), ('desktop', 'light')])
     with sync_playwright() as p:
         b = C.launch(p)
         for size, scheme in combos:

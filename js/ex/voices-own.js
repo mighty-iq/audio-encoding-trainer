@@ -160,7 +160,7 @@
       var done = new Promise(function (a, b) { resolve = a; reject = b; });
       function end() { if (timer) clearInterval(timer); stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) { /* ignore */ } }); }
       rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
-      rec.onstop = function () { end(); new root.Blob(chunks, { type: rec.mimeType || 'audio/webm' }).arrayBuffer().then(resolve, reject); };
+      rec.onstop = function () { end(); toAB(new root.Blob(chunks, { type: rec.mimeType || 'audio/webm' })).then(resolve, reject); };
       rec.onerror = function (e) { end(); reject(e.error || new Error('recording failed')); };
       rec.start();
       timer = setInterval(function () { var s = (Date.now() - t0) / 1000; if (onTick) onTick(s); if (s >= MAX_S) h.stop(); }, 250);

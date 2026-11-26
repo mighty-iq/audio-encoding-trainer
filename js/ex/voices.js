@@ -219,7 +219,7 @@
       { kind: 'practice', force: { task: 'who', dials: { cast: 0, similar: 0, snr: 30, length: 0 }, answerAt: [1] },
         text: 'Now one of them talks. Who is it?' },
       { kind: 'caption', minMs: 3500, then: 'tap',
-        text: 'From here the cast grows, the voices get more alike, the clips shorter and the room noisier, always near your edge. Later you find a voice you know in a crowd.' }
+        text: 'From here the cast grows, the voices get more alike, the clips shorter and the room noisier, always near your edge. Later you find a voice you know in a crowd. Help shows how to add voices from your own life.' }
     ];
   }
   M.tutorial = {};
