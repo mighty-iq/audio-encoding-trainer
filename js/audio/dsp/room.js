@@ -63,7 +63,7 @@
     return D.biquad('highshelf', 3000, 0.7071, sr, -D.airLossDb(6000, dist));
   };
 
-  /* hrtfLite(x, sr, azDeg) -> [L, R]: Woodworth ITD (fractional delay on the far ear, 16-tap windowed sinc) and the
+  /* hrtfLite(x, sr, azDeg) -> [L, R]: Woodworth ITD (fractional delay on the far ear, 8-tap windowed sinc) and the
      Brown & Duda (1998) one-pole/one-zero spherical-head shadow per ear (alpha_min 0.1, theta_min 150 deg), plus a mild
      high-frequency cut for sources behind (no pinna model). */
   function shadow(sr, thetaDeg) {
@@ -72,8 +72,8 @@
     var nb0 = 1 + alpha * K / (2 * w0), nb1 = 1 - alpha * K / (2 * w0), na0 = 1 + K / (2 * w0), na1 = 1 - K / (2 * w0);
     return { b0: nb0 / na0, b1: nb1 / na0, b2: 0, a1: na1 / na0, a2: 0 };
   }
-  function fracDelay(x, d) { // delay by d samples (d >= 0) with a 16-tap Blackman-windowed sinc
-    var n = x.length, y = new Float32Array(n), di = Math.floor(d), fr = d - di, T = 8, h = new Float64Array(2 * T), i, k;
+  function fracDelay(x, d) { // delay by d samples (d >= 0) with an 8-tap Blackman-windowed sinc
+    var n = x.length, y = new Float32Array(n), di = Math.floor(d), fr = d - di, T = 4, h = new Float64Array(2 * T), i, k;
     for (k = 0; k < 2 * T; k++) {
       var u = k - T + 1 - fr, s = Math.abs(u) < 1e-9 ? 1 : Math.sin(Math.PI * u) / (Math.PI * u);
       var wv = 0.42 + 0.5 * Math.cos(Math.PI * u / T) + 0.08 * Math.cos(2 * Math.PI * u / T);

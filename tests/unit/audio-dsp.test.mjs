@@ -75,6 +75,14 @@ export const tests = [
       near(assert, D.rmsDb(y), D.rmsDb(x), 0.3, 'level kept');
     }
   } },
+  { name: 'upsampleInt: x3 keeps the samples, the level and suppresses images', fn(ES, assert) {
+    const D = ES.audio.dsp, x = sine(D, 3000, 1, 0.5), y = D.upsampleInt(x, 3);
+    assert.equal(y.length, 3 * x.length);
+    assert.equal(y[3 * 1234], x[1234], 'phase 0 is the input');
+    near(assert, D.rmsDb(y.subarray(300, y.length - 300)), D.rmsDb(x), 0.05, 'level at 3 kHz');
+    const sp = D.psd(y, 48000, { n: 4096 });
+    assert.ok(10 * Math.log10(D.bandPower(sp, 12900, 13100) / D.bandPower(sp, 2900, 3100)) < -50, 'image at 13 kHz below -50 dB');
+  } },
   { name: 'vocoder: band energies follow the input (+-1.5 dB), deterministic', fn(ES, assert) {
     const D = ES.audio.dsp, n = 3 * SR, x = new Float32Array(n), edges = D.vocoderEdges(8, 100, 7500), lv = [0, -4, -9, -3, -12, -6, -15, -20];
     for (let b = 0; b < 8; b++) {

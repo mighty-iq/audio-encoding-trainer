@@ -45,6 +45,15 @@
      Thresholds are scanned in 0.1 dB steps with linear interpolation. Stereo: rectified = sqrt((L^2+R^2)/2).
      Returns {db, act (activity factor 0..1), rmsDb}. Silence returns db = FLOOR_DB. */
   var BIN = 0.1, LO = -140, NB = 1700; // histogram from -140 dB to +30 dB
+  // Fast log2 for histogram bins: exponent from the float32 bits, mantissa by a quartic fitted to log2(1 + m)
+  // (exact at both ends; error < 0.00015, i.e. 0.001 dB).
+  var F32 = new Float32Array(1), U32 = new Uint32Array(F32.buffer), DB_PER_LOG2 = 20 * Math.LOG10E * Math.LN2;
+  function log2f(x) {
+    F32[0] = x;
+    var b = U32[0], m = (b & 0x7fffff) / 8388608;
+    return ((b >>> 23) & 255) - 127 + m * (1.4380732 + m * (-0.6747667 + m * (0.3170007 - m * 0.0803073)));
+  }
+  D._log2f = log2f;
   // opts.tail (s): measure as if the signal were followed by that much silence. Sources are measured with
   // SOURCE_TAIL, so a clip's level alone equals its level inside a longer mix (the hangover counts the same samples).
   D.SOURCE_TAIL = 0.5;
@@ -54,27 +63,38 @@
     if (!n0) return { db: D.FLOOR_DB, act: 0, rmsDb: D.FLOOR_DB };
     var tc = opts.tc || 0.03, hang = Math.max(1, Math.round((opts.hang || 0.2) * sr)), M = opts.margin == null ? 15.9 : opts.margin;
     var g = Math.exp(-1 / (tc * sr)), h = 1 - g, n = n0 + Math.max(0, Math.round((opts.tail || 0) * sr));
-    var env = new Float32Array(n), q = 0, p = 0, E = 0, i, c;
-    for (i = 0; i < n0; i++) {
-      var s2 = 0;
-      for (c = 0; c < nc; c++) { var v = ch[c][i]; s2 += v * v; }
-      s2 /= nc; E += s2;
-      q = g * q + h * Math.sqrt(s2);
-      p = g * p + h * q;
-      env[i] = p;
+    var env = new Float32Array(n), q = 0, p = 0, E = 0, i, c, s2, v;
+    if (nc === 1) {
+      var x0 = ch[0];
+      for (i = 0; i < n0; i++) { v = x0[i]; E += v * v; q = g * q + h * (v < 0 ? -v : v); p = g * p + h * q; env[i] = p; }
+    } else if (nc === 2) {
+      var a0 = ch[0], a1 = ch[1];
+      for (i = 0; i < n0; i++) { v = a0[i]; s2 = v * v; v = a1[i]; s2 = 0.5 * (s2 + v * v); E += s2; q = g * q + h * Math.sqrt(s2); p = g * p + h * q; env[i] = p; }
+    } else {
+      for (i = 0; i < n0; i++) {
+        s2 = 0;
+        for (c = 0; c < nc; c++) { v = ch[c][i]; s2 += v * v; }
+        s2 /= nc; E += s2;
+        q = g * q + h * Math.sqrt(s2);
+        p = g * p + h * q;
+        env[i] = p;
+      }
     }
     for (; i < n; i++) { q = g * q; p = g * p + h * q; env[i] = p; }
     if (E <= 0) return { db: D.FLOOR_DB, act: 0, rmsDb: D.FLOOR_DB };
     // running max over the last `hang` samples (monotonic deque) -> histogram of its level in dB
-    var hist = new Float64Array(NB), dq = new Int32Array(n), head = 0, tail = 0;
+    var hist = new Float64Array(NB), dq = new Int32Array(n), head = 0, tail = 0, lastM = -1, lastB = -1;
     for (i = 0; i < n; i++) {
       while (tail > head && env[dq[tail - 1]] <= env[i]) tail--;
       dq[tail++] = i;
       if (dq[head] <= i - hang) head++;
       var m = env[dq[head]];
       if (m > 1e-9) {
-        var b = Math.floor((20 * Math.log10(m) - LO) / BIN);
-        hist[b < 0 ? 0 : b >= NB ? NB - 1 : b]++;
+        if (m !== lastM) { // the held maximum often stays put for many samples: reuse its bin
+          var b = Math.floor((DB_PER_LOG2 * log2f(m) - LO) / BIN);
+          lastB = b < 0 ? 0 : b >= NB ? NB - 1 : b; lastM = m;
+        }
+        hist[lastB]++;
       }
     }
     // A(k) = number of samples whose hangover envelope >= threshold of bin k (cumulative from the top)

@@ -120,34 +120,80 @@
   };
   D.rir = function (sr, o) { return D.composeRir(D.roomModel(sr, o)); };
 
-  /* Reverberate a mono signal through a room model -> [L, R] at the full rate, length x.length + model.len.
-     Late part: decimate by 2, one complex FFT of the signal, product with the cached FFT of (tailL + i tailR),
-     one inverse FFT gives both ears (real and imaginary parts), interpolate by 2. Early part: sparse taps. */
-  D.reverb = function (x, model) {
-    var n = x.length, outLen = n + model.len, x2 = D.decimate2(x), t2 = model.tail[0].length;
-    var N = D.nextPow2(x2.length + t2), G = model.G[N], i;
-    if (!G) {
-      // x2: each half-rate tap stands for two full-rate samples of a band-limited response
-      var gr = new Float64Array(N), gi = new Float64Array(N);
-      for (i = 0; i < t2; i++) { gr[i] = 2 * model.tail[0][i]; gi[i] = 2 * model.tail[1][i]; }
-      D.fft(gr, gi, false);
-      G = model.G[N] = { re: gr, im: gi };
+  // Interpolate two half-rate channels by 2 in one pass (see D.interp2).
+  var C2 = null;
+  D.interp2x2 = function (yl, yr, n) {
+    var c = C2 || (C2 = halfband().map(function (v) { return 2 * v; })), m = yl.length, L = new Float32Array(n), R = new Float32Array(n), i, k;
+    for (i = 0; i < n; i += 2) { var e = i >> 1; if (e < m) { L[i] = yl[e]; R[i] = yr[e]; } }
+    var q0 = HBK - 1, q1 = m - HBK; // odd outputs whose taps are all inside [0, m): no bounds checks
+    for (i = 1; i < n; i += 2) {
+      var q = i >> 1, al = 0, ar = 0, a, b, ck;
+      if (q >= q0 && q < q1) {
+        for (k = 0; k < HBK; k++) { a = q - k; b = q + 1 + k; ck = c[k]; al += ck * (yl[a] + yl[b]); ar += ck * (yr[a] + yr[b]); }
+      } else {
+        for (k = 0; k < HBK; k++) {
+          a = q - k; b = q + 1 + k; ck = c[k];
+          if (a >= 0 && a < m) { al += ck * yl[a]; ar += ck * yr[a]; }
+          if (b < m) { al += ck * yl[b]; ar += ck * yr[b]; }
+        }
+      }
+      L[i] = al; R[i] = ar;
     }
-    var re = new Float64Array(N), im = new Float64Array(N);
-    re.set(x2);
-    D.fft(re, im, false);
-    for (i = 0; i < N; i++) { var a = re[i], b = im[i], c = G.re[i], d = G.im[i]; re[i] = a * c - b * d; im[i] = a * d + b * c; }
+    return [L, R];
+  };
+  function tailFft(model, N) {
+    var G = model.G[N];
+    if (G) return G;
+    // x2: each half-rate tap stands for two full-rate samples of a band-limited response
+    var gr = new Float64Array(N), gi = new Float64Array(N), t2 = model.tail[0].length;
+    for (var i = 0; i < t2; i++) { gr[i] = 2 * model.tail[0][i]; gi[i] = 2 * model.tail[1][i]; }
+    D.fft(gr, gi, false);
+    return (model.G[N] = { re: gr, im: gi });
+  }
+  // [L, R] from the half-rate convolution spectrum Z (re, im) plus the early taps on x.
+  function finishOne(re, im, x, model, maxLen) {
     D.fft(re, im, true);
-    var m2 = Math.min(N, (outLen + 1) >> 1), yl = new Float32Array(m2), yr = new Float32Array(m2);
+    var n = x.length, outLen = Math.min(n + model.len, maxLen || Infinity), m2 = Math.min(re.length, ((outLen + 1) >> 1) + HBK), i;
+    var yl = new Float32Array(m2), yr = new Float32Array(m2);
     for (i = 0; i < m2; i++) { yl[i] = re[i]; yr[i] = im[i]; }
-    var L = D.interp2(yl, outLen), R = D.interp2(yr, outLen);
+    var out = D.interp2x2(yl, yr, outLen), L = out[0], R = out[1];
     model.early.forEach(function (f) {
       var gL = f.gL, gR = f.gR, dL = f.dL, dR = f.dR, j;
       for (j = 0; j < n && j + dL < outLen; j++) L[j + dL] += gL * x[j];
       for (j = 0; j < n && j + dR < outLen; j++) R[j + dR] += gR * x[j];
     });
-    return [L, R];
+    return out;
+  }
+  /* Reverberate mono signals through a room model -> [[L, R], ...] at the full rate, each x.length + model.len long
+     (or maxLens[k], to stop at the end of a trial).
+     Late part: decimate by 2; two signals share one complex FFT (x_a + i x_b, separated by conjugate symmetry);
+     each spectrum times the cached FFT of (tailL + i tailR); one inverse FFT per signal gives both ears (real and
+     imaginary parts); interpolate by 2. Early part: sparse taps at the full rate. */
+  D.reverbMany = function (xs, model, maxLens) {
+    maxLens = maxLens || [];
+    var out = new Array(xs.length), t2 = model.tail[0].length;
+    for (var p = 0; p < xs.length; p += 2) {
+      var xa = xs[p], xb = p + 1 < xs.length ? xs[p + 1] : null, a2 = D.decimate2(xa), b2 = xb ? D.decimate2(xb) : null;
+      var N = D.nextPow2(Math.max(a2.length, b2 ? b2.length : 0) + t2), G = tailFft(model, N), Gr = G.re, Gi = G.im, k;
+      var wr = new Float64Array(N), wi = new Float64Array(N);
+      wr.set(a2); if (b2) wi.set(b2);
+      D.fft(wr, wi, false);
+      var zr = b2 ? new Float64Array(N) : null, zi = b2 ? new Float64Array(N) : null;
+      if (b2) for (k = 0; k < N; k++) { // X_b = (W[k] - conj W[N-k]) / 2i, then times G
+        var j = (N - k) & (N - 1), xr = 0.5 * (wi[k] + wi[j]), xi = 0.5 * (wr[j] - wr[k]);
+        zr[k] = xr * Gr[k] - xi * Gi[k]; zi[k] = xr * Gi[k] + xi * Gr[k];
+      }
+      var ar = new Float64Array(N), ai = new Float64Array(N);
+      for (k = 0; k < N; k++) { // X_a = (W[k] + conj W[N-k]) / 2 (equals W when there is no second signal)
+        var jj = (N - k) & (N - 1), yr = b2 ? 0.5 * (wr[k] + wr[jj]) : wr[k], yi = b2 ? 0.5 * (wi[k] - wi[jj]) : wi[k];
+        ar[k] = yr * Gr[k] - yi * Gi[k]; ai[k] = yr * Gi[k] + yi * Gr[k];
+      }
+      out[p] = finishOne(ar, ai, xa, model, maxLens[p]);
+      if (b2) out[p + 1] = finishOne(zr, zi, xb, model, maxLens[p + 1]);
+    }
+    return out;
   };
+  D.reverb = function (x, model) { return D.reverbMany([x], model)[0]; };
 
   // Long-term colour of the room sound as LTAS points (dB re its mean), for stationary beds placed in the room.
   D.roomColour = function (model) {

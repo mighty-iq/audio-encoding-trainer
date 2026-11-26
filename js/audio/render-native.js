@@ -1,6 +1,7 @@
-/* Earshot native render pass: HRTF panning (PannerNode) and room convolution (ConvolverNode) in one
-   OfflineAudioContext, each job written to its own pair of output channels (a stem), plus AudioBuffer helpers.
-   MIT licence. */
+/* Earshot native render pass: HRTF panning (PannerNode) in one OfflineAudioContext, each job written to its own
+   pair of output channels (a stem), plus AudioBuffer helpers. Rooms render in JS (dsp/reverb.js): Chrome's
+   ConvolverNode took 40-70 ms for four 3 s stems. A 'conv' job ({type:'conv', input, at, ir:[L, R]}) is kept for
+   measured responses that must stay full-band. MIT licence. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -46,7 +47,7 @@
     return p;
   }
 
-  /* jobs: [{type:'pan', input: Float32Array, at: samples, az} | {type:'conv', input, at, ir: [L, R]}]
+  /* jobs: [{type:'pan', input: Float32Array, at: samples, az} | {type:'conv', input, at, ir: [L, R]}] (see above)
      Resolves with [[L, R], ...] in job order (full length `len`); HRTF stems are shifted by the measured panner
      latency so direct sound and reflections line up. */
   N.run = function (jobs, len, sr) {

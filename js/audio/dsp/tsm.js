@@ -87,6 +87,37 @@
     return y;
   };
 
+  /* Integer upsampling by k (e.g. 16 -> 48 kHz for playback): polyphase Kaiser-windowed sinc, 12 zero crossings each
+     side; phase 0 passes the input samples unchanged. Output length n * k. */
+  var UP = {};
+  D.upsampleInt = function (x, k) {
+    k = k | 0;
+    if (k <= 1) return D.copy(x);
+    var Z = 12, taps = UP[k], n = x.length, y = new Float32Array(n * k), i, m, ph;
+    if (!taps) {
+      taps = UP[k] = [];
+      var beta = 8, i0 = function (v) { var s = 1, t = 1; for (var q = 1; q < 30; q++) { t *= (v / (2 * q)) * (v / (2 * q)); s += t; } return s; };
+      for (ph = 0; ph < k; ph++) {
+        var h = new Float64Array(2 * Z + 1);
+        for (m = -Z; m <= Z; m++) {
+          var u = (ph + m * k) / k, s = u === 0 ? 1 : Math.sin(Math.PI * u) / (Math.PI * u), r = u / (Z + 1);
+          h[m + Z] = Math.abs(r) < 1 ? s * i0(beta * Math.sqrt(1 - r * r)) / i0(beta) : 0;
+        }
+        taps.push(h);
+      }
+    }
+    for (i = 0; i < n; i++) y[i * k] = x[i];
+    for (ph = 1; ph < k; ph++) {
+      var hp = taps[ph];
+      for (i = 0; i < n; i++) {
+        var acc = 0, lo = Math.max(-Z, i - n + 1), hi = Math.min(Z, i);
+        for (m = lo; m <= hi; m++) acc += x[i - m] * hp[m + Z];
+        y[i * k + ph] = acc;
+      }
+    }
+    return y;
+  };
+
   // Simple F0 estimate (normalised autocorrelation peak between fmin and fmax) of a voiced stretch; for tests/QA.
   D.f0 = function (x, sr, fmin, fmax, from, len) {
     fmin = fmin || 60; fmax = fmax || 400; from = from | 0; len = len || Math.min(x.length - from, Math.round(0.1 * sr));

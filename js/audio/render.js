@@ -83,7 +83,7 @@
     if (!haveTarget) { tA = 0; tB = len; } else tB = Math.min(tB, len);
     mark(c, 'fx');
     // 2. stems
-    var stems = [], jobs = [], stereo = c.spatial !== 'mono';
+    var stems = [], jobs = [], roomIn = [], stereo = c.spatial !== 'mono';
     srcs.forEach(function (s) {
       var dir = s.u, airLoss = 0, distDb = 0;
       if (s.inRoom) {
@@ -97,9 +97,9 @@
       else if (c.spatial === 'ild') { var lr = D.hrtfLite(dir, sr, +s.p.az || 0); st.ch = [D.place(len, lr[0], s.at), D.place(len, lr[1], s.at)]; }
       else { var m = D.place(len, dir, s.at); st.ch = [m, m]; }
       stems.push(st); s.dirStem = st;
-      if (s.inRoom) { // room sound of this part (JS, see dsp/reverb.js)
-        var w = D.reverb(s.u, model), rL = D.place(len, w[0], s.at);
-        var rv = { kind: 'rev', src: s, role: s.role, dir: st, ch: [rL, c.spatial === 'mono' ? rL : D.place(len, w[1], s.at)] };
+      if (s.inRoom) { // room sound of this part: reverberated below with every other room source in one batch
+        var rv = { kind: 'rev', src: s, role: s.role, dir: st, ch: null };
+        roomIn.push({ x: s.u, max: len - s.at, done: function (w) { var rL = D.place(len, w[0], s.at); rv.ch = [rL, c.spatial === 'mono' ? rL : D.place(len, w[1], s.at)]; } });
         stems.push(rv); s.revStem = rv;
       }
     });
@@ -111,17 +111,34 @@
     }
     var bedLabels = P.labels(beds, function (b) { return 'bed:' + (b.kind || 'ssn'); });
     beds.forEach(function (b, j) {
-      var inRoom = !!(room && b.room), ch = P.makeBed(b, len, sr, stereo, D.fork(c.rng, bedLabels[j]), clipData, extra, warn, inRoom ? model : null);
-      stems.push({ kind: 'bed', role: 'bed', bed: b, want: targetDb + (+b.db || 0), ch: ch.length === 1 ? [ch[0], ch[0]] : ch });
+      var inRoom = !!(room && b.room), kind = b.kind || 'ssn', st = { kind: 'bed', role: 'bed', bed: b, want: targetDb + (+b.db || 0) };
+      if (inRoom && kind !== 'ssn' && kind !== 'pink') { // babble, ambience: reverberate the dry (mono) bed
+        var dry = P.makeBed(b, len, sr, false, D.fork(c.rng, bedLabels[j]), clipData, extra, warn, null)[0];
+        roomIn.push({ x: dry, max: len, done: function (w) {
+          var fd = Math.round(0.05 * sr), l = D.fade(w[0].slice(0, len), 0, fd), r = c.spatial === 'mono' ? l : D.fade(w[1].slice(0, len), 0, fd);
+          st.ch = [l, r];
+        } });
+      } else { // ssn and pink in a room are coloured by the room's spectrum inside makeBed
+        var ch = P.makeBed(b, len, sr, stereo, D.fork(c.rng, bedLabels[j]), clipData, extra, warn, inRoom ? model : null);
+        st.ch = ch.length === 1 ? [ch[0], ch[0]] : ch;
+      }
+      stems.push(st);
     });
+    if (roomIn.length) {
+      var wet = D.reverbMany(roomIn.map(function (r) { return r.x; }), model, roomIn.map(function (r) { return r.max; }));
+      roomIn.forEach(function (r, k) { r.done(wet[k]); });
+    }
     mark(c, 'stems');
     // 3. native pass (HRTF, rooms)
-    return N.run(jobs, len, sr).then(function (out) {
+    return N.run(jobs, len, sr).catch(function (e) { // an engine that refuses the HRTF pass must not lose the trial
+      warn('HRTF pass failed (' + (e && e.message || e) + '); ITD/ILD head model used');
+      return jobs.map(function () { return null; });
+    }).then(function (out) {
       mark(c, 'native');
       stems.forEach(function (st) {
         if (st.job == null) return;
         st.ch = out[st.job];
-        if (st.eIn > 0 && !(D.energy(st.ch) > 0)) { // HRTF panner gave silence: light head model
+        if (st.eIn > 0 && !(st.ch && D.energy(st.ch) > 0)) { // HRTF gave silence or failed: light head model
           var j = jobs[st.job], lr = D.hrtfLite(j.input, sr, j.az);
           st.ch = [D.place(len, lr[0], j.at), D.place(len, lr[1], j.at)];
           warn('HRTF panner produced no output; ITD/ILD head model used');
@@ -296,6 +313,22 @@
   }
 
   // ---- playback (one trial buffer at a time) ----
+  /* A 16 kHz buffer on a 48 kHz device: browsers resample buffers on the fly (Chrome by linear interpolation, which
+     leaves faint images above 8 kHz), so when the device rate is an integer multiple the buffer is upsampled once
+     here (windowed sinc) and cached per buffer. opts.hq === false skips this. */
+  var hqCache = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function forDevice(buffer, c, opts) {
+    var k = c.sampleRate / buffer.sampleRate;
+    if (opts.hq === false || !(k > 1.5) || Math.abs(k - Math.round(k)) > 1e-9 || k > 6) return buffer;
+    var hit = hqCache && hqCache.get(buffer);
+    if (hit) return hit;
+    var chs = [];
+    for (var i = 0; i < buffer.numberOfChannels; i++) chs.push(D.upsampleInt(buffer.getChannelData(i), Math.round(k)));
+    var up = c.createBuffer(chs.length, chs[0].length, c.sampleRate);
+    for (i = 0; i < chs.length; i++) { if (up.copyToChannel) up.copyToChannel(chs[i], i); else up.getChannelData(i).set(chs[i]); }
+    if (hqCache) hqCache.set(buffer, up);
+    return up;
+  }
   var current = null;
   A.play = function (buffer, opts) {
     opts = opts || {};
@@ -303,6 +336,7 @@
     if (!c || !buffer) { settle({ ok: false, reason: c ? 'no-buffer' : 'no-audio' }); return { stop: function () {}, ended: ended, duration: 0 }; }
     if (current && opts.exclusive !== false) current.stop();
     var src = c.createBufferSource(), done = false, wd = null, h;
+    try { buffer = forDevice(buffer, c, opts); } catch (e) { /* keep the original buffer */ }
     src.buffer = buffer;
     src.connect(A.ctx.master());
     function fin(r) { if (done) return; done = true; if (wd) clearTimeout(wd); if (current === h) current = null; settle(r); }
