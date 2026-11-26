@@ -1,13 +1,20 @@
 /* Earshot engine — Echo: a message heard once in café or party noise (names, places, times, days, numbers,
    things to bring), a pause, then 2–3 questions. Dials: snr, details per message, rate (WSOLA speed-up), delay
    before the questions. Foils that occur elsewhere in the message are labelled 'context' (a binding error: right
-   word, wrong question). Bet: listening under memory load on real-life content (bridging). */
+   word, wrong question). Bet: listening under memory load on real-life content (bridging).
+   Lab matrix words (the probe vocabulary: "eleven", "thirty", "warm" …) may occur inside a message, but Echo never
+   asks for a detail that contains one and never offers one (token match: "eleven thirty", "twenty-four"); a message
+   with no other askable detail is skipped (lead's decision, 2026-11-26). */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
   var E = ES.engine, I = E.items, C = I.common, X = I.data;
 
   function val(id, i) { var d = E.dialDef('echo', id); return d.values[Math.max(d.min, Math.min(d.max, Math.round(i)))]; }
+  // a value with any probe (matrix) word among its tokens
+  function hasProbe(v) { var P = X.idx().probeWords; return C.norm(v).split(' ').some(function (t) { return !!P[t]; }); }
+  // the details of a message that can be asked: a category with ≥ 4 values to choose foils from, no probe word
+  function askable(it, cats) { return (it.facts || []).filter(function (f) { return cats[f.cat] && cats[f.cat].length >= 4 && !hasProbe(f.value); }); }
   function catPools(V) {
     var idx = X.idx(); idx.poolCache = idx.poolCache || {};
     if (idx.poolCache['echo:cats']) return idx.poolCache['echo:cats'];
@@ -15,13 +22,13 @@
     I.adapt.echoItems().forEach(function (it) {
       (it.facts || []).forEach(function (f) {
         var k = f.cat + '|' + C.norm(f.value);
-        if (seen[k] || X.isProbeWord(f.value)) return;
+        if (seen[k] || hasProbe(f.value)) return;
         seen[k] = 1; (out[f.cat] = out[f.cat] || []).push(f.value);
       });
     });
     var extra = V.echoValues || {};
     Object.keys(extra).forEach(function (cat) {
-      (extra[cat] || []).forEach(function (v) { var k = cat + '|' + C.norm(v); if (!seen[k] && !X.isProbeWord(v)) { seen[k] = 1; (out[cat] = out[cat] || []).push(v); } });
+      (extra[cat] || []).forEach(function (v) { var k = cat + '|' + C.norm(v); if (!seen[k] && !hasProbe(v)) { seen[k] = 1; (out[cat] = out[cat] || []).push(v); } });
     });
     idx.poolCache['echo:cats'] = out;
     return out;
@@ -42,7 +49,7 @@
   }
   function catPoolsOf(items) {
     var out = {}, seen = {};
-    items.forEach(function (it) { it.facts.forEach(function (f) { var k = f.cat + '|' + C.norm(f.value); if (!seen[k]) { seen[k] = 1; (out[f.cat] = out[f.cat] || []).push(f.value); } }); });
+    items.forEach(function (it) { it.facts.forEach(function (f) { var k = f.cat + '|' + C.norm(f.value); if (!seen[k] && !hasProbe(f.value)) { seen[k] = 1; (out[f.cat] = out[f.cat] || []).push(f.value); } }); });
     return out;
   }
   function contains(text, phrase) { return (' ' + C.norm(text) + ' ').indexOf(' ' + C.norm(phrase) + ' ') >= 0; }
@@ -55,8 +62,11 @@
     var cats = catPools(V);
     // Relaxation (meta.relaxed): (1) all voices with material; (2) the build's call-sign phrases as two- or
     // three-detail messages (who called, which word, which number when the build has ≥ 3 numbers).
-    var A = I.adapt, all = A.echoItems(), withMat = {}, relaxed = [];
-    if (!A.voicesWith(all).length) { all = fallbackMessages(); relaxed.push('call-sign phrases'); cats = catPoolsOf(all); }
+    var A = I.adapt, all = A.echoItems().filter(function (it) { return askable(it, cats).length > 0; }), withMat = {}, relaxed = [];
+    if (!A.voicesWith(all).length) {
+      all = fallbackMessages(); relaxed.push('call-sign phrases'); cats = catPoolsOf(all);
+      all = all.filter(function (it) { return askable(it, cats).length > 0; });
+    }
     A.voicesWith(all).forEach(function (v) { withMat[v] = 1; });
     var cand = [];
     for (var off = 0; off < 4 && !cand.length; off++) cand = all.filter(function (it) { return Math.abs(it.facts.length - nDet) === off; });
@@ -74,12 +84,12 @@
     var beds = [X.bedSpec(rng, breadth < 0.4 ? ['cafe'] : ['cafe', 'party', 'babble'], bo) || X.bedSpec(rng, ['babble'], bo) || { kind: 'ssn', db: -snr }];
     var audio = { out: { db: -20 }, dur: Math.round((0.6 + dur + 0.8) * 100) / 100, spatial: 'mono', parts: [part], beds: beds, room: null };
     C.remember(ctx, hit.voice, null);
-    var nQ = Math.min(3, actual), facts = C.sample(rng, it.facts.filter(function (f) { return cats[f.cat] && cats[f.cat].length >= 4; }), nQ);
+    var nQ = Math.min(3, actual), facts = C.sample(rng, askable(it, cats), nQ);
     var slots = facts.map(function (f) {
       var others = it.facts.filter(function (g) { return g !== f && g.cat === f.cat; }).map(function (g) { return g.value; });
       var idx = X.idx(), dk = 'echo:dist:' + actual + ':' + f.cat;
       var dist = idx.poolCache[dk] || (idx.poolCache[dk] = C.answerDist(cand.filter(function (m) { return m.facts.length === actual; }), function (m) {
-        var g = m.facts.filter(function (x) { return x.cat === f.cat; })[0]; return g ? g.value : undefined; }));
+        var g = m.facts.filter(function (x) { return x.cat === f.cat; })[0]; return g && !hasProbe(g.value) ? g.value : undefined; }));
       var sl = C.slot(rng, { label: f.q, answer: f.value, pool: dist.support.length >= 4 ? dist.support : cats[f.cat], draw: dist.draw, freq: dist.freq, neighbours: X.neighbours, avoid: others, type: f.cat === 'number' ? 'number' : undefined });
       Object.keys(sl.foils).forEach(function (o) { if (contains(it.text, o)) sl.foils[o] = 'context'; });
       sl.cat = f.cat;
@@ -96,5 +106,6 @@
         offsetDb: c.diff || 0, text: it.text, facts: it.facts }
     };
   }
-  I.echo = { make: make, ready: function () { return I.adapt.ready('echo'); } };
+  I.echo = { make: make, ready: function () { return I.adapt.ready('echo'); },
+    askable: function (it) { return askable(it, catPools((ES.data && ES.data.vocab) || {})); }, hasProbe: hasProbe };
 })(typeof window !== 'undefined' ? window : globalThis);

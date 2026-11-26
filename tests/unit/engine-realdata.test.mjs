@@ -50,6 +50,29 @@ export const tests = [
     const v = Object.keys(R.data.voices).find((x) => R.data.voices[x].set === 'train');
     exercise(subset(R, [v]), assert, 80, 'one');
   } },
+  { name: 'Echo never asks for or offers a Lab matrix word (token match), 2,000 seeds; every message stays askable', fn(ES, assert) {
+    const R = real(); if (!R) return;
+    const E = R.engine, V = R.data.vocab, X = buildIndex(R);
+    const norm = (t) => String(t).toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const MX = new Set(['name', 'verb', 'num', 'adj', 'obj'].flatMap((k) => (V.matrix && V.matrix[k]) || []).map(norm));
+    const hasMx = (v) => norm(v).split(' ').some((t) => MX.has(t));
+    assert.ok(MX.size >= 40, 'matrix words loaded');
+    (V.echo || []).forEach((it) => assert.ok(E.items.echo.askable(it).length >= 1, it.id + ' has an askable detail'));
+    const used = new Set();
+    for (let s = 0; s < 2000; s++) {
+      const rng = R.core.rng('mx:' + s), st = randomSetting(R, 'echo', rng.fork('set'));
+      const sp = E.items.echo.make(rng.fork('make'), { dials: st.dials, focus: Object.keys(st.dials)[0] }, { breadth: st.breadth, playerSeed: 'm' + (s % 7) });
+      assert.ok(sp.question.slots.length >= 1, 'at least one question');
+      sp.question.slots.forEach((sl) => {
+        assert.ok(!hasMx(sl.answer), 'asked a matrix word: ' + sl.answer);
+        sl.options.forEach((o) => assert.ok(!hasMx(o), 'offered a matrix word: ' + o));
+      });
+      assert.deepEqual(checkSpec(R, X, sp), []);
+      used.add(norm(sp.meta.text));
+    }
+    const withMx = (V.echo || []).filter((it) => it.facts.some((f) => hasMx(f.value)) && used.has(norm(it.text)));
+    assert.ok(withMx.length >= 5, 'messages with a matrix word are still played (others asked): ' + withMx.length);
+  } },
   { name: 'M3: babble beds carry one talker clip per voice (never a recorded bed id the renderer cannot split)', fn(ES, assert) {
     const R = real(); if (!R) return;
     const E = R.engine, C = R.data.manifest.clips; let babble = 0;
