@@ -39,6 +39,11 @@
     if (!c) return Promise.resolve(false);
     try { if (ES.audio && ES.audio.ctx && typeof ES.audio.ctx.unlock === 'function') ES.audio.ctx.unlock(); } catch (e) { /* ignore */ }
     try { if (c.state !== 'running' && c.resume) c.resume(); } catch (e) { /* ignore */ }
+    // Prebuild the HRIR table and FFT tables once (audio §4 warm-up); later trials render faster.
+    if (!unlock.warmed && ES.audio && typeof ES.audio.warm === 'function') {
+      unlock.warmed = true;
+      setTimeout(function () { try { ES.audio.warm(); } catch (e) { /* ignore */ } }, 0);
+    }
     try {
       var b = c.createBuffer(1, 1, c.sampleRate || 44100), s = c.createBufferSource();
       s.buffer = b; s.connect(c.destination); s.start(0);
