@@ -55,7 +55,7 @@
      Returns { label, options, answer, foils:{option:type} }. */
   function slot(rng, o) {
     var n = o.n || 4, T = o.answer, used = {}, out = [T];
-    var inPool = {}; (o.pool || []).forEach(function (w) { inPool[norm(w)] = 1; });
+    var inPool = o.pool ? normSet(o.pool) : null;
     var nbT = (o.neighbours ? o.neighbours(T) : []) || [];
     var nbTset = {}; nbT.forEach(function (w) { nbTset[norm(w)] = 1; });
     var avoid = {}; (o.avoid || []).forEach(function (w) { avoid[norm(w)] = 1; });
@@ -63,14 +63,16 @@
     function ok(w) {
       var k = norm(w);
       if (!k || used[k] || avoid[k]) return false;
-      if (o.pool && !inPool[k]) return false;
+      if (inPool && !inPool[k]) return false;
       for (var i = 0; i < out.length; i++) if (homophones(out[i], w)) return false;
       return true;
     }
     function add(w) { if (w !== undefined && out.length < n && ok(w)) { out.push(w); used[norm(w)] = 1; return true; } return false; }
     function nbOf(w) { return shuffle(rng, ((o.neighbours ? o.neighbours(w) : []) || []).filter(ok)); }
     function randomOne() {
-      var cand = shuffle(rng, (o.pool || []).filter(function (w) { return ok(w) && !nbTset[norm(w)]; }));
+      var P = o.pool || [];
+      for (var t = 0; t < 30 && P.length; t++) { var w = P[ri(rng, P.length)]; if (ok(w) && !nbTset[norm(w)]) return w; }
+      var cand = shuffle(rng, P.filter(function (w) { return ok(w) && !nbTset[norm(w)]; }));
       return cand[0];
     }
     var spoken = uniq((o.spoken || []).filter(function (w) { return norm(w) !== norm(T); }));
@@ -104,6 +106,13 @@
     return { label: o.label || '', options: shuffle(rng, out), answer: T, foils: foils };
   }
 
+  // Normalised membership set of a (cached) pool array, memoised on the array itself.
+  function normSet(a) {
+    if (a.__ns && a.__nsLen === a.length) return a.__ns;
+    var m = {}; for (var i = 0; i < a.length; i++) m[norm(a[i])] = 1;
+    try { Object.defineProperty(a, '__ns', { value: m, configurable: true, writable: true }); Object.defineProperty(a, '__nsLen', { value: a.length, configurable: true, writable: true }); } catch (e) { /* frozen */ }
+    return m;
+  }
   // A part list for words spoken one after another by one voice (gap in s between words).
   function sequence(clips, meta, t0, gap, extra) {
     var parts = [], t = t0;

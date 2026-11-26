@@ -25,7 +25,7 @@
     eighteen: ['eighty', 'eight'], twenty: ['twelve', 'thirty'], thirty: ['thirteen', 'forty'], forty: ['fourteen', 'four'],
     fifty: ['fifteen', 'sixty'], sixty: ['sixteen', 'fifty'], eighty: ['eighteen', 'eight']
   };
-  // nouns with real-word phonetic neighbours (minimal pairs or rhymes)
+  // Repair alternatives are answers of other items (closed set). Nouns with real-word phonetic neighbours (minimal pairs or rhymes)
   var nounNb = {
     cup: ['cap', 'pup', 'cut'], bag: ['bat', 'rag', 'back'], hat: ['cat', 'hut', 'ham'], map: ['mop', 'nap', 'mat'],
     pen: ['pin', 'ten', 'pan'], box: ['fox', 'bus', 'rocks'], key: ['tea', 'knee', 'bee'], ring: ['wing', 'rim', 'king'],
@@ -52,12 +52,12 @@
   ['four', 'two', 'nine', 'ten'].forEach(function (n) { delete nounNb[n]; });
   Object.keys(nounNb).forEach(function (w) { nounNb[w] = nounNb[w].filter(function (n) { return nounNb[n] && n !== w; }); });
   var nouns = Object.keys(nounNb).filter(function (w) { return nounNb[w].length; });
-  var keyNouns = nouns.slice(0, 64);
+  var keyNouns = nouns; // phrase keys cover the whole closed noun set, so neighbour foils are possible answers
   var adjs = ['green', 'quiet', 'round', 'sharp', 'empty', 'heavy', 'bright', 'soft', 'cold', 'tall'];
   var verbs = ['paints', 'folds', 'finds', 'lifts', 'hides', 'sells', 'burns', 'sends', 'drops', 'pulls'];
   var sus = [], phrases = [], i;
-  for (i = 0; i < 60; i++) {
-    var n1 = keyNouns[(i * 7) % keyNouns.length], n2 = keyNouns[(i * 13 + 5) % keyNouns.length];
+  for (i = 0; i < 120; i++) {
+    var n1 = keyNouns[(2 * i) % keyNouns.length], n2 = keyNouns[(2 * i + 1 + 2 * (i % 7)) % keyNouns.length];
     if (n2 === n1) n2 = keyNouns[(i * 13 + 6) % keyNouns.length];
     var st = 'the ' + adjs[i % adjs.length] + ' ' + n1 + ' ' + verbs[(i * 3) % verbs.length] + ' a ' + n2;
     sus.push({ id: 'sus-' + i, text: st, words: words(st), keys: [2, 5] });
@@ -68,18 +68,18 @@
     phrases.push({ id: 'phr-' + i, text: pt, words: pw, keys: [pw.indexOf(n1), pw.lastIndexOf(n2)] });
   }
   var repair = [
-    ['she poured the milk into a cup', 'cup', 'hi', ['bowl', 'glass']], ['he locked the door with a key', 'key', 'hi', ['chain', 'code']],
-    ['we ate the soup with a spoon', 'spoon', 'hi', ['fork', 'knife']], ['the boat had a white sail', 'sail', 'hi', ['flag', 'deck']],
-    ['she wore a hat on her head', 'hat', 'hi', ['crown', 'scarf']], ['he lit the room with a lamp', 'lamp', 'hi', ['torch', 'candle']],
-    ['the bird sat on its nest', 'nest', 'hi', ['branch', 'perch']], ['put the flowers in the vase', 'vase', 'hi', ['jar', 'pot']],
-    ['the queen wore a golden crown', 'crown', 'hi', ['ring', 'chain']], ['he washed his hands in the sink', 'sink', 'hi', ['bowl', 'tub']],
-    ['she carried her books in a bag', 'bag', 'mid', ['box', 'tray']], ['there was a stone on the path', 'stone', 'mid', ['leaf', 'coin']],
-    ['he found a coin under the desk', 'coin', 'mid', ['key', 'ring']], ['the children drew a cloud', 'cloud', 'mid', ['house', 'duck']],
-    ['she left the plate by the window', 'plate', 'mid', ['dish', 'cup']], ['we heard a bell in the distance', 'bell', 'mid', ['horn', 'drum']],
-    ['he kept the rope in the shed', 'rope', 'mid', ['chain', 'brush']], ['they painted the fence last week', 'fence', 'mid', ['door', 'desk']],
-    ['the next word is comb', 'comb', 'lo', ['coin', 'tent']], ['they talked about the frog', 'frog', 'lo', ['pear', 'drum']],
-    ['she thought about the glove', 'glove', 'lo', ['ship', 'bread']], ['he pointed at the pipe', 'pipe', 'lo', ['map', 'sock']],
-    ['we did not mention the mask', 'mask', 'lo', ['tray', 'wing']], ['you will now hear the word tooth', 'tooth', 'lo', ['kite', 'clock']]
+    ['she poured the milk into a cup', 'cup', 'hi', ['vase', 'plate']], ['he locked the door with a key', 'key', 'hi', ['coin', 'comb']],
+    ['we ate the soup with a spoon', 'spoon', 'hi', ['plate', 'cup']], ['the boat had a white sail', 'sail', 'hi', ['rope', 'bell']],
+    ['she wore a hat on her head', 'hat', 'hi', ['crown', 'mask']], ['he lit the room with a lamp', 'lamp', 'hi', ['pipe', 'comb']],
+    ['the bird sat on its nest', 'nest', 'hi', ['fence', 'stone']], ['put the flowers in the vase', 'vase', 'hi', ['sink', 'cup']],
+    ['the queen wore a golden crown', 'crown', 'hi', ['hat', 'mask']], ['he washed his hands in the sink', 'sink', 'hi', ['vase', 'cup']],
+    ['she carried her books in a bag', 'bag', 'mid', ['hat', 'cup']], ['there was a stone on the path', 'stone', 'mid', ['coin', 'frog']],
+    ['he found a coin under the desk', 'coin', 'mid', ['key', 'comb']], ['the children drew a cloud', 'cloud', 'mid', ['frog', 'crown']],
+    ['she left the plate by the window', 'plate', 'mid', ['cup', 'vase']], ['we heard a bell in the distance', 'bell', 'mid', ['frog', 'pipe']],
+    ['he kept the rope in the shed', 'rope', 'mid', ['bag', 'pipe']], ['they painted the fence last week', 'fence', 'mid', ['plate', 'sail']],
+    ['the next word is comb', 'comb', 'lo', ['coin', 'nest']], ['they talked about the frog', 'frog', 'lo', ['bell', 'cloud']],
+    ['she thought about the glove', 'glove', 'lo', ['stone', 'lamp']], ['he pointed at the pipe', 'pipe', 'lo', ['rope', 'bag']],
+    ['we did not mention the mask', 'mask', 'lo', ['hat', 'sail']], ['you will now hear the word tooth', 'tooth', 'lo', ['key', 'spoon']]
   ].map(function (r, k) {
     var w = words(r[0]);
     return { id: 'rep-' + k, text: r[0], words: w, key: w.lastIndexOf(r[1]), pred: r[2], alts: r[3] };

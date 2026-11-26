@@ -35,8 +35,9 @@
       { slope: 0.22, prior: { m: 4, s: 2 }, requires: 'headphones' })
   ];
   D.far = [
-    ord('dist', 'Distance', 'm', [1, 1.5, 2, 3, 4, 6, 8, 11, 16, 22, 32],
-      ['1 m', '1.5 m', '2 m', '3 m', '4 m', '6 m', '8 m', '11 m', '16 m', '22 m', '32 m'], { start: 1, slope: 0.35, prior: { m: 5, s: 2.5 } }),
+    // ≤ 0.8 × room length (CONTRACTS §12 R1: small 5 m, medium 10 m, large 22 m, hall 38 m long), so 30 m is the top
+    ord('dist', 'Distance', 'm', [1, 1.5, 2, 3, 4, 6, 8, 11, 16, 22, 30],
+      ['1 m', '1.5 m', '2 m', '3 m', '4 m', '6 m', '8 m', '11 m', '16 m', '22 m', '30 m'], { start: 1, slope: 0.35, prior: { m: 5, s: 2.5 } }),
     ord('rt60', 'Echo (reverberation time)', 's', [0.3, 0.45, 0.6, 0.8, 1.0, 1.3, 1.7, 2.2, 3.0],
       ['0.3 s', '0.45 s', '0.6 s', '0.8 s', '1.0 s', '1.3 s', '1.7 s', '2.2 s', '3.0 s'], { start: 1, slope: 0.35, prior: { m: 4, s: 2.5 } }),
     cont('noise', 'Room noise (speech vs noise)', 'dB', -6, 30, 1, -1, { start: 24, slope: 0.22, prior: { m: 6, s: 6 }, drift: 0.1 })

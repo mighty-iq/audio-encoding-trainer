@@ -143,13 +143,52 @@
     });
     return out;
   }
-  // Synthetic training rooms: seeds 1…9999 only (probes use ≥ 10000 or measured responses).
+  // Synthetic training rooms: seeds 1…9999 only (probes use ≥ 10000 or measured responses). Size words map to fixed
+  // lengths in the renderer (CONTRACTS §12 R1); the talker distance must stay ≤ 0.8 × the room length.
+  var SIZES = ['small', 'medium', 'large', 'hall'], LEN = { small: 5, medium: 10, large: 22, hall: 38 };
+  function fitSize(size, dist) {
+    var i = Math.max(0, SIZES.indexOf(size));
+    while (i < SIZES.length - 1 && dist > 0.8 * LEN[SIZES[i]]) i++;
+    return SIZES[i];
+  }
   function room(rng, rt60, dist, sizeHint) {
     var size = sizeHint || (rt60 >= 1.7 ? 'hall' : rt60 >= 0.8 ? 'large' : rt60 >= 0.5 ? 'medium' : 'small');
-    return { rt60: rt60, dist: dist, size: size, seed: 1 + C.ri(rng, 9999) };
+    return { rt60: rt60, dist: dist, size: fitSize(size, dist), seed: 1 + C.ri(rng, 9999) };
   }
 
-  I.data = { idx: idx, clip: clip, textOf: textOf, voice: voice, has: has, clipFor: clipFor, kindsOf: kindsOf, pool: pool,
+  /* An item (with .text) and a voice from `pool` that has its clip of `kind`; tries items in random order.
+     Returns { item, voice, clip } or null. avoidVoices are skipped when possible. */
+  function itemVoice(rng, items, kind, pool, avoidVoices) {
+    var X = idx(), inPool = {}, avoid = {};
+    pool.forEach(function (v) { inPool[v] = 1; });
+    (avoidVoices || []).forEach(function (v) { avoid[v] = 1; });
+    var order = C.shuffle(rng, items), fallback = null;
+    for (var i = 0; i < order.length && i < 80; i++) {
+      var it = order[i], ids = X.byKT[kind + '|' + C.norm(it.text)] || [];
+      var vs = ids.filter(function (id) { return inPool[X.man[id].voice]; });
+      if (!vs.length) continue;
+      var fresh = vs.filter(function (id) { return !avoid[X.man[id].voice]; });
+      var id = C.pick(rng, fresh.length ? fresh : vs);
+      var hit = { item: it, voice: X.man[id].voice, clip: id };
+      if (fresh.length) return hit;
+      if (!fallback) fallback = hit;
+    }
+    return fallback;
+  }
+  // Unique words at `keys` positions across items (the answer pool of an exercise), probe words removed.
+  function keyPool(name, items, getKeys) {
+    var X = idx();
+    X.poolCache = X.poolCache || {};
+    if (X.poolCache['keys:' + name]) return X.poolCache['keys:' + name];
+    var seen = {}, out = [];
+    (items || []).forEach(function (it) {
+      getKeys(it).forEach(function (w) { var t = C.norm(w); if (t && !seen[t] && !X.probeWords[t]) { seen[t] = 1; out.push(t); } });
+    });
+    X.poolCache['keys:' + name] = out;
+    return out;
+  }
+
+  I.data = { itemVoice: itemVoice, keyPool: keyPool, idx: idx, clip: clip, textOf: textOf, voice: voice, has: has, clipFor: clipFor, kindsOf: kindsOf, pool: pool,
     isProbeWord: isProbeWord, neighbours: neighbours, semis: semis, voicePool: voicePool, maskers: maskers, bed: bed,
-    babbleClips: babbleClips, room: room, reset: function () { cache = null; } };
+    babbleClips: babbleClips, room: room, fitSize: fitSize, ROOM_LEN: LEN, reset: function () { cache = null; } };
 })(typeof window !== 'undefined' ? window : globalThis);

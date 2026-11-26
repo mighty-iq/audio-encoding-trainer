@@ -58,14 +58,15 @@
     self.state = fresh();
     if (initial) load(initial);
 
-    function fresh() { return { v: 1, n: 0, dials: {}, breadth: {}, recent: {}, cond: {}, path: {}, best: {}, plat: {} }; }
+    function fresh() { return { v: 1, n: 0, dials: {}, breadth: {}, recent: {}, cond: {}, path: {}, best: {}, plat: {}, cast: {} }; }
     function load(obj) {
       var s = fresh();
       if (obj && typeof obj === 'object' && (obj.v === 1 || obj.v === undefined)) {
-        ['dials', 'breadth', 'recent', 'cond', 'path', 'best', 'plat'].forEach(function (k) {
+        ['dials', 'breadth', 'recent', 'cond', 'path', 'best', 'plat', 'cast'].forEach(function (k) {
           if (obj[k] && typeof obj[k] === 'object') s[k] = JSON.parse(JSON.stringify(obj[k]));
         });
         s.n = +obj.n || 0;
+        if (typeof obj.seed === 'string') s.seed = obj.seed;
       }
       self.state = s;
       return self;
@@ -174,6 +175,9 @@
       var c = st.cond[cid] = st.cond[cid] || { n: 0, acc: 0.7, at: 0 };
       c.n++; c.acc = c.n === 1 ? 0.5 * c.acc + 0.5 * prop : 0.85 * c.acc + 0.15 * prop; c.at = self.clock();
       breadthRule(ex);
+      if (ex === 'voices' && trial.meta && trial.meta.voices && trial.meta.voices[0]) {
+        var cv = trial.meta.voices[0]; st.cast[cv] = (st.cast[cv] || 0) + 1;
+      }
       var out = { updated: [], warmup: !!set.warmup };
       if (set.warmup || set.noUpdate) return out;
       var dials = set.dials || {}, fam = familyOf(ex, dials);
@@ -200,9 +204,10 @@
         var r = st.dials[key(ck, d.id)] || { h: [], f: 0 };
         r.m = Math.round(clamp(nu.m, d.min - pad, d.max + pad) * 1000) / 1000;
         r.s = Math.round(clamp(nu.s, sMin, d.prior.s * 1.5) * 1000) / 1000;
-        r.n = (pr.n || 0) + 1; r.at = now;
+        r.n = Math.round(((pr.n || 0) + w) * 100) / 100; r.at = now;
         if (d.id === set.focus) { r.f = (r.f || 0) + 1; r.lf = st.n; }
-        if (r.n % 8 === 0) { r.h = r.h || []; r.h.push(Math.round(d.dir * d.slope * r.m * 1000) / 1000); if (r.h.length > 10) r.h.shift(); }
+        r.u = (r.u || 0) + 1;
+        if (r.u % 8 === 0) { r.h = r.h || []; r.h.push(Math.round(d.dir * d.slope * r.m * 1000) / 1000); if (r.h.length > 10) r.h.shift(); }
         st.dials[key(ck, d.id)] = r;
         out.updated.push(d.id);
       });
