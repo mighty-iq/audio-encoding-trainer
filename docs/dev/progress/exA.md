@@ -84,3 +84,6 @@ Next: rerun ex_a_tutorial.py --miss once the shell fix lands; then final report.
   openHelp({actions}) (shell); strategy-card `seen` + skipping the engine's duplicate line on the plateau card
   (shell); number "neighbours" in data/vocab.js are not sound-alikes (stimuli); optional run_all entry (shell).
 - Run: `tools/with-browser.sh python3 tests/e2e/ex_a_tutorial.py --miss` and `… ex_a_layout.py`.
+- Commit hygiene: the git index is shared by all builders; commit with explicit paths
+  (`TZ=UTC git commit -m … -- <own paths>`). f5f401f accidentally carried the game's staged deletion of
+  js/game/fallback.js (reported in requests.md; history not rewritten).
