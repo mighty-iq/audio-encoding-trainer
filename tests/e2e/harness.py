@@ -159,12 +159,16 @@ class Tab:
         return mine, other
 
 
-def new_tab(browser, viewport=(390, 844), scheme='light', config=None, init=None, block_storage=False, context=None, touch=False):
+def new_tab(browser, viewport=(390, 844), scheme='light', config=None, init=None, block_storage=False, context=None, touch=False, real=False):
+    """A page in a new context. Shell suites run the demo session (config demo) unless real=True."""
     ctx = context or browser.new_context(viewport={'width': viewport[0], 'height': viewport[1]}, color_scheme=scheme,
                                          device_scale_factor=1, has_touch=touch, is_mobile=False)
     if context is None:
-        if config:
-            ctx.add_init_script('window.ES_CONFIG = ' + json.dumps(config) + ';')
+        cfg = dict(config or {})
+        if not real:
+            cfg.setdefault('demo', True)
+        if cfg:
+            ctx.add_init_script('window.ES_CONFIG = Object.assign(window.ES_CONFIG || {}, ' + json.dumps(cfg) + ');')
         if block_storage:
             ctx.add_init_script("Object.defineProperty(window, 'localStorage', { configurable: true, get: function () { "
                                 "throw new DOMException('The document is sandboxed.', 'SecurityError'); } });")

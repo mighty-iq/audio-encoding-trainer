@@ -59,9 +59,11 @@
       if (s !== set) return;
       if (set.results.length >= set.n) { sess.finishSet(); return; }
       paintDots(dots, set);
-      var trial = null;
-      try { trial = sess.makeTrial(); } catch (e) { reportErr(e); }
-      if (!trial) { sess.skip(null, 'no trial'); if (set.skips > 5) { sess.endSetEarly(); return; } setTimeout(loop, 0); return; }
+      if (!set.results.length && set.plan && set.plan.text && !set.introShown) { intro(set); return; }
+      var trial = null, err = null;
+      try { trial = sess.makeTrial(); } catch (e) { err = e; reportErr(e); }
+      if (!trial && !err) { sess.finishSet(); return; }          // the engine says the set is complete
+      if (!trial) { sess.skip(null, err); if (set.skips > 5) { sess.endSetEarly(); return; } setTimeout(loop, 0); return; }
       level.textContent = sess.levelText(trial);
       root.querySelector('.trial').setAttribute('data-index', String(set.results.length));
       var view = ES.ui.trialView.run(host, { trial: trial, mode: 'set', score: sess.scorer(trial),
@@ -72,6 +74,16 @@
         if (out && out.skipped) sess.skip(trial, out.error);
         loop();
       });
+    }
+    /** Overnight check or fresh-ears set: say what this set is before it starts (static; no sound yet). */
+    function intro(s) {
+      U.clear(host);
+      host.appendChild(U.el('div', { class: 'tut-card card set-intro', 'data-set-intro': '' }, [
+        U.el('p', { class: 'eyebrow mono' }, s.plan.kind === 'fresh' ? 'Fresh ears' : s.plan.kind === 'overnight' ? 'Overnight check' : 'This set'),
+        U.el('p', { class: 'tut-text' }, s.plan.text),
+        U.el('p', { class: 'tut-next' }, 'Next: tap Start, then listen.'),
+        ES.ui.button('Start', { kind: 'primary', wide: true, attrs: { 'data-intro-start': '' }, onClick: function () { s.introShown = true; loop(); } })
+      ]));
     }
     function reportErr(e) {
       if (win.console) console.error('[play]', e);

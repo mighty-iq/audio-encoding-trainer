@@ -289,8 +289,12 @@
       recent: T.map(T.any([])),                                   // per-trial proportions (0, 0.5, 1 …), newest last
       cond: T.map(T.any(null, { merge: 'newest', by: 'at' })),    // engine records keyed by id: newer `at` wins
       path: T.map(T.any(null, { merge: 'newest', by: 'at' })),
-      best: T.map(T.any(null, { merge: 'newest', by: 'at' })),
-      plat: T.map(T.any(null, { merge: 'newest', by: 'at' }))
+      best: T.map(T.num(0, { merge: 'max' })),                    // best ability per dial (higher is better)
+      plat: T.map(T.any(null, { merge: 'newest', by: 'at' })),
+      edge: T.map(T.any(null, { merge: 'newest', by: 'at' })),
+      cast: T.map(T.any(null, { merge: 'newest', by: 'at' })),
+      n: T.int(0, { min: 0, merge: 'max' }),                      // trials the learner has seen
+      seed: T.str('')
     }) },
     log: { v: 1, desc: T.obj({
       sessions: T.list(T.obj({ id: T.str(''), start: T.num(0, { min: 0 }), end: T.num(0, { min: 0 }),

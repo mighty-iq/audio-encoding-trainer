@@ -1,8 +1,9 @@
 /* ES.ui.session — one training session: plan → sets → results → log (PLAN §7; CONTRACTS §5, §7, §11).
-   Real trials run as soon as the engine and the audio engine are present (planner, controller, items[ex],
-   score, audio.render/play); until then a demo session of tone trials keeps the flow testable. Writes happen
-   between trials and at set ends, never during a stimulus. While a set runs, ES.ui.inSet is true and every
-   Chimera invitation waits for the screen between sets. */
+   Real sets run through the engine's set runner (ES.engine.flow: start → next → answer → end), which owns the
+   controller, generators, scoring and learner updates; the shell saves the learner between trials and the log at
+   set ends, never during a stimulus. Real sessions need the planner, the audio engine and voice clips; until then
+   (or with ES_CONFIG.demo) a demo session of tone trials keeps the flow testable. While a set runs ES.ui.inSet is
+   true, so Chimera invitations wait for the screen between sets. */
 (function (ES, win) {
   'use strict';
   var U = ES.core.util;
@@ -15,10 +16,19 @@
     if (win.console) console.error('[session ' + where + ']', e);
     if (ES._keepError) ES._keepError({ at: Date.now(), kind: 'session', msg: where + ': ' + String(e && e.message || e), stack: String(e && e.stack || '').slice(0, 800) });
   }
+  function settings() { return store().peek('profile').settings || {}; }
+  function E() { return ES.engine; }
+  function flowOk() { var f = E().flow; return !!(f && typeof f.start === 'function' && typeof f.next === 'function' && typeof f.answer === 'function'); }
   function engineReady(exId) {
-    var E = ES.engine, A = ES.audio;
-    return !!(E && E.controller && typeof E.controller.next === 'function' && E.items && E.items[exId] &&
-      typeof E.items[exId].make === 'function' && typeof E.score === 'function' && A && typeof A.render === 'function' && typeof A.play === 'function');
+    var A = ES.audio, en = E();
+    var gen = en.items && en.items[exId] && typeof en.items[exId].make === 'function';
+    var loop = flowOk() || (en.controller && typeof en.controller.next === 'function' && typeof en.score === 'function');
+    return !!(gen && loop && A && typeof A.render === 'function' && typeof A.play === 'function');
+  }
+  function runnable(exId) {
+    var ex = ES.ex[exId];
+    if (ex && ex.view === 'custom') return typeof ex.custom === 'function';
+    return engineReady(exId);
   }
   /** Voice clips exist (the stimulus packs and their manifest). */
   function audioData() {
@@ -27,12 +37,8 @@
   }
   /** A real session can start: a planner, the audio engine and voice clips are installed. */
   function realAvailable() {
-    return !!(ES.engine.planner && typeof ES.engine.planner.session === 'function' && ES.audio && typeof ES.audio.render === 'function' && audioData());
-  }
-  function runnable(exId) {
-    var ex = ES.ex[exId];
-    if (ex && ex.view === 'custom') return typeof ex.custom === 'function';
-    return engineReady(exId);
+    if (ES.CONFIG && ES.CONFIG.demo === true) return false;    // tests and previews can force the demo session
+    return !!(E().planner && typeof E().planner.session === 'function' && ES.audio && typeof ES.audio.render === 'function' && audioData());
   }
   function exInfo(exId) {
     if (exId === 'demo') return ES.ui.demo.ex;
@@ -40,19 +46,31 @@
     return { id: exId, name: ex.name || NAMES[exId] || exId, short: ex.short || '', bet: ex.bet || '', betNew: !!ex.betNew,
       view: ex.view || 'keyword', feedback: ex.feedback || 'standard', tutorial: ex.tutorial || null, custom: ex.custom, tips: ex.tips || null };
   }
-  function settings() { return store().peek('profile').settings || {}; }
+  function labInfo() {
+    try { if (ES.lab && typeof ES.lab.forPlanner === 'function') return ES.lab.forPlanner(); } catch (e) { report('lab', e); }
+    return null;
+  }
+  /** The engine's learner follows the stored record (other tabs may have trained); call outside sets. */
+  function syncLearner() {
+    var L = E().learner;
+    if (L && typeof L.load === 'function') { try { L.load(store().get('learner')); } catch (e) { report('learner load', e); } }
+  }
+  function saveLearner() {
+    var L = E().learner;
+    if (L && typeof L.save === 'function') { try { L.save(); } catch (e) { report('learner save', e); } }
+  }
 
-  function buildPlan() {
-    var P = ES.engine.planner;
+  function buildPlan(id) {
     if (realAvailable()) {
       try {
-        var p = P.session({ mode: settings().mode || 'edge', sessionMin: settings().sessionMin || 15, now: Date.now(),
-          log: store().peek('log'), learner: store().peek('learner'), headphones: !!settings().headphones });
+        var avail = (E().exercises || Object.keys(E().items || {})).filter(runnable);
+        var p = E().planner.session({ mode: settings().mode || 'edge', minutes: settings().sessionMin || 15, now: Date.now(),
+          rng: ES.core.rng('plan:' + id), log: store().peek('log'), available: avail, lab: labInfo(), headphones: !!settings().headphones });
         var sets = (p && p.sets || []).filter(function (s) { return s && runnable(s.exId); });
-        if (sets.length) return { sets: sets, demo: false };
+        if (sets.length) return { sets: sets, demo: false, notes: (p.notes || []).slice() };
       } catch (e) { report('planner', e); }
     }
-    return { sets: ES.ui.demo.plan().sets, demo: true };
+    return { sets: ES.ui.demo.plan().sets, demo: true, notes: [] };
   }
 
   function active() { return !!(S && !S.done); }
@@ -61,11 +79,12 @@
 
   /** Start a session (call from the Start tap, so sound can unlock). */
   function start() {
-    var plan = buildPlan();
-    S = { id: U.uid('s'), start: Date.now(), mode: settings().mode || 'edge', demo: plan.demo, setIndex: 0, done: false,
-      demoTmr: 6, rows: [], log: null,
+    var id = U.uid('s');
+    syncLearner();
+    var plan = buildPlan(id);
+    S = { id: id, start: Date.now(), mode: settings().mode || 'edge', demo: plan.demo, setIndex: 0, done: false, demoTmr: 6, rows: [], notes: plan.notes,
       sets: plan.sets.map(function (p, i) {
-        return { index: i, exId: p.exId, n: Math.max(1, p.trials | 0 || 20), plan: p, results: [], pb: false, activeStart: 0, plateau: null, demo: plan.demo };
+        return { index: i, exId: p.exId, n: Math.max(1, p.trials | 0 || 20), plan: p, results: [], pb: false, activeStart: 0, plateau: null, demo: plan.demo, sc: null };
       }) };
     S.log = { id: S.id, start: S.start, end: S.start, activeMs: 0, mode: S.mode, sets: [] };
     if (S.demo) S.log.demo = true;
@@ -76,14 +95,22 @@
   function needsTutorial(exId) {
     var info = exInfo(exId), steps = info.tutorial && info.tutorial.steps;
     if (!steps || !steps.length) return false;
-    var t = store().peek('profile').tutorials || {};
-    return !t[exId];
+    return !(store().peek('profile').tutorials || {})[exId];
+  }
+  function openFlow(set) {
+    if (set.demo || set.sc || !flowOk() || exInfo(set.exId).view === 'custom') return;
+    var p = set.plan;
+    try {
+      set.sc = E().flow.start(set.exId, { mode: S.mode, seed: S.id + ':' + set.index, headphones: !!settings().headphones, kind: p.kind,
+        hint: p.hint, avoidVoices: p.avoidVoices, daysAway: p.daysAway, lab: labInfo(), trials: set.n });
+    } catch (e) { report('flow.start', e); set.sc = null; }
   }
   function beginSet(i) {
     if (!S || !S.sets[i]) { finish(); return; }
     S.setIndex = i;
     var set = S.sets[i];
     set.activeStart = ES.core.clock.activeMs();
+    openFlow(set);
     if (needsTutorial(set.exId)) { ES.ui.inSet = false; ES.core.router.go('tutorial', { exId: set.exId, set: i }, { replace: i > 0 }); return; }
     ES.ui.inSet = true;
     ES.core.router.go('play', { set: i }, { replace: i > 0 });
@@ -91,33 +118,41 @@
   /** After a tutorial run inside a session: start the set it was guarding. */
   function afterTutorial() {
     if (!active()) return false;
-    var set = currentSet();
-    set.activeStart = ES.core.clock.activeMs();
+    currentSet().activeStart = ES.core.clock.activeMs();
     ES.ui.inSet = true;
     ES.core.router.go('play', { set: S.setIndex }, { replace: true });
     return true;
   }
 
+  /** The next trial of the current set, or null when the engine says the set is complete. */
   function makeTrial() {
     var set = currentSet(), i = set.results.length, seed = S.id + ':' + set.index + ':' + i + ':' + (set.skips || 0);
-    var rng = ES.core.rng(seed);
     if (set.demo || set.exId === 'demo') {
-      var last2 = set.results.slice(-2), anchor = (i > 0 && i % 5 === 4) || (last2.length === 2 && !last2[0].correct && !last2[1].correct);
+      var rng = ES.core.rng(seed), last2 = set.results.slice(-2);
+      var anchor = (i > 0 && i % 5 === 4) || (last2.length === 2 && !last2[0].correct && !last2[1].correct);
       return ES.ui.demo.make(rng, { tmr: anchor ? Math.min(ES.ui.demo.MAX_TMR, S.demoTmr + 6) : S.demoTmr, twoSlots: i % 3 === 2, anchor: anchor });
     }
-    var learner = store().peek('learner');
-    var ctx = { mode: S.mode, rng: rng.fork('controller'), recent: (learner.recent || {})[set.exId] || [], breadth: (learner.breadth || {})[set.exId] || 0,
-      set: set.plan, index: i, prev: set.results.slice(-5), headphones: !!settings().headphones };
-    var setting = ES.engine.controller.next(set.exId, ctx);
-    var trial = ES.engine.items[set.exId].make(rng.fork('items'), setting, ctx);
-    if (trial.seed == null) trial.seed = seed;
-    if (!trial.setting) trial.setting = setting;
-    if (!trial.ex) trial.ex = set.exId;
-    return trial;
+    var t;
+    if (set.sc) {
+      t = set.sc.pending || E().flow.next(set.sc);    // an aborted trial stays pending, so it is shown again, not re-drawn
+      if (!t) return null;
+    } else {
+      var r2 = ES.core.rng(seed), learner = store().peek('learner');
+      var ctx = { mode: S.mode, rng: r2.fork('controller'), recent: (learner.recent || {})[set.exId] || [], breadth: (learner.breadth || {})[set.exId] || 0,
+        set: set.plan, index: i, prev: set.results.slice(-5), headphones: !!settings().headphones };
+      var setting = E().controller.next(set.exId, ctx);
+      t = E().items[set.exId].make(r2.fork('items'), setting, ctx);
+      if (!t.setting) t.setting = setting;
+    }
+    if (t.seed == null) t.seed = seed;
+    if (!t.ex) t.ex = set.exId;
+    return t;
   }
   function scorer(trial) {
     if (trial && trial.meta && trial.meta.demo) return ES.ui.demo.score;
-    return function (t, r) { return ES.engine.score(t, r); };
+    var set = currentSet();
+    if (set && set.sc) return function (t, r) { var out = E().flow.answer(set.sc, t, r); set.lastOut = out; return out.result; };
+    return function (t, r) { return E().score(t, r); };
   }
   function focusLevel(trial) {
     var s = trial && trial.setting;
@@ -127,14 +162,10 @@
     var s = trial && trial.setting;
     if (!s || !s.focus) return '';
     if (trial.meta && trial.meta.demo) return ES.ui.demo.levelText(s.dials.tmr);
-    var defs = (ES.engine.dials || {})[trial.ex] || [], d = defs.filter(function (x) { return x.id === s.focus; })[0];
     var v = s.dials ? s.dials[s.focus] : null;
-    if (v == null) return '';
-    if (d && d.kind === 'ord' && d.levels) return (d.label ? d.label + ' · ' : '') + (d.levels[Math.round(v)] || v);
-    var unit = (d && d.unit) || '', val = unit === 'dB' ? U.fmtDb(v) : unit === 'm' ? U.fmtM(v) : U.fmtNum(v, 1) + (unit ? ' ' + unit : '');
-    return (d && d.label ? d.label + ' · ' : '') + val;
+    return v == null ? '' : ES.ui.w.dialText(trial.ex, s.focus, v).replace(': ', ' · ');
   }
-  /** Record an answered trial (called at answer time, between stimuli). */
+  /** Record an answered trial (at answer time, after the stimulus). */
   function record(trial, result, resp) {
     var set = currentSet();
     if (!set) return;
@@ -142,16 +173,18 @@
     set.results.push(rec);
     S.rows.push([Date.now(), trial.ex || set.exId, rec.focus, rec.level, rec.correct ? 1 : 0, U.round(rec.prop, 3), rec.intrusions]);
     if (trial.meta && trial.meta.demo) S.demoTmr = ES.ui.demo.nextTmr(S.demoTmr, rec.correct);
-    else if (ES.engine.learner && typeof ES.engine.learner.update === 'function') {
-      try { ES.engine.learner.update(trial, result); } catch (e) { report('learner', e); }
+    else {
+      if (!set.sc && E().learner && typeof E().learner.update === 'function') { try { E().learner.update(trial, result); } catch (e) { report('learner', e); } }
+      saveLearner();
     }
     ES.hooks.emit('trial:done', { trial: trial, result: result, response: resp, set: set.index, index: set.results.length - 1, demo: !!set.demo });
   }
   function skip(trial, err) {
     var set = currentSet();
     set.skips = (set.skips || 0) + 1;
+    if (set.sc && set.sc.pending) set.sc.pending = null;   // an unplayable trial is dropped, not retried
     report('skip', err || 'skipped');
-    if (set.skips >= 3 && !set.demo) { set.demo = true; set.exId = 'demo'; ES.ui.toast('Trials could not be prepared, so this set continues with demo trials.'); }
+    if (set.skips >= 3 && !set.demo) { set.demo = true; set.sc = null; set.exId = 'demo'; ES.ui.toast('Trials could not be prepared, so this set continues with demo trials.'); }
   }
   function writeLog() {
     S.log.end = Date.now();
@@ -161,14 +194,17 @@
     store().update('log', function (r) { r.sessions = (r.sessions || []).filter(function (x) { return x.id !== copy.id; }).concat([copy]); });
     if (rows.length) store().update('trials', function (r) { r.rows = (r.rows || []).concat(rows); });
   }
-  function endLevels(set) {
-    var L = ES.engine.learner;
-    if (!set.demo && L && typeof L.summary === 'function') {
-      try { var sm = L.summary(set.exId); if (sm && typeof sm === 'object') return U.copy(sm); } catch (e) { report('summary', e); }
-    }
-    var last = set.results[set.results.length - 1], out = {};
-    if (last && last.focus && last.level != null) out[last.focus] = last.level;
-    return out;
+  function pbText(exId, pbs) {
+    return (pbs || []).map(function (p) { return ES.ui.w.dialText(exId, p.dial, p.m); }).filter(Boolean).join(' · ');
+  }
+  function fallbackEntry(set, extra) {
+    var counts = {};
+    set.results.forEach(function (r) { if (r.focus) counts[r.focus] = (counts[r.focus] || 0) + 1; });
+    var last = set.results[set.results.length - 1], end = {};
+    if (last && last.focus && last.level != null) end[last.focus] = last.level;
+    return { ex: set.exId, n: extra.n != null ? extra.n | 0 : set.results.length,
+      correct: extra.correct != null ? extra.correct | 0 : set.results.filter(function (r) { return r.correct; }).length,
+      focus: Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; })[0] || '', end: end, pb: false };
   }
   /** Close the current set (also from a custom view's done(result)) and show its results. */
   function finishSet(extra) {
@@ -176,24 +212,28 @@
     if (!set || set.finished) return;
     set.finished = true;
     extra = extra || {};
-    var n = extra.n != null ? extra.n | 0 : set.results.length;
-    var correct = extra.correct != null ? extra.correct | 0 : set.results.filter(function (r) { return r.correct; }).length;
     set.activeMs = Math.max(0, ES.core.clock.activeMs() - set.activeStart);
-    var focusCounts = {};
-    set.results.forEach(function (r) { if (r.focus) focusCounts[r.focus] = (focusCounts[r.focus] || 0) + 1; });
-    var focus = set.plan.focus || Object.keys(focusCounts).sort(function (a, b) { return focusCounts[b] - focusCounts[a]; })[0] || '';
-    var entry = { ex: set.exId, n: n, correct: correct, focus: focus, end: endLevels(set), pb: !!set.pb, activeMs: set.activeMs };
+    var entry = null;
+    if (set.sc && typeof E().flow.end === 'function') { try { entry = E().flow.end(set.sc); } catch (e) { report('flow.end', e); } }
+    else if (extra.ex && extra.n != null) entry = U.copy(extra);
+    if (!entry) entry = fallbackEntry(set, extra);
+    entry.activeMs = set.activeMs;
+    if (set.plan.kind && set.plan.kind !== 'normal') entry.kind = set.plan.kind;
+    set.entry = entry;
+    set.pb = set.pb || !!entry.pb;
     S.log.sets.push(entry);
     ES.ui.inSet = false;
+    if (!set.demo) saveLearner();
     writeLog();
     if (ES.core.playtest.enabled()) {
-      var last = set.results[set.results.length - 1];
-      ES.core.playtest.setDone({ ex: set.exId, n: n, correct: correct, activeMs: set.activeMs, level: last ? last.level : null, demo: !!set.demo });
+      var lr = set.results[set.results.length - 1];
+      ES.core.playtest.setDone({ ex: set.exId, n: entry.n, correct: entry.correct, activeMs: set.activeMs, level: lr ? lr.level : null, demo: !!set.demo });
     }
-    if (!set.demo && ES.engine.plateau && typeof ES.engine.plateau.check === 'function') {
+    if (entry.pb) ES.hooks.emit('pb', { exId: set.exId, pbs: entry.pbs || [], title: 'New personal best', text: pbText(set.exId, entry.pbs) });
+    if (!set.demo && E().plateau && typeof E().plateau.check === 'function') {
       try {
-        var pl = ES.engine.plateau.check(set.exId);
-        if (pl) { set.plateau = pl; ES.hooks.emit('plateau', { exId: set.exId, reason: pl.reason, breaker: pl.breaker, text: pl.breaker && pl.breaker.text }); }
+        var pl = E().plateau.check(set.exId);
+        if (pl) { set.plateau = pl; ES.hooks.emit('plateau', { exId: set.exId, reason: pl.reason, breaker: pl.breaker, text: pl.breaker && pl.breaker.text }); saveLearner(); }
       } catch (e) { report('plateau', e); }
     }
     ES.hooks.emit('set:done', { set: entry, index: set.index, session: S.id, results: set.results.slice(), demo: !!set.demo });
@@ -203,6 +243,7 @@
   function endSetEarly() {
     var set = currentSet();
     if (!set) return;
+    if (set.sc) set.sc.pending = null;
     if (!set.results.length) { set.finished = true; ES.ui.inSet = false; S.sets = S.sets.slice(0, set.index); finish(); return; }
     set.n = set.results.length;
     finishSet();
@@ -223,9 +264,13 @@
   function abandon() { if (S && !S.done) { ES.ui.inSet = false; if (S.log.sets.length) finish(); else { S.done = true; ES.core.clock.stop(); } } }
 
   ES.hooks.on('pb', function () { var set = currentSet(); if (set && active()) set.pb = true; });
+  ES.hooks.on('store:changed', function (ev) {
+    if (ev && ev.source !== 'local' && (ev.key === 'learner' || ev.key === '*') && !ES.ui.inSet) syncLearner();
+  });
+  ES.hooks.on('app:ready', syncLearner);
 
   ES.ui.session = { active: active, state: state, start: start, beginSet: beginSet, afterTutorial: afterTutorial, currentSet: currentSet,
     exInfo: exInfo, makeTrial: makeTrial, scorer: scorer, record: record, skip: skip, levelText: levelText, finishSet: finishSet,
     endSetEarly: endSetEarly, next: next, finish: finish, abandon: abandon, runnable: runnable, engineReady: engineReady,
-    needsTutorial: needsTutorial, realAvailable: realAvailable, NAMES: NAMES };
+    needsTutorial: needsTutorial, realAvailable: realAvailable, syncLearner: syncLearner, NAMES: NAMES };
 })(window.ES, window);

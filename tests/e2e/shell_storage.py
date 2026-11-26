@@ -86,6 +86,7 @@ def run(h):
 
     # Two tabs in one browser.
     ctx = h.browser.new_context(viewport={'width': 390, 'height': 844})
+    ctx.add_init_script('window.ES_CONFIG = { demo: true };')
     ctx.add_init_script(preset({'profile': {'v': 1, 'welcomeSeen': 1}}))
     a = new_tab(h.browser, context=ctx)
     b = new_tab(h.browser, context=ctx)

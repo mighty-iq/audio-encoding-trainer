@@ -47,7 +47,7 @@ export function build(opts = {}) {
     scripts++; bytesJs += code.length;
     return '<script>/* ' + src + ' */\n' + safeScript(code) + '\n</script>';
   });
-  if (opts.test) html = html.replace('<!-- scripts:begin -->', '<!-- scripts:begin -->\n<script>window.ES_CONFIG = { testBuild: true };</script>');
+  if (opts.test) html = html.replace('<!-- scripts:begin -->', '<!-- scripts:begin -->\n<script>window.ES_CONFIG = Object.assign(window.ES_CONFIG || {}, { testBuild: true });</script>');
   html = html.replace(/<!-- scripts:(begin|end) -->\n?/g, '');
   return { html, scripts, bytesJs };
 }
