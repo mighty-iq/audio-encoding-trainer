@@ -35,7 +35,7 @@
     var target = C.pick(rng, tPool.length ? tPool : pool);
     var tName = wordFor(rng, target, 'name', names), tWord = wordFor(rng, target, 'word', nouns), tNum = wordFor(rng, target, 'number', nums);
     var allVoices = X.voicePool({ kinds: ['name', 'word', 'number'], avoid: ctx.avoidVoices });
-    var mk = X.maskers(rng, target, simLevel, nMask, simLevel >= 1 ? allVoices : pool, null);
+    var mk = X.maskers(rng, target, simLevel, nMask, simLevel >= 1 ? allVoices : pool, null, allVoices);
     dials.similar = mk.level;
     var usedN = [tName], usedW = [tWord], usedK = [tNum], talkers = [];
     mk.list.forEach(function (m) {

@@ -52,8 +52,11 @@
     var k1 = hit.item.words[hit.item.keys[0]], k2 = hit.item.words[hit.item.keys[1]];
     var carrierWords = carrier ? (meta(carrier).words || []) : [];
     var avoid1 = [k2].concat(carrierWords), avoid2 = [k1].concat(carrierWords);
-    var s1 = C.slot(rng, { label: 'First word', answer: k1, pool: answers, neighbours: X.neighbours, avoid: avoid1 });
-    var s2 = C.slot(rng, { label: 'Second word', answer: k2, pool: answers, neighbours: X.neighbours, avoid: avoid2 });
+    var dist = idx.poolCache['far:dist'] || (idx.poolCache['far:dist'] = [0, 1].map(function (j) {
+      return C.answerDist(ok, function (it) { return C.norm(it.words[it.keys[j]]); });
+    }));
+    var s1 = C.slot(rng, { label: 'First word', answer: k1, pool: dist[0].support, draw: dist[0].draw, neighbours: X.neighbours, avoid: avoid1 });
+    var s2 = C.slot(rng, { label: 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, neighbours: X.neighbours, avoid: avoid2 });
     var near = { out: audio.out, dur: audio.dur, spatial: audio.spatial, beds: [],
       parts: [{ clip: hit.clip, at: 0.3, db: 0, role: 'target' }], room: null };
     near.dur = Math.round((0.3 + ((meta(hit.clip) && meta(hit.clip).dur) || 1.5) + 0.5) * 100) / 100;

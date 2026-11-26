@@ -42,8 +42,12 @@
     var part = { clip: hit.clip, at: 0.35, db: 0, role: 'target', fx: fx };
     var audio = { out: { db: -20 }, dur: Math.round((0.35 + (c.dur || 2) + 0.5) * 100) / 100, spatial: 'mono', parts: [part], beds: [], room: null };
     var clear = { out: audio.out, dur: audio.dur, spatial: 'mono', parts: [{ clip: hit.clip, at: 0.35, db: 0, role: 'target' }], beds: [], room: null };
-    var key = hit.item.words[hit.item.key];
-    var s1 = C.slot(rng, { label: 'Lost word', answer: key, pool: answers, neighbours: X.neighbours, context: hit.item.alts || [],
+    // foils follow the answers of the same candidate list the item came from (same level, same variety filter)
+    var key = hit.item.words[hit.item.key], lvlItems = cand.filter(function (it) { return it.pred === hit.item.pred; });
+    var idx = X.idx(); idx.poolCache = idx.poolCache || {};
+    var dk = 'repair:dist:' + hit.item.pred + ':' + (breadth < 0.4 ? 'late' : 'any') + ':' + lvlItems.length;
+    var dist = idx.poolCache[dk] || (idx.poolCache[dk] = C.answerDist(lvlItems, function (it) { return C.norm(it.words[it.key]); }));
+    var s1 = C.slot(rng, { label: 'Lost word', answer: key, pool: dist.support, draw: dist.draw, neighbours: X.neighbours, context: hit.item.alts || [],
       avoid: hit.item.words.filter(function (w, i) { return i !== hit.item.key; }) });
     var shown = hit.item.words.map(function (w, i) { return i === hit.item.key ? '[' + w + ']' : w; }).join(' ');
     return {

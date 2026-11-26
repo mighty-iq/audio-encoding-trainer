@@ -50,8 +50,8 @@
   }
 
   /* Build one answer slot.
-     o = { answer, spoken:[masker words], pool:[possible answers], neighbours:fn(w)→[w], context:[words fitting the
-           sentence], avoid:[words never to show], n:4, label }
+     o = { answer, spoken:[masker words], pool:[possible answers], draw:fn(rng)→word from this slot's answer
+           distribution, neighbours:fn(w)→[w], context:[words fitting the sentence], avoid:[words never to show], n:4, label }
      Returns { label, options, answer, foils:{option:type} }. */
   function slot(rng, o) {
     var n = o.n || 4, T = o.answer, used = {}, out = [T];
@@ -70,6 +70,8 @@
     function add(w) { if (w !== undefined && out.length < n && ok(w)) { out.push(w); used[norm(w)] = 1; return true; } return false; }
     function nbOf(w) { return shuffle(rng, ((o.neighbours ? o.neighbours(w) : []) || []).filter(ok)); }
     function randomOne() {
+      // foils follow the answer distribution of this slot (item-sampled), so no option is more often "an answer"
+      if (o.draw) for (var d = 0; d < 30; d++) { var dw = o.draw(rng); if (dw !== undefined && ok(dw) && !nbTset[norm(dw)]) return dw; }
       var P = o.pool || [];
       for (var t = 0; t < 30 && P.length; t++) { var w = P[ri(rng, P.length)]; if (ok(w) && !nbTset[norm(w)]) return w; }
       var cand = shuffle(rng, P.filter(function (w) { return ok(w) && !nbTset[norm(w)]; }));
@@ -124,8 +126,14 @@
     });
     return { parts: parts, end: t - gap };
   }
+  // Answer support and sampler for one slot from eligible items: getAns(item) → the slot's answer in that item.
+  function answerDist(items, getAns) {
+    var list = [], seen = {}, support = [];
+    items.forEach(function (it) { var a = getAns(it); if (a === undefined || a === null) return; list.push(a); var k = norm(a); if (!seen[k]) { seen[k] = 1; support.push(a); } });
+    return { support: support, draw: function (rng) { return list.length ? list[ri(rng, list.length)] : undefined; } };
+  }
   function seedOf(rng) { return Math.floor(rng.next() * 4294967296); }
 
   ES.engine.items.common = { ri: ri, pick: pick, shuffle: shuffle, sample: sample, chance: chance, weighted: weighted,
-    norm: norm, slug: slug, uniq: uniq, homophones: homophones, slot: slot, sequence: sequence, seedOf: seedOf };
+    norm: norm, slug: slug, uniq: uniq, homophones: homophones, slot: slot, answerDist: answerDist, sequence: sequence, seedOf: seedOf };
 })(typeof window !== 'undefined' ? window : globalThis);

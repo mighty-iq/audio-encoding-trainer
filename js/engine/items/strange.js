@@ -45,7 +45,9 @@
       pool = pool.slice(0, nKeep);
     }
     var idx = X.idx(); idx.poolCache = idx.poolCache || {};
-    var ok = idx.poolCache['strange:items'] || (idx.poolCache['strange:items'] = items.filter(function (it) { return it.keys && it.keys.length >= 2; }));
+    var ok = idx.poolCache['strange:items'] || (idx.poolCache['strange:items'] = items.filter(function (it) {
+      return it.keys && it.keys.length >= 2 && it.keys.every(function (k) { return answers.indexOf(C.norm(it.words[k])) >= 0; });
+    }));
     var hit = X.itemVoice(rng, ok, 'sentence', pool, ctx.recentVoices);
     if (!hit) throw new Error('strange: no phrase for family ' + d.id);
     var fx = [], beds = [];
@@ -68,8 +70,11 @@
     if (fx.length) part.fx = fx;
     var audio = { out: { db: -20 }, dur: Math.round((0.35 + dur + 0.5) * 100) / 100, spatial: 'mono', parts: [part], beds: beds, room: null };
     var k1 = hit.item.words[hit.item.keys[0]], k2 = hit.item.words[hit.item.keys[1]];
-    var s1 = C.slot(rng, { label: 'First word', answer: k1, pool: answers, neighbours: X.neighbours, avoid: [k2] });
-    var s2 = C.slot(rng, { label: 'Second word', answer: k2, pool: answers, neighbours: X.neighbours, avoid: [k1] });
+    var dist = idx.poolCache['strange:dist'] || (idx.poolCache['strange:dist'] = [0, 1].map(function (j) {
+      return C.answerDist(ok, function (it) { return C.norm(it.words[it.keys[j]]); });
+    }));
+    var s1 = C.slot(rng, { label: 'First word', answer: k1, pool: dist[0].support, draw: dist[0].draw, neighbours: X.neighbours, avoid: [k2] });
+    var s2 = C.slot(rng, { label: 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, neighbours: X.neighbours, avoid: [k1] });
     var vo = X.voice(hit.voice), c = meta(hit.clip);
     var cond = d.id === 'accent' ? 'accent:' + (vo.accent || '?') : d.id;
     return {

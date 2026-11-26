@@ -25,7 +25,7 @@
     eighteen: ['eighty', 'eight'], twenty: ['twelve', 'thirty'], thirty: ['thirteen', 'forty'], forty: ['fourteen', 'four'],
     fifty: ['fifteen', 'sixty'], sixty: ['sixteen', 'fifty'], eighty: ['eighteen', 'eight']
   };
-  // Repair alternatives are answers of other items (closed set). Nouns with real-word phonetic neighbours (minimal pairs or rhymes)
+  // Repair alternatives are answers of other items at the same predictability level (closed set). Nouns with real-word phonetic neighbours (minimal pairs or rhymes)
   var nounNb = {
     cup: ['cap', 'pup', 'cut'], bag: ['bat', 'rag', 'back'], hat: ['cat', 'hut', 'ham'], map: ['mop', 'nap', 'mat'],
     pen: ['pin', 'ten', 'pan'], box: ['fox', 'bus', 'rocks'], key: ['tea', 'knee', 'bee'], ring: ['wing', 'rim', 'king'],
@@ -56,9 +56,10 @@
   var adjs = ['green', 'quiet', 'round', 'sharp', 'empty', 'heavy', 'bright', 'soft', 'cold', 'tall'];
   var verbs = ['paints', 'folds', 'finds', 'lifts', 'hides', 'sells', 'burns', 'sends', 'drops', 'pulls'];
   var sus = [], phrases = [], i;
-  for (i = 0; i < 120; i++) {
-    var n1 = keyNouns[(2 * i) % keyNouns.length], n2 = keyNouns[(2 * i + 1 + 2 * (i % 7)) % keyNouns.length];
-    if (n2 === n1) n2 = keyNouns[(i * 13 + 6) % keyNouns.length];
+  // every noun appears once as the first key and once as the second key (balanced positions)
+  for (i = 0; i < keyNouns.length; i++) {
+    var n1 = keyNouns[i], n2 = keyNouns[(i * 37 + 11) % keyNouns.length];
+    if (n2 === n1) n2 = keyNouns[(i + 1) % keyNouns.length];
     var st = 'the ' + adjs[i % adjs.length] + ' ' + n1 + ' ' + verbs[(i * 3) % verbs.length] + ' a ' + n2;
     sus.push({ id: 'sus-' + i, text: st, words: words(st), keys: [2, 5] });
     var tpl = i % 3;
@@ -68,18 +69,18 @@
     phrases.push({ id: 'phr-' + i, text: pt, words: pw, keys: [pw.indexOf(n1), pw.lastIndexOf(n2)] });
   }
   var repair = [
-    ['she poured the milk into a cup', 'cup', 'hi', ['vase', 'plate']], ['he locked the door with a key', 'key', 'hi', ['coin', 'comb']],
-    ['we ate the soup with a spoon', 'spoon', 'hi', ['plate', 'cup']], ['the boat had a white sail', 'sail', 'hi', ['rope', 'bell']],
-    ['she wore a hat on her head', 'hat', 'hi', ['crown', 'mask']], ['he lit the room with a lamp', 'lamp', 'hi', ['pipe', 'comb']],
-    ['the bird sat on its nest', 'nest', 'hi', ['fence', 'stone']], ['put the flowers in the vase', 'vase', 'hi', ['sink', 'cup']],
-    ['the queen wore a golden crown', 'crown', 'hi', ['hat', 'mask']], ['he washed his hands in the sink', 'sink', 'hi', ['vase', 'cup']],
-    ['she carried her books in a bag', 'bag', 'mid', ['hat', 'cup']], ['there was a stone on the path', 'stone', 'mid', ['coin', 'frog']],
-    ['he found a coin under the desk', 'coin', 'mid', ['key', 'comb']], ['the children drew a cloud', 'cloud', 'mid', ['frog', 'crown']],
-    ['she left the plate by the window', 'plate', 'mid', ['cup', 'vase']], ['we heard a bell in the distance', 'bell', 'mid', ['frog', 'pipe']],
-    ['he kept the rope in the shed', 'rope', 'mid', ['bag', 'pipe']], ['they painted the fence last week', 'fence', 'mid', ['plate', 'sail']],
-    ['the next word is comb', 'comb', 'lo', ['coin', 'nest']], ['they talked about the frog', 'frog', 'lo', ['bell', 'cloud']],
-    ['she thought about the glove', 'glove', 'lo', ['stone', 'lamp']], ['he pointed at the pipe', 'pipe', 'lo', ['rope', 'bag']],
-    ['we did not mention the mask', 'mask', 'lo', ['hat', 'sail']], ['you will now hear the word tooth', 'tooth', 'lo', ['key', 'spoon']]
+    ['she poured the milk into a cup', 'cup', 'hi', ['vase', 'sink']], ['he locked the door with a key', 'key', 'hi', ['spoon', 'lamp']],
+    ['we ate the soup with a spoon', 'spoon', 'hi', ['cup', 'key']], ['the boat had a white sail', 'sail', 'hi', ['hat', 'nest']],
+    ['she wore a hat on her head', 'hat', 'hi', ['crown', 'sail']], ['he lit the room with a lamp', 'lamp', 'hi', ['key', 'vase']],
+    ['the bird sat on its nest', 'nest', 'hi', ['hat', 'crown']], ['put the flowers in the vase', 'vase', 'hi', ['cup', 'sink']],
+    ['the queen wore a golden crown', 'crown', 'hi', ['hat', 'nest']], ['he washed his hands in the sink', 'sink', 'hi', ['cup', 'vase']],
+    ['she carried her books in a bag', 'bag', 'mid', ['plate', 'rope']], ['there was a stone on the path', 'stone', 'mid', ['coin', 'cloud']],
+    ['he found a coin under the desk', 'coin', 'mid', ['stone', 'bell']], ['the children drew a cloud', 'cloud', 'mid', ['stone', 'bell']],
+    ['she left the plate by the window', 'plate', 'mid', ['bag', 'coin']], ['we heard a bell in the distance', 'bell', 'mid', ['coin', 'cloud']],
+    ['he kept the rope in the shed', 'rope', 'mid', ['bag', 'fence']], ['they painted the fence last week', 'fence', 'mid', ['rope', 'plate']],
+    ['the next word is comb', 'comb', 'lo', ['frog', 'mask']], ['they talked about the frog', 'frog', 'lo', ['comb', 'pipe']],
+    ['she thought about the glove', 'glove', 'lo', ['mask', 'tooth']], ['he pointed at the pipe', 'pipe', 'lo', ['frog', 'glove']],
+    ['we did not mention the mask', 'mask', 'lo', ['comb', 'glove']], ['you will now hear the word tooth', 'tooth', 'lo', ['pipe', 'comb']]
   ].map(function (r, k) {
     var w = words(r[0]);
     return { id: 'rep-' + k, text: r[0], words: w, key: w.lastIndexOf(r[1]), pred: r[2], alts: r[3] };
@@ -91,16 +92,17 @@
   var items = ['umbrella', 'ticket', 'charger', 'notebook', 'scarf', 'camera'];
   var plats = ['four', 'seven', 'eleven', 'fifteen', 'twenty', 'thirty'];
   var echo = [];
-  for (i = 0; i < 80; i++) {
+  for (i = 0; i < 96; i++) {
     var nf = 2 + (i % 4), f = [];
-    var who = people[i % people.length], pl = places[(i * 3) % places.length], tm = times[(i * 5) % times.length];
-    var dy = days[(i * 7) % days.length], it = items[(i * 11) % items.length], pf = plats[(i * 13) % plats.length];
+    var kk = Math.floor(i / 4); // index within the group of messages with the same number of details
+    var who = people[kk % people.length], pl = places[(kk * 3 + 1) % places.length], tm = times[(kk * 5 + 2) % times.length];
+    var dy = days[(kk + 3) % days.length], it = items[(kk * 5 + 1) % items.length], pf = plats[(kk * 5) % plats.length];
     var parts = ['meet ' + who]; f.push({ cat: 'name', value: who, q: 'Who will you meet?' });
     parts.push('at the ' + pl); f.push({ cat: 'place', value: pl, q: 'Where will you meet?' });
     if (nf >= 3) { parts.push('at ' + tm); f.push({ cat: 'time', value: tm, q: 'At what time?' }); }
     if (nf >= 4) { parts.push('on ' + dy); f.push({ cat: 'day', value: dy, q: 'Which day?' }); }
     if (nf >= 5) { parts.push('and bring the ' + it); f.push({ cat: 'item', value: it, q: 'What should you bring?' }); }
-    if (i % 5 === 4 && nf < 5) { parts.push('from platform ' + pf); f.push({ cat: 'number', value: pf, q: 'Which platform?' }); }
+
     var et = parts.join(' ');
     echo.push({ id: 'echo-' + i, text: et, words: words(et), facts: f });
   }

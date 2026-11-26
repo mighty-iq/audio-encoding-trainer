@@ -95,10 +95,16 @@
 
   /* Maskers by similarity level: 0 other sex; 1 same sex, ≥ 2 semitones apart; 2 same sex, closest pitch
      (< 2 semitones where possible); 3 near-twin (the target's own voice, pitch-shifted ~1 semitone). */
-  function maskers(rng, target, level, count, pool, needs) {
+  function maskers(rng, target, level, count, pool, needs, wide) {
     var X = idx(), tv = X.vdat[target], out = [];
     var cand = pool.filter(function (v) { return v !== target && (!needs || needs(v)); });
-    function bySex(same) { return cand.filter(function (v) { return (X.vdat[v].sex === tv.sex) === same; }); }
+    var extra = (wide || []).filter(function (v) { return v !== target && cand.indexOf(v) < 0 && (!needs || needs(v)); });
+    // the variety-limited pool first; voices outside it only when the pool lacks the wanted kind
+    function bySex(same) {
+      var a = cand.filter(function (v) { return (X.vdat[v].sex === tv.sex) === same && out.every(function (o) { return o.v !== v; }); });
+      if (a.length) return a;
+      return extra.filter(function (v) { return (X.vdat[v].sex === tv.sex) === same && out.every(function (o) { return o.v !== v; }); });
+    }
     var lvl = level;
     while (out.length < count) {
       var left = cand.filter(function (v) { return out.indexOf(v) < 0; });
@@ -106,12 +112,12 @@
       if (lvl >= 3 && out.filter(function (o) { return o.v === target; }).length < 2) {
         pickV = target; fx = [{ type: 'resample', ratio: out.length % 2 ? 0.94 : 1.06 }];
       } else if (lvl === 0) {
-        pickV = C.pick(rng, bySex(false).filter(function (v) { return left.indexOf(v) >= 0; }));
+        pickV = C.pick(rng, bySex(false));
       } else if (lvl === 1) {
-        var far = bySex(true).filter(function (v) { var s = semis(X.vdat[v].f0, tv.f0); return left.indexOf(v) >= 0 && (s === null || Math.abs(s) >= 2); });
-        pickV = C.pick(rng, far.length ? far : bySex(true).filter(function (v) { return left.indexOf(v) >= 0; }));
+        var far = bySex(true).filter(function (v) { var s = semis(X.vdat[v].f0, tv.f0); return s === null || Math.abs(s) >= 2; });
+        pickV = C.pick(rng, far.length ? far : bySex(true));
       } else {
-        var same = bySex(true).filter(function (v) { return left.indexOf(v) >= 0; });
+        var same = bySex(true);
         same.sort(function (a, b) { return Math.abs(semis(X.vdat[a].f0, tv.f0) || 0) - Math.abs(semis(X.vdat[b].f0, tv.f0) || 0); });
         pickV = C.pick(rng, same.slice(0, 3));
       }
@@ -121,7 +127,7 @@
         pickV = C.pick(rng, left);
         if (!pickV) break;
       }
-      if (pickV !== target) cand = cand.filter(function (v) { return v !== pickV; });
+      if (pickV !== target) { cand = cand.filter(function (v) { return v !== pickV; }); extra = extra.filter(function (v) { return v !== pickV; }); }
       out.push({ v: pickV, fx: fx, level: lvl });
     }
     var used = out.length ? Math.min.apply(null, out.map(function (o) { return o.level; })) : level;
