@@ -18,3 +18,4 @@ Each line: what, why it was deferred, where the detail is.
 - Item difficulty and accent tiers from human ratings or listening data; today they come from recogniser accuracy
   in noise, an objective stand-in.
 - Fill the gaps: af_jessica lacks the matrix word "shirts", af_river "sticks"; ff_siwis (Anouk) has no intro.
+- Natural non-native training talkers (e.g. AudioMNIST talkers outside the 8 probe talkers, digits only) and a second French voice; the accent family is synthetic today (RV-stimuli ST-08).
