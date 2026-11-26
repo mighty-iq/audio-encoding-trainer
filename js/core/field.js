@@ -82,8 +82,8 @@
         width: U.round(w * k, 2), height: U.round(dd * k, 2), rx: 3 }));
     }
 
-    // You: a dot with a short nose pointing ahead.
-    svg.appendChild(U.svg('path', { class: 'f-you-nose', d: 'M -3.2 -3.2 L 0 -9 L 3.2 -3.2 Z' }));
+    // You: a dot with a short tick pointing ahead.
+    svg.appendChild(U.svg('line', { class: 'f-you-tick', x1: 0, y1: -5.5, x2: 0, y2: -11 }));
     svg.appendChild(U.svg('circle', { class: 'f-you', r: 4.2, cx: 0, cy: 0 }));
     if (!model.compact) svg.appendChild(U.svg('text', { class: 'f-you-label', x: 0, y: 15 }, model.you || 'you'));
 

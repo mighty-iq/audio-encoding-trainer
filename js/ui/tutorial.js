@@ -114,7 +114,7 @@
       U.clear(host);
       host.appendChild(U.el('div', { class: 'tut-card card', 'data-step': 'caption' }, [st.title ? U.el('h2', { class: 'h-small' }, st.title) : null,
         U.el('p', { class: 'tut-text' }, st.text), nextNote, auto ? null : btn, howBtn]));
-      cur.timer = setTimeout(function () { if (auto) { k++; show(); } else { btn.disabled = false; try { btn.focus({ preventScroll: true }); } catch (e) { /* ignore */ } } }, minMs);
+      cur.timer = setTimeout(function () { if (auto) { k++; show(); } else { btn.disabled = false; U.focus(btn); } }, minMs);
     }
     function runTrial(st, trial, attempt) {
       if (!trial) { k++; show(); return; }

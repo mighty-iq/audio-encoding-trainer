@@ -59,7 +59,7 @@
       var focusEl = el.querySelector('[data-autofocus]') || el.querySelector('h1');
       if (focusEl && !(ES.ui.sheetOpen && ES.ui.sheetOpen())) {
         if (!focusEl.hasAttribute('tabindex')) focusEl.setAttribute('tabindex', '-1');
-        try { focusEl.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+        ES.core.util.focus(focusEl);
       }
     }
   }

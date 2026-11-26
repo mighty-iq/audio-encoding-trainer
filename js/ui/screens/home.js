@@ -42,8 +42,7 @@
     } });
   }
   function lead() {
-    var real = !!(ES.engine.planner && ES.engine.planner.session) && ES.audio && ES.audio.render;
-    if (!real) return 'Demo session: two short sets of tone trials walk you through the flow. The voice exercises arrive with the audio build.';
+    if (!ES.ui.session.realAvailable()) return 'Demo session: two short sets of tone trials walk you through the flow. The voice exercises arrive with the audio build.';
     var min = (ES.core.store.peek('profile').settings || {}).sessionMin || 15;
     return 'About ' + min + ' minutes of short mixed sets, each held at the edge of what you can hear.';
   }
@@ -61,8 +60,8 @@
           today >= 3 ? U.el('p', { class: 'hint sleep-note' }, 'That is ' + today + ' sessions today. Learning settles overnight, so the next one pays off most after sleep.') : null,
           startButton()
         ]),
-        U.el('div', { class: 'home-hero-pic', 'aria-hidden': 'true' }, ES.ui.field(null, { compact: false, labels: true, voices: [
-          { id: 'a', role: 'target', az: 28, dist: 2.2, label: 'the voice you follow' }, { id: 'b', role: 'masker', az: -55, dist: 3.1 },
+        U.el('div', { class: 'home-hero-pic', 'aria-hidden': 'true' }, ES.ui.field(null, { compact: true, labels: false, voices: [
+          { id: 'a', role: 'target', az: 28, dist: 2.2 }, { id: 'b', role: 'masker', az: -55, dist: 3.1 },
           { id: 'c', role: 'masker', az: 140, dist: 2.6 }, { id: 'd', role: 'masker', az: 95, dist: 3.6 }] }))
       ]),
       U.el('div', { class: 'home-cards' }, [w.weekCard(), venueTeaser()]),

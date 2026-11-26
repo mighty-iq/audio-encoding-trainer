@@ -37,8 +37,11 @@
     text = String(text || '').trim().slice(0, 4000);
     if (text) add('notes', { screen: String(screenId || ''), text: text });
   }
+  var lastErr = { msg: '', at: 0 };
   function error(e) {
     var rec = e && e.msg ? e : { kind: 'error', msg: String(e && e.message || e), stack: String(e && e.stack || '').slice(0, 800) };
+    if (rec.msg === lastErr.msg && Date.now() - lastErr.at < 2000) { lastErr.at = Date.now(); return; }   // an error loop: keep one
+    lastErr = { msg: rec.msg, at: Date.now() };
     if (!enabled()) { mem.errors.push(rec); mem.errors = mem.errors.slice(-60); return; }
     add('errors', { kind: rec.kind, msg: String(rec.msg).slice(0, 300), src: rec.src, line: rec.line, stack: rec.stack }, 120);
   }

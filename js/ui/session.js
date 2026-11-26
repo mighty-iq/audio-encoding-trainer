@@ -20,6 +20,15 @@
     return !!(E && E.controller && typeof E.controller.next === 'function' && E.items && E.items[exId] &&
       typeof E.items[exId].make === 'function' && typeof E.score === 'function' && A && typeof A.render === 'function' && typeof A.play === 'function');
   }
+  /** Voice clips exist (the stimulus packs and their manifest). */
+  function audioData() {
+    var m = ES.data && ES.data.manifest;
+    return !!(m && m.clips && Object.keys(m.clips).length && ES.packs && Object.keys(ES.packs).length);
+  }
+  /** A real session can start: a planner, the audio engine and voice clips are installed. */
+  function realAvailable() {
+    return !!(ES.engine.planner && typeof ES.engine.planner.session === 'function' && ES.audio && typeof ES.audio.render === 'function' && audioData());
+  }
   function runnable(exId) {
     var ex = ES.ex[exId];
     if (ex && ex.view === 'custom') return typeof ex.custom === 'function';
@@ -35,7 +44,7 @@
 
   function buildPlan() {
     var P = ES.engine.planner;
-    if (P && typeof P.session === 'function') {
+    if (realAvailable()) {
       try {
         var p = P.session({ mode: settings().mode || 'edge', sessionMin: settings().sessionMin || 15, now: Date.now(),
           log: store().peek('log'), learner: store().peek('learner'), headphones: !!settings().headphones });
@@ -202,6 +211,7 @@
   function finish() {
     if (!S) return;
     ES.ui.inSet = false;
+    ES.core.clock.resume('away');
     if (!S.done) {
       S.done = true;
       writeLog();
@@ -217,5 +227,5 @@
   ES.ui.session = { active: active, state: state, start: start, beginSet: beginSet, afterTutorial: afterTutorial, currentSet: currentSet,
     exInfo: exInfo, makeTrial: makeTrial, scorer: scorer, record: record, skip: skip, levelText: levelText, finishSet: finishSet,
     endSetEarly: endSetEarly, next: next, finish: finish, abandon: abandon, runnable: runnable, engineReady: engineReady,
-    needsTutorial: needsTutorial, NAMES: NAMES };
+    needsTutorial: needsTutorial, realAvailable: realAvailable, NAMES: NAMES };
 })(window.ES, window);

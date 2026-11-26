@@ -25,3 +25,19 @@ Interpretations (logged here; lead may overrule):
 - Router `on(name, fn)` = listener for entering a route ('*' for any); screens come from `ES.ui.screens`,
   else the shell's placeholder registry `ES.ui.placeholders`.
 - Custom exercise `api.rate()` opens the playtest rating (no-op Promise when playtest is off).
+
+## 2026-11-26 17:59 UTC — status
+Done (committed 4a38bd6 and later): core modules, store (envelope, schema guard, 3-way merge, quota probe, blocked →
+memory, newer → read-only, corrupt → kept aside, hold/release), clock, router (+ ES.ui.screens registry, placeholders),
+UI kit, field, answer panel, Chimera (welcome full/light, invites queued during sets), playtest (ratings, notes,
+report, frame sampler), sound player, demo trials, trial view (+ exA hooks: prepare, prime, review/auto replays,
+openHelp, tutorialTrial, Try again, step title/next/notes/replayOnMiss), tutorial runner, session runner (planner →
+sets → results → log; real trials when planner + audio + clips exist, demo otherwise), screens (home, play,
+results, settings + data, volume, about, placeholders), app boot, CSS (tokens/base/components/screens), fonts.
+Tools: build-index.mjs (script block from disk; per-area load-order.txt), build-single.mjs (--test, --srcdoc).
+Tests: unit run.mjs + core.* (45 pass); e2e harness + run_all + shell_open (36/36), shell_session (39/39),
+shell_layout (172/172), shell_storage, shell_srcdoc, shell_ui (written; runs queued behind the browser lock).
+Screens looked at: home 390/1366, trial + feedback 360×640 light/dark, 640×360, 1366×768, results, session done,
+settings, pause, map placeholder. Fixed from them: landscape feedback overlap, heading focus ring, unreadable
+labels on the home picture, "?:" in feedback lines, the "you" marker, title truncation in the trial bar.
+Next: run storage/srcdoc/ui suites; look at their screenshots; final full run; commit.

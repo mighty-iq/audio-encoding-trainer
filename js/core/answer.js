@@ -91,7 +91,7 @@
     function focusKey(k) {
       if (!k) return;
       groups.forEach(function (g) { g.keys.forEach(function (x) { x.setAttribute('tabindex', x === k ? '0' : '-1'); }); });
-      try { k.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+      U.focus(k);
     }
 
     root.addEventListener('pointerdown', function (e) {

@@ -51,8 +51,8 @@
 .tb-btn .icon { width: 20px; height: 20px; fill: currentColor; }
 .tb-mid { flex: 1; display: flex; flex-direction: column; gap: 7px; }
 .tb-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; white-space: nowrap; overflow: hidden; }
-.tb-title { font-weight: 700; font-size: var(--fs-2); overflow: hidden; text-overflow: ellipsis; }
-.tb-level { font-size: 12px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; }
+.tb-title { flex: none; max-width: 60%; font-weight: 700; font-size: var(--fs-2); overflow: hidden; text-overflow: ellipsis; }
+.tb-level { flex: 1 1 auto; min-width: 0; text-align: right; font-size: 12px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; }
 .tb-chip { flex: none; }
 .tb-note { padding: 0 10px; }
 .dots { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; }
@@ -83,7 +83,7 @@
   .trial-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-rows: 1fr auto auto auto 1fr;
     grid-template-areas: "field ." "field text" "field answer" "field actions" "field ."; column-gap: 24px; overflow-y: auto; }
   .trial-field { grid-area: field; }
-  .trial-text { grid-area: text; text-align: left; min-height: 0; }
+  .trial-text { grid-area: text; text-align: left; min-height: auto; }
   .trial-prime, .fb-text, .fb-words { margin-left: 0; }
   .trial-answer { grid-area: answer; }
   .trial-actions { grid-area: actions; }

@@ -41,6 +41,7 @@
 
 #toasts { position: fixed; left: 0; right: 0; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 60; display: flex; flex-direction: column;
   align-items: center; gap: 8px; padding: 0 16px; pointer-events: none; }
+html.sheet-open #toasts { top: calc(12px + env(safe-area-inset-top)); bottom: auto; }
 .toast { max-width: 520px; padding: 10px 14px; border-radius: var(--r-1); background: var(--ink); color: var(--on-ink); font-size: var(--fs-2); box-shadow: var(--shadow-2); }
 
 #banners:empty { display: none; }
@@ -63,7 +64,8 @@ html.in-trial #banners { display: none; }
 .f-ring-outer { stroke: var(--ink-3); }
 .f-dist { font: 500 7px var(--mono); fill: var(--ink-3); }
 .f-room { fill: none; stroke: var(--ink-2); stroke-width: 1.3; stroke-dasharray: 5 3; vector-effect: non-scaling-stroke; }
-.f-you, .f-you-nose { fill: var(--ink); }
+.f-you { fill: var(--ink); }
+.f-you-tick { stroke: var(--ink); stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .f-you-label { font: 600 7.5px var(--font); fill: var(--ink-2); text-anchor: middle; }
 .f-target .f-dot { fill: var(--red); }
 .f-target .f-halo { fill: none; stroke: var(--red); stroke-width: 1.2; opacity: .5; vector-effect: non-scaling-stroke; }

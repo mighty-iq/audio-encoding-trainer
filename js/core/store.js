@@ -203,6 +203,7 @@
     cache[key] = { rev: e.rev + 1, at: Date.now(), by: TAB, rec: rec };
     dirty[key] = true;
     var ok = flush(key);
+    if (ok && Object.keys(dirty).length) ok = flushAll() && ok;   // space came back: retry what failed before
     if (!ls || S.readOnly) {
       try { sizes[key] = JSON.stringify(cache[key]).length * 2; } catch (e) { /* ignore */ }
       measure();

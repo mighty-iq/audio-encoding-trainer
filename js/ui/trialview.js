@@ -137,7 +137,8 @@
       if (r.correct) return null;
       var picked = r.picked == null ? 'nothing' : '“' + r.picked + '”';
       var why = r.foil && words[r.foil] && r.foil !== 'random' ? ' (' + words[r.foil] + ')' : '';
-      return (q.slots.length > 1 ? s.label + ': ' : '') + 'you picked ' + picked + why + ', it was “' + r.answer + '”.';
+      var lead = q.slots.length > 1 ? (/[?]$/.test(s.label) ? s.label + ' You picked ' : s.label + ': you picked ') : 'you picked ';
+      return lead + picked + why + ', it was “' + r.answer + '”.';
     }
     function showFeedback() {
       setState('feedback', '');
@@ -158,7 +159,7 @@
         .filter(function (x, i, a) { return typeof x === 'number' && replaySpec(trial, x) && a.indexOf(x) === i; });
       playSeq(auto, rv && rv.words ? 'Again, with the words…' : 'Listen again…', function () {
         if (ok && mode === 'set' && cfg.autoNext !== false) autoT = setTimeout(next, cfg.autoMs || 1200);
-        else if (nextBtn) { try { nextBtn.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+        else if (nextBtn) U.focus(nextBtn);
       });
     }
     /** Play replays in order after feedback; Next stays enabled and stops them. */
@@ -232,7 +233,7 @@
     }
 
     start();
-    return {
+    var handle = {
       done: done,
       state: function () { return state; },
       /** Stop the sound; the stimulus plays again from the start on resume (the trial is not scored twice). */
@@ -257,6 +258,8 @@
       },
       trial: trial
     };
+    ES.ui.trialView.current = handle;     // the running trial (tests and playtest reports read it)
+    return handle;
   }
 
   ES.ui.trialView = { run: run, renderAudio: renderAudio, FOIL_WORDS: FOIL_WORDS };

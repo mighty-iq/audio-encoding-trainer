@@ -7,7 +7,7 @@
   var RING_SEGMENTS = 5, GOOD_RHYTHM = [3, 5];
 
   function sessionsThisWeek() {
-    var log = ES.core.store.peek('log'), wk = U.weekKey(), real = !!(ES.engine.planner && ES.engine.planner.session);
+    var log = ES.core.store.peek('log'), wk = U.weekKey(), real = ES.ui.session.realAvailable();
     return (log.sessions || []).filter(function (s) { return U.weekKey(s.start) === wk && (!s.demo || !real); }).length;
   }
   function sessionsToday() {

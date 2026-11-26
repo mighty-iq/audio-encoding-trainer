@@ -10,6 +10,7 @@
   function doc() { return win.document; }
   function appRoot() { return doc().getElementById('app'); }
   function setInert(on) {
+    doc().documentElement.classList.toggle('sheet-open', !!on);
     ['app', 'banners'].forEach(function (id) {
       var n = doc().getElementById(id);
       if (!n) return;
@@ -30,10 +31,10 @@
       }
       if (e.key === 'Tab') {
         var items = Array.prototype.filter.call(top.el.querySelectorAll(FOCUSABLE), function (n) { return n.offsetParent !== null || n === doc().activeElement; });
-        if (!items.length) { e.preventDefault(); top.el.focus(); return; }
+        if (!items.length) { e.preventDefault(); U.focus(top.el); return; }
         var first = items[0], last = items[items.length - 1], a = doc().activeElement;
-        if (e.shiftKey && (a === first || !top.el.contains(a))) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && (a === last || !top.el.contains(a))) { e.preventDefault(); first.focus(); }
+        if (e.shiftKey && (a === first || !top.el.contains(a))) { e.preventDefault(); U.focus(last); }
+        else if (!e.shiftKey && (a === last || !top.el.contains(a))) { e.preventDefault(); U.focus(first); }
       }
     }, true);
   }
@@ -98,7 +99,7 @@
         if (!sheets.length) setInert(false);
         if (typeof opts.onClose === 'function') { try { opts.onClose(value); } catch (e) { /* ignore */ } }
         var target = sheets.length ? sheets[sheets.length - 1].el : prevFocus;
-        try { if (target && target.focus && doc().contains(target)) target.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+        if (target && doc().contains(target)) U.focus(target);
         resolveFn(value);
       }
     };
@@ -106,7 +107,7 @@
     setInert(true);
     doc().body.appendChild(layer);
     var first = opts.focus === 'panel' ? null : panel.querySelector('[data-autofocus]') || (acts && acts.querySelector('.btn-primary')) || panel.querySelector(FOCUSABLE);
-    try { (first || panel).focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+    U.focus(first || panel);
     return handle;
   }
   function sheetOpen() { return sheets.length > 0; }
@@ -170,7 +171,8 @@
       function viaBox() { copyBox(text, opts); finish('box'); }
       if (opts.box) { viaBox(); return; }
       try {
-        var cb = win.navigator && win.navigator.clipboard;
+        var cb = win.navigator && win.navigator.clipboard, pp = doc().permissionsPolicy || doc().featurePolicy;
+        if (pp && typeof pp.allowsFeature === 'function' && !pp.allowsFeature('clipboard-write')) cb = null;   // blocked: skip quietly
         if (cb && typeof cb.writeText === 'function') {
           cb.writeText(text).then(function () { finish('clipboard'); }, function () { if (!viaExec()) viaBox(); });
           return;
@@ -187,7 +189,7 @@
     var h = sheet({ title: opts.title || 'Copy this text', body: function (b) {
       b.appendChild(U.el('p', { class: 'hint' }, opts.hint || 'Copying is blocked here. Select all of the text below and copy it.'));
       b.appendChild(ta);
-    }, actions: [{ label: 'Select all', keep: true, onClick: function () { ta.focus(); ta.select(); try { ta.setSelectionRange(0, text.length); } catch (e) { /* ignore */ } } },
+    }, actions: [{ label: 'Select all', keep: true, onClick: function () { U.focus(ta); ta.select(); try { ta.setSelectionRange(0, text.length); } catch (e) { /* ignore */ } } },
       { label: 'Done', kind: 'primary' }] });
     return h;
   }

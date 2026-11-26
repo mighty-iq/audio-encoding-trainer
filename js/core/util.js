@@ -146,4 +146,20 @@
     return build(doc, doc.createElementNS('http://www.w3.org/2000/svg', tag), attrs, children);
   };
   U.clear = function (node) { while (node && node.firstChild) node.removeChild(node.firstChild); return node; };
+
+  // A sandboxed preview (opaque-origin iframe) refuses focus() without a recent tap and logs a policy error;
+  // there the call is skipped, which changes nothing the player sees.
+  var sandboxed = (function () {
+    try { return globalThis.self !== globalThis.top && String(globalThis.origin) === 'null'; } catch (e) { return true; }
+  })();
+  U.sandboxed = sandboxed;
+  U.focus = function (node) {
+    if (!node || typeof node.focus !== 'function') return false;
+    try {
+      var ua = globalThis.navigator && globalThis.navigator.userActivation;
+      if (sandboxed && ua && !ua.isActive) return false;
+      node.focus({ preventScroll: true });
+      return true;
+    } catch (e) { return false; }
+  };
 })(window.ES);

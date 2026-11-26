@@ -35,6 +35,7 @@
         : 'Downloads are blocked here: copy the text and keep it in a file or a note.'));
       ES.core.chimera.invite('export', { el: b });
     }, actions: [{ label: 'Copy the text', attrs: { 'data-copy-backup': '' }, onClick: function () { ES.ui.copyText(text, { title: 'Your backup', toast: 'Backup copied' }); return false; } },
+      { label: 'Show the text', attrs: { 'data-show-backup': '' }, onClick: function () { ES.ui.copyBox(text, { title: 'Your backup', hint: 'Select all of the text and copy it into a file or a note.' }); return false; } },
       { label: 'Done', kind: 'primary' }] });
     return h;
   }

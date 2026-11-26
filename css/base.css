@@ -20,6 +20,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 :focus { outline: none; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+/* Headings take focus after navigation so screen readers announce the new screen; they need no ring. */
+h1[tabindex="-1"]:focus-visible, [data-autofocus][tabindex="-1"]:focus-visible { outline: none; }
 [hidden] { display: none !important; }
 
 .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: 0; }

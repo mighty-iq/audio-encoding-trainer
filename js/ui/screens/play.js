@@ -28,6 +28,7 @@
     if (!sess.active() || !sess.currentSet()) { ES.core.router.go('home', {}, { reset: true }); return; }
     var set = sess.currentSet(), info = sess.exInfo(set.exId);
     ES.ui.inSet = true;
+    ES.core.clock.resume('away');
     document.documentElement.classList.add('in-trial');
     var level = U.el('span', { class: 'tb-level mono' });
     var dots = U.el('ol', { class: 'dots' });
@@ -149,6 +150,9 @@
       cur.aborted = true;
       if (cur.view) cur.view.abort();
       document.removeEventListener('visibilitychange', cur.onVis);
+      // Left mid-set (Back, Help → tutorial): the set waits; invitations may show again and the clock rests.
+      var s = ES.ui.session.currentSet();
+      if (ES.ui.session.active() && s && !s.finished) { ES.ui.inSet = false; ES.core.clock.pause('away'); }
     }
     cur = null;
     ES.ui.quiet(false);
