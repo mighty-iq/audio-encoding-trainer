@@ -127,7 +127,7 @@
       host.appendChild(slot);
       var label = st.next || 'Continue', practice = st.kind === 'practice';
       var view = ES.ui.trialView.run(slot, { trial: trial, mode: practice ? 'practice' : 'demo', autoNext: false,
-        nextLabel: label, answerNote: exId === 'demo' ? 'the red voice' : 'the answer', score: ES.ui.session.scorer(trial), foilWords: st.notes,
+        nextLabel: label, answerNote: exId === 'demo' ? 'the red voice' : 'the answer', score: ES.ui.session.plainScorer(trial), foilWords: st.notes,
         nextLabelFor: function (r) { return practice && r && !r.correct && attempt < 3 ? 'Try again' : label; },
         autoReplays: function (r) { return practice && r && !r.correct && st.replayOnMiss ? (Array.isArray(st.replayOnMiss) ? st.replayOnMiss : [0]) : []; } });
       cur.view = view;

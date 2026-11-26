@@ -19,7 +19,9 @@
   function renderAudio(trial, which) {
     if (isDemo(trial)) return ES.ui.demo.render(trial, which == null ? null : (replaySpec(trial, which) || {}).only);
     var spec = which == null ? trial.audio : replaySpec(trial, which);
-    return Promise.resolve(ES.audio.render(spec, { seed: String(trial.seed) + (which == null ? '' : ':replay' + which) }))
+    // The trial's own seed for every replay: "again" is the identical sound, and "target alone" processes the
+    // target exactly as in the mix (the renderer keys its random streams by role and clip).
+    return Promise.resolve(ES.audio.render(spec, { seed: String(trial.seed) }))
       .then(function (r) { return r && r.buffer ? r.buffer : r; });
   }
   function playAudio(buf) {
@@ -62,6 +64,7 @@
 
     function setState(s, text) { state = s; body.setAttribute('data-state', s); if (text != null) status.textContent = text; }
     function get(which) {
+      if (which != null && !isDemo(trial) && replaySpec(trial, which) === trial.audio) which = null;  // replaying the stimulus itself
       var k = which == null ? 'main' : 'r' + which;
       if (!cache[k]) cache[k] = renderAudio(trial, which);
       return cache[k];

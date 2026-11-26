@@ -110,15 +110,17 @@
     S.setIndex = i;
     var set = S.sets[i];
     set.activeStart = ES.core.clock.activeMs();
-    openFlow(set);
     if (needsTutorial(set.exId)) { ES.ui.inSet = false; ES.core.router.go('tutorial', { exId: set.exId, set: i }, { replace: i > 0 }); return; }
+    openFlow(set);                                   // the set's engine context opens only when its trials start
     ES.ui.inSet = true;
     ES.core.router.go('play', { set: i }, { replace: i > 0 });
   }
   /** After a tutorial run inside a session: start the set it was guarding. */
   function afterTutorial() {
     if (!active()) return false;
-    currentSet().activeStart = ES.core.clock.activeMs();
+    var set = currentSet();
+    set.activeStart = ES.core.clock.activeMs();
+    openFlow(set);
     ES.ui.inSet = true;
     ES.core.router.go('play', { set: S.setIndex }, { replace: true });
     return true;
@@ -148,10 +150,17 @@
     if (!t.ex) t.ex = set.exId;
     return t;
   }
+  /** How a trial is scored: the demo scorer; the set's flow (updates the learner, counts toward the set) for
+      trials the flow made; plain ES.engine.score for anything else (tutorial trials: no learner update). */
   function scorer(trial) {
     if (trial && trial.meta && trial.meta.demo) return ES.ui.demo.score;
-    var set = currentSet();
-    if (set && set.sc) return function (t, r) { var out = E().flow.answer(set.sc, t, r); set.lastOut = out; return out.result; };
+    var set = currentSet(), fromFlow = !!(trial && trial.meta && trial.meta.decision);
+    if (set && set.sc && fromFlow) return function (t, r) { var out = E().flow.answer(set.sc, t, r); set.lastOut = out; return out.result; };
+    return function (t, r) { return E().score(t, r); };
+  }
+  /** Tutorial trials never touch the learner or the set. */
+  function plainScorer(trial) {
+    if (trial && trial.meta && trial.meta.demo) return ES.ui.demo.score;
     return function (t, r) { return E().score(t, r); };
   }
   function focusLevel(trial) {
@@ -271,7 +280,7 @@
   ES.hooks.on('app:ready', syncLearner);
 
   ES.ui.session = { active: active, state: state, start: start, beginSet: beginSet, afterTutorial: afterTutorial, currentSet: currentSet,
-    exInfo: exInfo, makeTrial: makeTrial, scorer: scorer, record: record, skip: skip, levelText: levelText, finishSet: finishSet,
+    exInfo: exInfo, makeTrial: makeTrial, scorer: scorer, plainScorer: plainScorer, record: record, skip: skip, levelText: levelText, finishSet: finishSet,
     endSetEarly: endSetEarly, next: next, finish: finish, abandon: abandon, runnable: runnable, engineReady: engineReady,
     needsTutorial: needsTutorial, realAvailable: realAvailable, syncLearner: syncLearner, NAMES: NAMES };
 })(window.ES, window);
