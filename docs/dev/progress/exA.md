@@ -56,3 +56,17 @@ Open: Help sheet styles/adoption (shell); index.html lacks far/strange/repair un
   multi-room result, babble language); Help sheets de-duplicated; Crowd tips trimmed to three.
 - Browser lock is shared by every builder (shell run_all, audio, lead play-tests); queue long runs in the
   background with a long flock wait (e.g. timeout 3400 flock …) — a 600 s wait timed out once.
+
+## 2026-11-26 18:51 UTC — status
+- Layout suite (fixtures): 81/81 pass at 360×640 light/dark, 390×844, 1366×768 dark (answer + miss feedback fit,
+  Help ranges = code, Strange text-first prime ≥ 1 s before sound). Crowd on the real starter pack (--real): pass.
+- Tutorial suite: the four tutorials finish in 28.6 / 50.1 / 32.1 / 29.8 s (crowd/far/strange/repair) and a miss
+  shows "Try again" and stays on the step; BUT after the tutorial the set does not start: tutorial.js scores practice
+  trials through the set's flow (session.scorer → flow.answer needs meta.decision) — reported to the shell
+  (requests.md, BLOCKER line). Not worked around here on purpose (a fake decision would let tutorial answers move
+  the learner).
+- Far on the starter pack: adapt.farItems() returns vocab.phrases that have no clips → "no speech material";
+  reported to the engine. Repair/Strange on the starter pack use call-sign phrases: Repair's copy adapts (no
+  context claims, "phrase" wording).
+- ES.ex[id].venues now reads ES.game.venues.forExercise(id) (fallback lists match the map).
+Next: rerun ex_a_tutorial.py --miss once the shell fix lands; then final report.
