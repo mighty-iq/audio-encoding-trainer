@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earshot — player guide</title>
+<meta name="author" content="the Chimera community">
+<meta name="description" content="What Earshot trains, how to train with it, how it measures carry-over, and the research behind each choice.">
+<!-- Earshot player guide. Text and figures: CC BY-SA 4.0, the Chimera community (LICENSE-TEXTS.md). Rendered to
+     docs/Earshot-Guide.pdf by tools/build-pdf.py; figures come from tools/shots.py (simulated players only).
+     Research claims come from docs/research/R1-R6 at the strength each note's reading-depth tag allows; numbers
+     about the app come from the code (tools/build-pdf.py FACTS lists the line behind each). Only links to https
+     addresses or to #ids in this file. -->
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+
+<!-- ============================================================ cover -->
+<section class="cover" aria-label="Cover">
+  <div class="top"><span class="kicker">Earshot · player guide</span><span class="kicker">Version 0.1.0 · November 2026</span></div>
+  <div class="field">
+    <svg viewBox="0 0 300 230" role="img" aria-label="An earshot field: you at the centre, one voice to follow in red, three other voices in blue, range rings at 1, 2, 4 and 8 metres">
+      <g fill="none" stroke="#15171B">
+        <circle cx="150" cy="140" r="16" stroke-opacity="0.35" stroke-width="0.6"/>
+        <circle cx="150" cy="140" r="32" stroke-opacity="0.35" stroke-width="0.6"/>
+        <circle cx="150" cy="140" r="56" stroke-opacity="0.45" stroke-width="0.6"/>
+        <circle cx="150" cy="140" r="86" stroke-opacity="0.85" stroke-width="0.8"/>
+        <line x1="40" y1="140" x2="260" y2="140" stroke-opacity="0.18" stroke-width="0.5" stroke-dasharray="1.5 2"/>
+        <line x1="150" y1="40" x2="150" y2="230" stroke-opacity="0.18" stroke-width="0.5" stroke-dasharray="1.5 2"/>
+      </g>
+      <g font-family="JetBrains Mono" font-size="5.2" fill="#686E77">
+        <text x="162" y="155">1 m</text><text x="174" y="166">2 m</text><text x="190" y="183">4 m</text><text x="212" y="205">8 m</text>
+      </g>
+      <circle cx="150" cy="140" r="3.6" fill="#15171B"/>
+      <line x1="150" y1="135" x2="150" y2="129" stroke="#15171B" stroke-width="1.4"/>
+      <text x="150" y="152.5" font-family="Archivo" font-weight="600" font-size="6" text-anchor="middle" fill="#474C54">you</text>
+      <circle cx="178" cy="97" r="9.5" fill="none" stroke="#C8372B" stroke-opacity="0.55" stroke-width="0.8"/>
+      <circle cx="178" cy="97" r="6.2" fill="#C8372B"/>
+      <text x="167" y="76" font-family="Archivo" font-weight="700" font-size="7" text-anchor="middle" fill="#C8372B">the voice you follow</text>
+      <circle cx="117" cy="88" r="5" fill="#2A56CF"/>
+      <circle cx="215" cy="128" r="5" fill="#2A56CF"/>
+      <circle cx="92" cy="171" r="5" fill="#2A56CF"/>
+      <circle cx="196" cy="196" r="5" fill="#2A56CF" fill-opacity="0.55"/>
+    </svg>
+  </div>
+  <div class="title">
+    <h1>Earshot</h1>
+    <p class="sub">A listening trainer for loud rooms, far-off voices and unfamiliar talkers, and for holding on to what you heard. The player guide: what it trains, how to train, how it measures, and the research behind every choice.</p>
+  </div>
+  <div class="foot">
+    <div>
+      <div class="built">Built by the Chimera community on Discord</div>
+      <a class="addr" href="https://discord.gg/chmr">discord.gg/chmr</a>
+    </div>
+    <div class="ver">Free · open source · works offline<br>Your data stays on your device<br>Text CC BY-SA 4.0 · code MIT</div>
+  </div>
+</section>
+
+<!-- ============================================================ contents -->
+<section id="contents" aria-label="Contents">
+  <p class="kicker red">Earshot · player guide</p>
+  <h1 style="margin: 2mm 0 4mm">Contents</h1>
+  <ol class="toc">
+    <li><span class="no">01</span><a href="#ch-why">What Earshot trains and why</a><span class="pg" data-for="ch-why"></span><span class="what">three ways conversations break · what earlier trainers taught us · the bets</span></li>
+    <li><span class="no">02</span><a href="#ch-start">Getting started</a><span class="pg" data-for="ch-start"></span><span class="what">the first two minutes · headphones or a speaker · a comfortable level · safe listening</span></li>
+    <li><span class="no">03</span><a href="#ch-train">How to train</a><span class="pg" data-for="ch-train"></span><span class="what">sessions · the edge on every dial · feedback · five modes · sleep and days off · how much · plateaus</span></li>
+    <li><span class="no">04</span><a href="#ch-ex">The eight exercises</a><span class="pg" data-for="ch-ex"></span><span class="what">what you do, the dials in real units, the bet and the research behind it</span>
+      <ol>
+        <li><a href="#ex-crowd">Crowd</a><span class="pg" data-for="ex-crowd"></span></li>
+        <li><a href="#ex-far">Far</a><span class="pg" data-for="ex-far"></span></li>
+        <li><a href="#ex-strange">Strange voices</a><span class="pg" data-for="ex-strange"></span></li>
+        <li><a href="#ex-repair">Repair</a><span class="pg" data-for="ex-repair"></span></li>
+        <li><a href="#ex-echo">Echo</a><span class="pg" data-for="ex-echo"></span></li>
+        <li><a href="#ex-seek">Seek</a><span class="pg" data-for="ex-seek"></span></li>
+        <li><a href="#ex-voices">Voices</a><span class="pg" data-for="ex-voices"></span></li>
+        <li><a href="#ex-missions">Missions</a><span class="pg" data-for="ex-missions"></span></li>
+      </ol></li>
+    <li><span class="no">05</span><a href="#ch-lab">The Lab: measuring what carries over</a><span class="pg" data-for="ch-lab"></span><span class="what">near, mid and far check-ins · baselines · reading a verdict · what the numbers are and are not</span></li>
+    <li><span class="no">06</span><a href="#ch-game">The game layer</a><span class="pg" data-for="ch-game"></span><span class="what">the night out · the cast · growth in real units · the weekly night out · why no streaks</span></li>
+    <li><span class="no">07</span><a href="#ch-data">Your data and privacy</a><span class="pg" data-for="ch-data"></span><span class="what">everything stays on your device · backups · the community export · voices from your life</span></li>
+    <li><span class="no">08</span><a href="#ch-credits">Credits and licences</a><span class="pg" data-for="ch-credits"></span><span class="what">voices, recordings, noises, fonts and tools, with their licences</span></li>
+    <li><span class="no">09</span><a href="#ch-refs">References</a><span class="pg" data-for="ch-refs"></span><span class="what">every source cited, with links and how much of it we read</span></li>
+  </ol>
+  <div class="figrow" style="gap: 7mm">
+    <div class="panel" style="flex: 1 1 0; margin: 0">
+      <h3>About this guide</h3>
+      <p class="small">Every research claim here comes from the project's research notes, which record how much of each source we read: the full text, the abstract only, or a report of it in another paper. The references carry the same tags, and where a claim rests on an abstract or a second-hand report the text says so. Every number about the app matches its code (version 0.1.0).</p>
+      <p class="small">The pictures show the app on a phone with a simulated player: a learner record produced by the training engine in simulation. Their numbers belong to no real person.</p>
+    </div>
+    <div class="panel" style="flex: 1 1 0; margin: 0">
+      <h3>Reading the numbers</h3>
+      <p class="small"><b>dB</b> (decibels) compare two sounds. <b>Speech vs noise</b> and <b>your voice vs the others</b> are level differences: at 0 dB the voice you follow is as loud as the rest; at −6 dB the rest is 6 dB louder. Lower is harder, so a falling threshold is progress. <b>Echo time</b> (RT60) is how long a room takes to fall 60 dB quiet. <b>Points</b> are percentage points. <b>SD</b> is a standard deviation; <b>d</b> and <b>g</b> are effect sizes in SD units. Sources appear as (author, year) and link to chapter 9.</p>
+    </div>
+  </div>
+  <p class="small muted" style="margin-top: 5mm">Guide text and figures © 2026 the Chimera community, licensed under <a class="ext" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Earshot's code: MIT licence. Typefaces: Archivo and JetBrains Mono, SIL Open Font License 1.1. Built by the Chimera community on Discord; join us at <a class="ext" href="https://discord.gg/chmr">discord.gg/chmr</a>.</p>
+</section>
+
+<!-- ============================================================ 01 why -->
+<section class="chapter" id="ch-why">
+  <header class="opener">
+    <span class="kicker red">Chapter 01</span><span class="no">01</span>
+    <h1>What Earshot trains and why</h1>
+    <p class="lead">Conversations break in three ways: other voices bury the one you want, distance and echo smear it, or the talker sounds unlike anyone you know. Earshot trains each of them, and the skill that ties them together: holding on to what you heard long enough to use it.</p>
+  </header>
+  <div class="col">
+
+  <h2 id="why-crowd">1. Other voices bury the one you want</h2>
+  <aside class="side"><span class="label">Two kinds of masking</span><p><b>Energetic masking:</b> the noise covers the sound, so parts of it never reach the ear in usable form.</p><p><b>Informational masking:</b> the sound arrives, but its words get mixed up with the words around it. In multi-talker rooms this is the bigger problem (<a class="cite" href="#r-bronkhorst2015">Bronkhorst 2015</a>).</p></aside>
+  <p>In a busy bar the voice you want is rarely too quiet to hear. More often it is lost in confusion: its words reach your ears and get mixed up with the words of the voices around it. In a classic task where listeners followed one talker among others, most errors were the other talker's words, and a competing voice of the same sex cost about 20 percentage points compared with one of the other sex; a near-identical voice cost about 40 (Brungart 2001, reported by <a class="cite" href="#r-bronkhorst2015">Bronkhorst 2015</a>). Two competing talkers are the hardest number: one talker leaves gaps to listen through, while two fill the gaps and still sound like words (<a class="cite" href="#r-rosen2013">Rosen et al. 2013</a>). At a lively party, the voice you want is estimated to be about as loud as everything else around it (Plomp 1977, reported by <a class="cite" href="#r-bronkhorst2015">Bronkhorst 2015</a>).</p>
+  <p>Three cues pull a voice out of the crowd: knowing which voice to follow, knowing where it is, and how different it sounds. Knowing where to listen was worth 10 to 40 points in one study (Kidd et al. 2005, reported by <a class="cite" href="#r-bronkhorst2015">Bronkhorst 2015</a>). Small separations go a long way: 10 degrees between voices was enough for top scores in one task (Brungart &amp; Simpson 2007, reported by the same review), and two talkers 15 degrees to each side of the voice you follow became 12 to 18 dB easier to ignore than when all three came from one place (<a class="cite" href="#r-swaminathan2015">Swaminathan et al. 2015</a>). People also differ a lot: in that study, the level at which adults with normal hearing could follow one voice between two others spanned about 15 dB. Crowd, Seek and Voices train the use of these cues; Repair trains what to do with the gaps.</p>
+
+  <h2 id="why-far">2. Distance and echo smear it</h2>
+  <p>In the open, every doubling of distance takes about 6 dB off a voice. In a room the echo stays while the direct sound fades, so the share of direct sound falls with every step back (as summarised in the introduction of a 2024 study of distance perception, <a class="cite" href="#r-arxiv2024">arXiv 2408.14198</a>). Echo also blurs the end of one sound into the start of the next: in two very reverberant halls, listeners identified final consonants 56 and 62 % of the time, against 88 % without echo (<a class="cite" href="#r-vlahou2021">Vlahou et al. 2021</a>).</p>
+  <p>Ears adapt quickly. Hearing a sentence in the same room before the target improved the speech threshold by 2.7 dB, within seconds, mainly through both ears working together (<a class="cite" href="#r-brandewie2010">Brandewie &amp; Zahorik 2010</a>). And in a game-like study that taught a new speech-sound contrast, training across three rooms carried over to rooms the listeners had never heard, while training in a single room produced no learning at all (<a class="cite" href="#r-vlahou2019">Vlahou, Seitz &amp; Kopčo 2019</a>). Far is built on both findings.</p>
+
+  <h2 id="why-strange">3. The talker sounds unfamiliar</h2>
+  <p>An accent, a fast talker, a whisper, a bad phone line: the first sentences are hard, then the ear tunes in. Across eight kinds of distorted speech, listeners made half their gain within about three sentences, with no feedback at all (<a class="cite" href="#r-cooke2022">Cooke, Scharenborg &amp; Meyer 2022</a>), and the slowdown caused by an unfamiliar accent was gone within about twelve sentences (<a class="cite" href="#r-xie2018rapid">Xie et al. 2018</a>).</p>
+  <p>The open question is how to make the tuning-in carry over to the next new voice. Listeners who heard five talkers with five different accents understood a new talker with yet another accent better, while listeners trained on one accent did not (<a class="cite" href="#r-baeseberk2013">Baese-Berk, Bradlow &amp; Wright 2013</a>, ten listeners per group). A larger study found that kind of carry-over real but uneven from talker to talker, and found that a talker understood only about half the time produced no adaptation at all (<a class="cite" href="#r-bradlow2023">Bradlow, Bassard &amp; Paller 2023</a>). Strange voices bets on variety, dosed so that the ear can keep up.</p>
+
+  <h2 id="why-hold">4. Holding on to what you heard</h2>
+  <p>Catching a name in a noisy room is half the job; keeping it until you can use it is the other half. Attention and general thinking skills go with better listening among competing talkers, most clearly in older listeners (<a class="cite" href="#r-fullgrabe2015">Füllgrabe, Moore &amp; Stone 2015</a>), and words that come later can repair a word the noise blurred earlier (<a class="cite" href="#r-tinnemore2025">Tinnemore, Gordon-Salant &amp; Goupell 2025</a>). Echo trains listening under memory load on the content that matters day to day: names, numbers, places and times.</p>
+
+  <h2 id="why-history">5. What earlier trainers taught us</h2>
+  <p>Listening trainers have been studied for three decades. People reliably got better at the exercises they practised (<a class="cite" href="#r-henshaw2013">Henshaw &amp; Ferguson 2013</a>). Carry-over to untrained listening tests was smaller and less consistent, and it shrank as study quality rose: in a meta-analysis of 23 controlled studies, the randomised trials showed no clear effect on speech-in-noise thresholds (<a class="cite" href="#r-fallahnezhad2023">Fallahnezhad, Pourbakht &amp; Toufan 2023</a>), and the largest independent trial, with 279 hearing-aid users, found a commercial programme no better than a placebo (<a class="cite" href="#r-saunders2016">Saunders et al. 2016</a>, abstract only). The few controlled successes were small and faded: an audiomotor game for older hearing-aid users (<a class="cite" href="#r-whitton2017">Whitton et al. 2017</a>, known to us from a news release) and a game of listening tasks for young adults, whose gain was gone a month later (<a class="cite" href="#r-lelo2022">Lelo de Larrea-Mancera et al. 2022</a>).</p>
+  <p>We read these studies as a map of how trainers fail, and built Earshot around the failures.</p>
+  <table class="wide compact" id="tab-failures">
+    <caption>Table 1 · How earlier trainers failed, and Earshot's response</caption>
+    <thead><tr><th style="width: 23%">Failure</th><th style="width: 40%">What the studies found</th><th>Earshot's response</th></tr></thead>
+    <tbody>
+      <tr><td>Gains stay with the trained items, voices and noise</td><td>Gains on untrained speech were small and inconsistent (<a class="cite" href="#r-henshaw2013">Henshaw &amp; Ferguson 2013</a>); training in babble helped only the babble language it used (<a class="cite" href="#r-vanengen2012">Van Engen 2012</a>)</td><td>Thousands of voice and word combinations; crowds, rooms and voice types that widen as you improve; the Lab checks with voices, rooms and formats you never train on</td></tr>
+      <tr><td>Practice on a test mistaken for progress</td><td>Control groups improved on retest (<a class="cite" href="#r-henshaw2013">Henshaw &amp; Ferguson 2013</a>); a matrix sentence test improves 1.1 to 1.2 dB from the first run to the second by practice alone (<a class="cite" href="#r-puglisi2015">Puglisi et al. 2015</a>)</td><td>A practice run before every baseline; a trend model that separates early practice from later change</td></tr>
+      <tr><td>Too hard to learn from</td><td>A talker understood about half the time produced no adaptation (<a class="cite" href="#r-bradlow2023">Bradlow et al. 2023</a>)</td><td>No trial planned below 65 % predicted accuracy; easy anchor trials; easy-to-hard ladders on every dial</td></tr>
+      <tr><td>Score and lives on screen</td><td>An on-screen score and lives bar cut training gains in a children's working-memory game (<a class="cite" href="#r-katz2014">Katz et al. 2014</a>)</td><td>Results only between sets, in real units (dB, metres); nothing decorative while a sound plays</td></tr>
+      <tr><td>Too little practice</td><td>Four days of training gave nothing (Ingvalson et al. 2012, reported by <a class="cite" href="#r-henshaw2013">Henshaw &amp; Ferguson 2013</a>); controlled studies that found carry-over trained for about 12 to 40 hours (<a class="cite" href="#r-lelo2022">Lelo de Larrea-Mancera et al. 2022</a>; <a class="cite" href="#r-whitton2017">Whitton et al. 2017</a>; <a class="cite" href="#r-anderson2013">Anderson et al. 2013</a>)</td><td>Short sessions, four or five a week, for months rather than days</td></tr>
+      <tr><td>Gains fade</td><td>Game-based gains faded within a month or without practice (<a class="cite" href="#r-lelo2022">Lelo de Larrea-Mancera et al. 2022</a>; <a class="cite" href="#r-whitton2017">Whitton et al. 2017</a>)</td><td>A retention check after a break; a maintenance rhythm (chapter 3)</td></tr>
+      <tr><td>Dull, buggy or repetitive</td><td>Trainees named technical problems (39 %) and boring repetition (16 %) as the worst parts (<a class="cite" href="#r-henshaw2015">Henshaw, McCormack &amp; Ferguson 2015</a>)</td><td>Eight exercises, a cast of voices, a night out to explore; every sound rendered on the device, offline</td></tr>
+      <tr><td>Progress shown only on the exercises</td><td>None of the listening apps we surveyed measured untrained listening, used alternate test forms or exported data (our survey, <a class="cite" href="#r-notes">research note R1</a>)</td><td>Near, mid and far Lab check-ins with alternate forms, your own trend with its margin, and an export the community can pool</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="why-bets">6. A portfolio of bets</h2>
+  <p>No theory of transfer has won, so Earshot does not bet on one. Each exercise names the mechanism it bets on, and the Lab measures what happens. Two bets are new or barely tested anywhere, and every player who trains and checks in helps test them.</p>
+  <table class="wide compact" id="tab-bets">
+    <caption>Table 2 · The eight exercises and their bets</caption>
+    <thead><tr><th style="width: 15%">Exercise</th><th style="width: 34%">The bet</th><th>Where the evidence stands</th></tr></thead>
+    <tbody>
+      <tr><td><a href="#ex-crowd"><b>Crowd</b></a></td><td>Attention control and voice and place cues against competing talkers; ever-changing crowds to keep the skill general</td><td>The cues are well studied; training gains stuck to the trained babble (<a class="cite" href="#r-vanengen2012">Van Engen 2012</a>), so whether a varied diet of crowds builds general resistance is untested</td></tr>
+      <tr><td><a href="#ex-far"><b>Far</b></a></td><td>Room adaptation, trained across many rooms</td><td>Multi-room training carried over to new rooms for a speech-sound contrast (<a class="cite" href="#r-vlahou2019">Vlahou et al. 2019</a>); untested for distant speech in noise</td></tr>
+      <tr><td><a href="#ex-strange"><b>Strange voices</b></a></td><td>Variety that trains adapting to new voices</td><td>Multi-accent exposure helped a new accent in small studies (<a class="cite" href="#r-baeseberk2013">Baese-Berk et al. 2013</a>); a large replication found the benefit of variety smaller than first claimed (<a class="cite" href="#r-brekelmans2022">Brekelmans et al. 2022</a>)</td></tr>
+      <tr><td><a href="#ex-repair"><b>Repair</b></a></td><td>A general strategy: hold the sentence, then repair it; listening in the dips</td><td>Interrupted-speech training carried over across gap types and held about three months (<a class="cite" href="#r-benard2013">Benard &amp; Başkent 2013</a>); training the use of context is untested as far as we found</td></tr>
+      <tr><td><a href="#ex-echo"><b>Echo</b></a></td><td>Listening under memory load on real-life content</td><td>Reviewers favour training that loads listening and thinking together; the largest trial of a programme built that way found no benefit over placebo (<a class="cite" href="#r-saunders2016">Saunders et al. 2016</a>, abstract only)</td></tr>
+      <tr><td><a href="#ex-seek"><b>Seek</b></a> <span class="tag new">new</span></td><td>Sound-guided movement, and turning so one ear faces the voice</td><td>One placebo-controlled audiomotor study, not replicated (<a class="cite" href="#r-whitton2017">Whitton et al. 2017</a>); head-turn practice in simulated scenes untested</td></tr>
+      <tr><td><a href="#ex-voices"><b>Voices</b></a> <span class="tag new">new</span></td><td>Fast voice familiarity, including voices from your own life</td><td>About ten minutes with a voice makes it easier to follow (<a class="cite" href="#r-holmes2021">Holmes, To &amp; Johnsrude 2021</a>); whether practice makes you quicker at it is untested as far as we found</td></tr>
+      <tr><td><a href="#ex-missions"><b>Missions</b></a></td><td>Explicit bridging: one real-world listening task a week</td><td>The tactics come from lab studies, such as a 30-degree head turn (<a class="cite" href="#r-grange2016">Grange &amp; Culling 2016</a>); whether practising them carries into daily life is what the diary tracks</td></tr>
+    </tbody>
+  </table>
+
+  <h3>What we left out</h3>
+  <p><b>Music lessons and pitch drills.</b> Musicians hear speech in noise about 0.4 dB better than non-musicians on average, a difference that is not distinguishable from zero once publication bias is allowed for (<a class="cite" href="#r-hennessy2022">Hennessy, Mack &amp; Habibi 2022</a>); a large lab comparison found no musician advantage at all (<a class="cite" href="#r-madsen2019">Madsen et al. 2019</a>), and six months of piano lessons in a randomised trial moved thresholds by less than half a decibel (<a class="cite" href="#r-worschech2021">Worschech et al. 2021</a>). <b>Stand-alone working-memory drills.</b> Used as the comparison training in a listening study, they did not improve listening in babble (<a class="cite" href="#r-gao2020">Gao et al. 2020</a>). Earshot keeps memory inside listening instead (Echo).</p>
+  </div>
+</section>
+
+<!-- ============================================================ 02 start -->
+<section class="chapter" id="ch-start">
+  <header class="opener">
+    <span class="kicker red">Chapter 02</span><span class="no">02</span>
+    <h1>Getting started</h1>
+    <p class="lead">Earshot runs in any modern browser, on a phone or a computer, online or off. A first-time player is training within two minutes. Three settings are worth one more minute each.</p>
+  </header>
+  <div class="col">
+  <figure class="side phone"><img src="figures/home.png" alt="The home screen: Ready when you are, a Start session button, this week’s ring with two sessions, and cards from the Lab and the game"><figcaption><span class="label">Figure 1 · Home</span>Tonight’s session, this week’s ring, and cards from the Lab and the game. A simulated player.</figcaption></figure>
+
+  <h2>1. Open it</h2>
+  <p>Earshot is a single web page. Open <span data-url="pages">the web version (the project's GitHub Pages site)</span>, or download the file <code>earshot.html</code> and open it from your device's files. Neither needs an installation or an account, the downloaded file also works without a connection, and the app makes no network requests at all: your record stays in the browser you use, on that device.</p>
+  <p>The first time you open it, a short welcome tells you that Earshot was built by the Chimera community on Discord and invites you to join us at <a class="ext" href="https://discord.gg/chmr">discord.gg/chmr</a>; later launches show a one-tap version.</p>
+
+  <h2>2. The first two minutes</h2>
+  <p>Tap <b>Start session</b>. Each exercise opens with a short tutorial the first time you meet it: one line at a time that always says what to do next, a worked example with the right answer marked and every wrong option labelled with the kind of mistake it represents, then a few practice trials with feedback. A wrong practice answer gets a fresh try. Practice never counts toward your levels. The tutorial ends with the Discord link, and then the set begins.</p>
+  <p>The <b>?</b> button on every trial opens the exercise's Help: the goal, every dial with its real range, tips, and the bet the exercise makes. Pause is always one tap away, and ending a set early costs nothing.</p>
+
+  <h2>3. Phone speaker or headphones</h2>
+  <p>Everything in Earshot works on a phone speaker except the dials that place voices around you in space: Crowd's spatial separation and Seek's head-turn view. Those need headphones, because each ear must get its own signal.</p>
+  <p><b>Settings › Sound › Headphone check</b> plays six rounds of three low hums and asks which one is quietest. Over speakers, one of the louder hums partly cancels itself in the air and seems quietest, which gives speakers away; five right out of six unlocks the direction dials, and guessing passes only about 2 % of the time (the anti-phase method of <a class="cite" href="#r-woods2017">Woods et al. 2017</a>). The check is a strong hint rather than proof: in its authors' tests about 1 in 20 desktop speakers passed, and more laptop speakers did. If you know you wear headphones, switch on <b>I am wearing headphones</b> instead.</p>
+
+  <h2>4. A comfortable level</h2>
+  <p><b>Settings › Sound › Set level</b> plays a reference sound. Set your device volume so that it sounds clear and comfortable, like a conversation across a table, and never loud. Every trial except Seek's live search then plays at that same loudness, however hard it gets: difficulty changes the balance between the voice you follow and everything else, never the overall volume.</p>
+
+  <h2>5. Safe listening</h2>
+  <div class="note">The WHO–ITU safe-listening standard gives adults a weekly sound allowance equal to 80 dB(A) for 40 hours, and every 3 dB louder halves the safe time: 83 dB(A) for 20 hours uses the same allowance (<a class="cite" href="#r-who2019">WHO–ITU 2019, ITU-T H.870</a>).</div>
+  <p>Earshot's sessions are 10 to 30 minutes long and play at the level you chose, so a comfortable setting keeps you far inside that allowance. Turn the volume down if anything ever sounds loud, and give your ears a rest if they ring or feel dull after listening anywhere.</p>
+
+  <h2>6. Before a Lab check-in</h2>
+  <p>Lab check-ins compare you with yourself, week by week, so keep the conditions steady: a quiet spot, the same device, the same headphones or speaker, the same volume. Levels measured in steady noise hold up well on people's own devices: a matrix sentence test taken at home on consumer gear agreed with the lab within about 0.3 dB, with no effect of headphone type (<a class="cite" href="#r-schwarz2026">Schwarz et al. 2026</a>). Background noise in your room, though, is a masker the app cannot hear.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 03 train -->
+<section class="chapter" id="ch-train">
+  <header class="opener">
+    <span class="kicker red">Chapter 03</span><span class="no">03</span>
+    <h1>How to train</h1>
+    <p class="lead">Tap Start and Earshot does the planning: which exercises, which voices and rooms, and how hard, trial by trial. This chapter shows what happens under the hood, so you know why a session looks the way it does and when to change the defaults.</p>
+  </header>
+  <div class="col">
+
+  <h2 id="train-session">1. A session</h2>
+  <aside class="side"><span class="label">Set lengths</span>
+    <table class="compact" style="margin: 0">
+      <tbody>
+        <tr><td>Crowd</td><td class="n">24 trials</td></tr>
+        <tr><td>Far</td><td class="n">20 trials</td></tr>
+        <tr><td>Strange voices</td><td class="n">20 trials</td></tr>
+        <tr><td>Repair</td><td class="n">22 trials</td></tr>
+        <tr><td>Echo</td><td class="n">10 messages</td></tr>
+        <tr><td>Seek</td><td class="n">6 searches</td></tr>
+        <tr><td>Voices</td><td class="n">22 trials</td></tr>
+      </tbody>
+    </table>
+  </aside>
+  <p>A session lasts about 15 minutes; Settings offers 10, 15, 20 or 30. It is made of sets of about three minutes, each from a different exercise, so a 15-minute session holds five sets. The plan draws each set's exercise with weights that lean toward loud places (Crowd 20, Repair 12 and Seek 8 out of 100), then distance (Far 22), unusual voices (Strange voices 18), memory (Echo 12) and voice learning (Voices 8). An exercise does not come back until the others have had their turn, and never twice in a row.</p>
+  <p>After some Strange voices, Far and Repair sets comes a <b>listen-only interlude</b> of about 25 seconds: examples of the condition you just trained, with their words on screen and nothing to answer, at most two per session. In lab studies, practice combined with periods of listen-only exposure learned as much as longer practice (<a class="cite" href="#r-wright2010">Wright et al. 2010</a>, with tones, and <a class="cite" href="#r-wright2015">2015</a>, with speech; both known to us from their abstracts). There is never a repeat-aloud step: saying a sound right after hearing it blocked its learning in one study, while a delay of a few seconds restored it (<a class="cite" href="#r-baeseberk2022">Baese-Berk &amp; Samuel 2022</a>).</p>
+
+  <h2 id="train-edge">2. At the edge, on every dial</h2>
+  <p>Each exercise has several <b>dials</b>: how loud the other voices are, how many there are, how alike they sound, how far away the talker stands, how much echo the room has. For every dial Earshot keeps its own estimate of your edge, the level at which you get about 7 in 10 right. On each trial it pushes one dial, the <b>focus</b>, to your edge and sets the others a margin below theirs, so every dimension advances and no single number hides the rest.</p>
+  <aside class="side"><span class="label">The trial mix</span><p><b>Edge trials</b> aim at about 72 % right.</p><p><b>Anchors</b>, about 90 %: every fourth or fifth trial, and after two misses in a row.</p><p><b>Warm-ups</b>, about 85 %: the first trials of a set and of any new condition. They do not move your levels.</p><p><b>Floor:</b> no trial is planned below 65 %.</p></aside>
+  <p>Why about 7 in 10? Learning theory puts the fastest learning at about 85 % correct for simple learning machines (<a class="cite" href="#r-wilson2019">Wilson et al. 2019</a>), while data from a learning platform found more learning and more returning players with harder targets of 50 to 65 % (<a class="cite" href="#r-papousek2016">Papoušek, Stanislav &amp; Pelánek 2016</a>). Earshot's edge sits between the two, and the easy trials around it pull the average up.</p>
+  <p>Which dial gets the focus depends on where you have been improving lately, with one trial in five chosen at random so that no dial is forgotten, a method from intelligent tutoring systems (<a class="cite" href="#r-clement2015">Clement et al. 2015</a>). Easy anchor trials are not wasted time: in visual learning studies, mixing easy trials with hard ones let learning happen even without feedback, and training only at threshold made learning more specific to the trained condition (<a class="cite" href="#r-liu2012">Liu, Lu &amp; Dosher 2012</a>; <a class="cite" href="#r-hung2014">Hung &amp; Seitz 2014</a>). Warm-ups exist because the ear needs a few sentences to tune in to a new voice or distortion (<a class="cite" href="#r-cooke2022">Cooke et al. 2022</a>). And the floor exists because exposure that hard starves learning: a talker understood about half the time produced no adaptation (<a class="cite" href="#r-bradlow2023">Bradlow et al. 2023</a>; also <a class="cite" href="#r-mclaughlin2024">McLaughlin et al. 2024</a>).</p>
+
+  <h2 id="train-feedback">3. Feedback that teaches</h2>
+  <p>Every answer gets feedback at once, slot by slot: what was said, what you picked, and why a wrong option was tempting (a word another voice said, a sound-alike, a detail from elsewhere in the message). Then you can hear it again. In Crowd: the voice alone, then the crowd again. In Strange voices: the words appear and the same strange voice plays again. In Repair: the whole sentence, then the broken one with its words. In Far: the talker up close, then from the distance again.</p>
+  <p>The common ingredient is hearing the hard version again while knowing what it says. Distorted speech heard again after seeing its words trained listeners as well as hearing a clear version, and better than plain repetition (<a class="cite" href="#r-davis2005">Davis et al. 2005</a>); the degraded sound with text beat clear-sound feedback in another study (<a class="cite" href="#r-loebach2010">Loebach, Pisoni &amp; Svirsky 2010</a>), and interrupted-speech training with the same clear-then-degraded feedback carried over across gap types (<a class="cite" href="#r-benard2013">Benard &amp; Başkent 2013</a>). Feedback never shows a running score; your progress appears between sets, in dB and metres.</p>
+
+  <h2 id="train-variety">4. Variety, dosed</h2>
+  <p>Variety of talkers, rooms, noises and voice types is a dial of its own. It widens when you get at least 75 % of your last 20 edge trials right and narrows when that falls below 55 %, so new kinds of voice arrive one or two at a time and mixing grows as your accuracy holds.</p>
+  <p>The research supports both halves of that rule. Variety slows early learning and widens what the learning applies to (<a class="cite" href="#r-raviv2022">Raviv, Lupyan &amp; Green 2022</a>). Mixing talkers helped strong learners and hurt weaker ones in one study, where blocking rescued them (<a class="cite" href="#r-perrachione2011">Perrachione et al. 2011</a>), though a large replication found no such split (<a class="cite" href="#r-brekelmans2022">Brekelmans et al. 2022</a>); a hard new speech contrast was learned better blocked than interleaved (<a class="cite" href="#r-fuhrmeister2020">Fuhrmeister &amp; Myers 2020</a>), while interleaving accented talkers beat blocking once accuracy was high (<a class="cite" href="#r-tzeng2016">Tzeng et al. 2016</a>). Block to acquire, mix to generalise.</p>
+
+  <h2 id="train-modes">5. Five modes, one record</h2>
+  <p>Edge is the default and needs no setup. The other modes change how the next trial is chosen, never your record: switching back and forth loses nothing.</p>
+  <table class="wide" id="tab-modes">
+    <caption>Table 3 · Progression modes (Settings › Training)</caption>
+    <thead><tr><th style="width: 12%">Mode</th><th style="width: 52%">What it does</th><th>When it is the right one</th></tr></thead>
+    <tbody>
+      <tr><td><b>Edge</b></td><td>Tracks your edge on every dial and pushes one at a time to it, the rest just below. No setup.</td><td>Almost everyone; it is the default.</td></tr>
+      <tr><td><b>Path</b></td><td>Venues in order: one condition at a time, then mixed. A step is passed after 5 trials in a row fully right, or 80 % over the last 15 (in a maths tutor, five in a row predicted later success better than three: <a class="cite" href="#r-kelly2015">Kelly et al. 2015</a>); after 15 trials under 50 % the path steps back one, with no penalty.</td><td>Beginners, anyone who likes clear goals, and anyone who finds mixing confusing.</td></tr>
+      <tr><td><b>Variety</b></td><td>A new talker, room or voice type on every trial, at the same targets; the focus dial is picked at random.</td><td>After a plateau, or when you already do well and want breadth.</td></tr>
+      <tr><td><b>Focus</b></td><td>About 60 % of sets go to the exercise behind your weakest Lab check-in, or the situation you pick, and about 60 % of its trials push that dial.</td><td>When one situation bothers you most.</td></tr>
+      <tr><td><b>Free</b></td><td>Pick one exercise and set its dials yourself; a coach line shows your current edge on each.</td><td>When you want to explore.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="train-days">6. Sleep, days off and coming back</h2>
+  <p>The first set of the first session on a new day re-tests the hardest condition you reached on your last training day, with a voice that was not in that set. In one study, listeners who learned an accent generalised it to a new talker only after a night's sleep (<a class="cite" href="#r-xie2018sleep">Xie, Earle &amp; Myers 2018</a>), so this set lets you see what the night did.</p>
+  <p>After two or more days away, a gentle <b>fresh ears</b> set comes first instead, and the app tells you whether your level held. In large data sets from online training games, skill mostly survived breaks and came back within a game or two (<a class="cite" href="#r-kumar2022">Kumar et al. 2022</a>). After three sessions in one day, the plan suggests coming back after sleep: repeated same-day practice wore performance down in a visual task, and a nap restored it (<a class="cite" href="#r-mednick2002">Mednick et al. 2002</a>). Nothing is lost by stopping.</p>
+  <p>The ring on the home screen counts this week's sessions. Four or five a week is a good rhythm, any day works, and a new week simply starts a new ring.</p>
+
+  <h2 id="train-dose">7. How much, and for how long</h2>
+  <p>Four or five 15-minute sessions add up to about an hour a week. Controlled studies that found carry-over trained for roughly 12 to 40 hours in total (Table 1), and the total amount of practice mattered more than how it was spread over the week (<a class="cite" href="#r-nogaki2007">Nogaki, Fu &amp; Galvin 2007</a>). So think in months: ten weeks at this rhythm is about 10 to 12 hours.</p>
+  <p>Gains from two game-based programmes faded within a month once practice stopped (Table 1), while interrupted-speech training held for about three months (<a class="cite" href="#r-benard2013">Benard &amp; Başkent 2013</a>). Nobody has tested a maintenance dose, so ours is a bet: once your Lab trend levels off, keep one or two sessions a week, and let the retention check after a long break show what stayed.</p>
+
+  <h2 id="train-plateau">8. Plateaus, and what the app changes</h2>
+  <p>Individual learning curves rarely bend smoothly. In data from about 25,000 people on an online training site, most individual curves were better described by steps than by a smooth curve (<a class="cite" href="#r-donner2015">Donner &amp; Hardy 2015</a>, known to us from a summary), and in a long study of a complex game, dips while players tried a new strategy often came just before a leap (<a class="cite" href="#r-destefano2016">Destefano &amp; Gray 2016</a>). A flat stretch is normal. A long one is a signal to change something.</p>
+  <p>Earshot watches each exercise for a stall: no new personal best in four sessions, and a trend over your last 10 sessions with that exercise whose upper 80 % bound stays below +0.15 dB a session, four checks in a row. The earliest it can say so is your 13th session with an exercise. In our simulations of learners over 60 days, the rule caught 47 to 86 % of true stalls depending on the mode, and gave a false alarm to 3 to 7 % of simulated learners who were in fact still improving slowly.</p>
+  <p>When it finds a stall, it changes one thing, tells you what and why, and waits at least three sessions before changing anything else. The changes come in this order:</p>
+  <ol>
+    <li><b>Wider variety:</b> more voices, rooms and noises.</li>
+    <li><b>A different focus:</b> another dial is pushed to its edge for a while, the rest at comfort.</li>
+    <li><b>More anchors:</b> more easy trials between the hard ones.</li>
+    <li><b>A strategy card</b> with one concrete tip for that exercise.</li>
+    <li><b>Sleep on it:</b> when this is already your second session or more that day.</li>
+    <li><b>A rest:</b> the exercise sits out three sessions while the plan trains other situations, then comes back.</li>
+  </ol>
+  <p>A plateau screen is also where Earshot invites you to the Chimera community on Discord; it never interrupts a set.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 04 exercises -->
+<section class="chapter" id="ch-ex">
+  <header class="opener">
+    <span class="kicker red">Chapter 04</span><span class="no">04</span>
+    <h1>The eight exercises</h1>
+    <p class="lead">Seven exercises train in the app, one takes training into your week. Each page says what you do, lists the dials with their real ranges from easy to hard, names the bet the exercise makes about carry-over, and sums up the research behind it.</p>
+  </header>
+  <div class="col">
+  <p>All seven training exercises share one trial shape: a short cue (a call sign, a voice, a room), one sound played once, a closed set of answers to tap, and feedback with replays. Answer options are shuffled every time, and the wrong options are chosen to teach: words another voice said, sound-alikes, and details from elsewhere in the message. Every sound is rendered on your device for that trial, so the same words come back with different voices, rooms and crowds.</p>
+  <p>Each exercise also lists its dials in its Help sheet (the <b>?</b> on every trial), with the same ranges as below. "Easy to hard" runs from the first level to the last; the engine moves along each ladder as far as your edge allows.</p>
+  <figure class="wide" id="fig-anatomy" style="margin-top: 5mm">
+    <svg viewBox="0 0 520 92" role="img" aria-label="The anatomy of a trial: cue, sound played once, answer from a closed set, feedback, then replays" style="width: 100%; height: auto; display: block">
+      <defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#686E77"/></marker></defs>
+      <g font-family="Archivo" fill="#15171B">
+        <g><rect x="2" y="14" width="88" height="62" rx="6" fill="#F4F4EF" stroke="#B9BBB3" stroke-width="0.7"/>
+          <text x="12" y="31" font-family="JetBrains Mono" font-size="6.6" font-weight="600" fill="#C8372B">1 CUE</text>
+          <text x="12" y="47" font-size="8.4" font-weight="600">A call sign,</text><text x="12" y="58" font-size="8.4" font-weight="600">a voice, a room</text></g>
+        <g><rect x="109" y="14" width="88" height="62" rx="6" fill="#F4F4EF" stroke="#B9BBB3" stroke-width="0.7"/>
+          <text x="119" y="31" font-family="JetBrains Mono" font-size="6.6" font-weight="600" fill="#C8372B">2 SOUND</text>
+          <text x="119" y="47" font-size="8.4" font-weight="600">Played once;</text><text x="119" y="58" font-size="8.4" font-weight="600">nothing moves</text></g>
+        <g><rect x="216" y="14" width="88" height="62" rx="6" fill="#F4F4EF" stroke="#B9BBB3" stroke-width="0.7"/>
+          <text x="226" y="31" font-family="JetBrains Mono" font-size="6.6" font-weight="600" fill="#C8372B">3 ANSWER</text>
+          <text x="226" y="47" font-size="8.4" font-weight="600">Tap from a</text><text x="226" y="58" font-size="8.4" font-weight="600">closed set</text></g>
+        <g><rect x="323" y="14" width="88" height="62" rx="6" fill="#F4F4EF" stroke="#B9BBB3" stroke-width="0.7"/>
+          <text x="333" y="31" font-family="JetBrains Mono" font-size="6.6" font-weight="600" fill="#C8372B">4 FEEDBACK</text>
+          <text x="333" y="47" font-size="8.4" font-weight="600">Right or wrong,</text><text x="333" y="58" font-size="8.4" font-weight="600">and why</text></g>
+        <g><rect x="430" y="14" width="88" height="62" rx="6" fill="#FBE9E6" stroke="#C8372B" stroke-width="0.7"/>
+          <text x="440" y="31" font-family="JetBrains Mono" font-size="6.6" font-weight="600" fill="#C8372B">5 REPLAY</text>
+          <text x="440" y="47" font-size="8.4" font-weight="600">Clear or alone,</text><text x="440" y="58" font-size="8.4" font-weight="600">then hard again</text></g>
+      </g>
+      <g stroke="#686E77" stroke-width="1" marker-end="url(#ah)"><line x1="92" y1="45" x2="106" y2="45"/><line x1="199" y1="45" x2="213" y2="45"/><line x1="306" y1="45" x2="320" y2="45"/><line x1="413" y1="45" x2="427" y2="45"/></g>
+    </svg>
+    <figcaption><span class="label">Figure 2 · The shape of a trial</span>Results come between sets, never during them: a set shows only progress dots.</figcaption>
+  </figure>
+  <table class="wide compact" id="tab-situations">
+    <caption>Table 4 · Which exercise trains which situation</caption>
+    <thead><tr><th style="width: 18%">Exercise</th><th style="width: 15%">Loud places</th><th style="width: 15%">Distance, echo</th><th style="width: 15%">Unfamiliar talkers</th><th style="width: 15%">Holding on</th><th>Weight in a session plan</th></tr></thead>
+    <tbody>
+      <tr><td><a href="#ex-crowd"><b>Crowd</b></a></td><td><span class="dot"></span></td><td></td><td></td><td></td><td class="n">20 of 100</td></tr>
+      <tr><td><a href="#ex-far"><b>Far</b></a></td><td></td><td><span class="dot"></span></td><td></td><td></td><td class="n">22 of 100</td></tr>
+      <tr><td><a href="#ex-strange"><b>Strange voices</b></a></td><td><span class="dot o"></span></td><td></td><td><span class="dot"></span></td><td></td><td class="n">18 of 100</td></tr>
+      <tr><td><a href="#ex-repair"><b>Repair</b></a></td><td><span class="dot"></span></td><td></td><td></td><td><span class="dot o"></span></td><td class="n">12 of 100</td></tr>
+      <tr><td><a href="#ex-echo"><b>Echo</b></a></td><td><span class="dot o"></span></td><td></td><td></td><td><span class="dot"></span></td><td class="n">12 of 100</td></tr>
+      <tr><td><a href="#ex-seek"><b>Seek</b></a></td><td><span class="dot"></span></td><td><span class="dot o"></span></td><td></td><td></td><td class="n">8 of 100</td></tr>
+      <tr><td><a href="#ex-voices"><b>Voices</b></a></td><td><span class="dot o"></span></td><td></td><td><span class="dot"></span></td><td></td><td class="n">8 of 100</td></tr>
+      <tr><td><a href="#ex-missions"><b>Missions</b></a></td><td><span class="dot o"></span></td><td><span class="dot o"></span></td><td><span class="dot o"></span></td><td><span class="dot o"></span></td><td class="muted">one task a week, outside sets</td></tr>
+    </tbody>
+  </table>
+  <p class="small">A filled dot marks the situation an exercise is built for, a ring a situation it also touches. Weights are how the default plan draws each set's exercise (chapter 3); accented voices run in babble, Echo's messages come in café or party noise, Seek's scenes are noisy rooms and Voices ends with finding a friend in a crowd.</p>
+  </div>
+
+  <!-- Crowd -->
+  <article class="newpage" id="ex-crowd">
+    <div class="exhead"><span class="kicker red">Exercise 1 · loud places</span><h2>Crowd</h2><span class="bettag"><span class="tag">bet: attention and cues</span></span>
+      <p class="trains">Follow one voice while others talk over it. The crowd gets louder, more alike and closer together as you improve.</p></div>
+    <div class="col">
+    <figure class="side phone"><img src="figures/crowd-feedback.png" alt="A Crowd trial after a wrong answer: the voice to follow in red ahead of you, two blue voices beside it, and feedback saying the picked words came from another voice"><figcaption><span class="label">Figure 3 · Crowd, feedback</span>Two other voices, each as loud as the voice to follow. The picked words came from another voice and the feedback says so; the buttons at the bottom replay the voice alone, then the crowd again.</figcaption></figure>
+    <h3>What you do</h3>
+    <p>One voice says a call sign, then a word and a number. Other voices say words and numbers too, over a background of chatter. Follow the call-sign voice and tap its word and its number. As your variety widens, the cue that tells you whom to follow changes (a call sign, a short preview of the voice, or its place around you) and the voices start at slightly different moments.</p>
+    <p>When you pick a word another voice said, the feedback says so: in crowds that is the most common mistake, a slip in which voice you followed rather than in your ears. Then you can hear the voice alone, and the crowd again.</p>
+    <table class="dials">
+      <thead><tr><th>Dial</th><th>Easy to hard</th><th>What changes</th></tr></thead>
+      <tbody>
+        <tr><td>Your voice vs the others</td><td>+12 dB to −15 dB, in 0.5 dB steps; first trials at +8 dB</td><td>The level of each other voice relative to yours</td></tr>
+        <tr><td>Other voices</td><td>1 · 2 · 3</td><td>How many talk at once</td></tr>
+        <tr><td>Voice similarity</td><td>other sex · same sex · same sex, similar pitch · near-twin voice</td><td>How alike the others sound</td></tr>
+        <tr><td>Spatial separation (headphones)</td><td>90° · 45° · 30° · 20° · 15° · 10° · 5° · same place</td><td>How far the others stand from your voice</td></tr>
+      </tbody>
+    </table>
+    <div class="bet"><span class="label">The bet</span><p>Attention control and voice and place cues against competing talkers; ever-changing crowds aim to keep the skill general.</p></div>
+    <h3>The research</h3>
+    <p>Speech among other speech is limited mostly by confusion, not audibility, and the confusion grows with similarity: same-sex and near-identical voices are far harder than a voice of the other sex (chapter 1). The cues that undo it are what Crowd trains. Knowing where the voice will be was worth 10 to 40 points (Kidd et al. 2005, reported by <a class="cite" href="#r-bronkhorst2015">Bronkhorst 2015</a>); performance kept improving while the voice stayed in one place (Best et al. 2008, 2010, reported by the same review), and recall fell by about 10 points when it moved between turns (<a class="cite" href="#r-lin2015">Lin &amp; Carlile 2015</a>); and over headphones, generic 3D sound gave the same spatial benefit as each listener's own ear shapes did (<a class="cite" href="#r-zenke2022">Zenke &amp; Rosen 2022</a>).</p>
+    <p>The catch: in a training study, listeners who trained in two-talker babble beat those who trained in steady noise, but the gain stuck to the trained babble's language and was larger for the trained talkers (<a class="cite" href="#r-vanengen2012">Van Engen 2012</a>). Crowd therefore keeps changing the crowd: how many, how alike, where, and what sits underneath. Whether that variety builds a general resistance is untested; the Lab's Two voices check-in, with recorded voices you never train with, is where it would show.</p>
+    <h3>Tips</h3>
+    <ul class="dash">
+      <li><b>Lock on at the call sign</b>, then stay with that voice's pitch and pace.</li>
+      <li><b>Wrong voice, not wrong ears:</b> a real word from another voice means you followed the wrong talker; replay the voice alone.</li>
+      <li><b>With headphones, listen toward the red dot.</b> Even 10 to 15 degrees apart, place is one of the strongest cues.</li>
+    </ul>
+    </div>
+  </article>
+
+  <!-- Far -->
+  <article class="newpage" id="ex-far">
+    <div class="exhead"><span class="kicker red">Exercise 2 · distance and echo</span><h2>Far</h2><span class="bettag"><span class="tag">bet: many rooms</span></span>
+      <p class="trains">Catch words across echoing rooms, halls and stations. Distance and echo grow with you; rooms change so the skill is general.</p></div>
+    <div class="col">
+    <figure class="side phone"><img src="figures/far.png" alt="A Far trial: a talker 11 metres ahead of you inside a room drawn as a dashed outline, with range rings"><figcaption><span class="label">Figure 4 · Far</span>A talker 11 m ahead with 1.7 s of echo. The dashed outline is the room; the rings mark the distance.</figcaption></figure>
+    <h3>What you do</h3>
+    <p>Someone in a room says two phrases. The first is there so you can hear the room; then tap the word and the number from the second. Rooms come in four sizes, from a small room 5 m long to a hall 38 m long, each with its own background (a hum, a café, a station, a crowd), and the talker always fits inside the room.</p>
+    <p>The feedback tells you how far away the talker was and in what kind of room, and lets you hear the talker up close, then from the distance again.</p>
+    <table class="dials">
+      <thead><tr><th>Dial</th><th>Easy to hard</th><th>What changes</th></tr></thead>
+      <tbody>
+        <tr><td>Distance</td><td>1 · 1.5 · 2 · 3 · 4 · 6 · 8 · 11 · 16 · 22 · 30 m</td><td>The direct sound loses 6 dB against the echo with every doubling</td></tr>
+        <tr><td>Echo (reverberation time)</td><td>0.3 · 0.45 · 0.6 · 0.8 · 1.0 · 1.3 · 1.7 · 2.2 · 3.0 s</td><td>From an office to a church</td></tr>
+        <tr><td>Room noise (speech vs noise)</td><td>+30 dB to −6 dB; first trials at +24 dB</td><td>The room's background at your ears</td></tr>
+      </tbody>
+    </table>
+    <p class="small">As your variety widens, more voices and room types join, and the room can change from one trial to the next. That costs something: a lead-in from a different room helped less than one from the same room, by 1 to 7 points in the lab (<a class="cite" href="#r-vlahou2021">Vlahou et al. 2021</a>).</p>
+    <div class="bet"><span class="label">The bet</span><p>Room adaptation, trained across many rooms so that it can carry over to rooms you have never heard.</p></div>
+    <h3>The research</h3>
+    <p>Listeners calibrate to a room fast. Hearing a sentence in the same room first improved the threshold in noise by 2.7 dB, within seconds, and the effect was mainly binaural, so it is strongest with headphones (<a class="cite" href="#r-brandewie2010">Brandewie &amp; Zahorik 2010</a>); in another study, most confusions between similar words in echo were resolved after about half a second of the same echo (<a class="cite" href="#r-beeston2014">Beeston, Brown &amp; Watkins 2014</a>). Echo hits the ends of words hardest (final consonants 56 to 62 % against 88 % without echo; <a class="cite" href="#r-vlahou2021">Vlahou et al. 2021</a>).</p>
+    <p>For lasting learning, variety of rooms seems to be the key: training across three rooms carried over to untrained rooms, while one room, echoey or not, produced no learning (<a class="cite" href="#r-vlahou2019">Vlahou, Seitz &amp; Kopčo 2019</a>). No study we found has trained distant speech in noise across many rooms and then tested a new one. Far is that test, and the Lab's Rooms check-in uses a hall you never train in.</p>
+    <h3>Tips</h3>
+    <ul class="dash">
+      <li><b>Let the room tune you in:</b> hear the first phrase as a room, not a message.</li>
+      <li><b>Catch the start of each word,</b> where echo blurs least; let the phrase fill in the ends.</li>
+      <li><b>In real rooms, close the distance:</b> every halving gives the direct sound 6 dB more against the echo.</li>
+    </ul>
+    </div>
+  </article>
+
+  <!-- Strange voices -->
+  <article class="newpage" id="ex-strange">
+    <div class="exhead"><span class="kicker red">Exercise 3 · unusual talkers</span><h2>Strange voices</h2><span class="bettag"><span class="tag">bet: variety</span></span>
+      <p class="trains">Accents, fast talkers, whispers, phone lines, muffled and robot-like voices. Each kind starts easy and gets harder as you adapt.</p></div>
+    <div class="col">
+    <figure class="side phone"><img src="figures/strange.png" alt="A Strange voices trial: a synthetic voice ahead of you, the prompt naming the kind of voice and its level, and options for a word and a number"><figcaption><span class="label">Figure 5 · Strange voices</span>One kind of unusual voice per trial, named in the prompt with its level. Synthetic voices are labelled as synthetic.</figcaption></figure>
+    <h3>What you do</h3>
+    <p>Each phrase comes from an unusual voice: an accent, a fast talker, a whisper, a phone line, a voice through a wall, or a robot-like voice. Tap the words you heard. The phrases are deliberately unpredictable, so that context cannot replace listening (such sentences trained listeners as well as meaningful ones: <a class="cite" href="#r-loebach2010">Loebach, Pisoni &amp; Svirsky 2010</a>).</p>
+    <table class="dials compact">
+      <thead><tr><th>Kind (one per trial)</th><th>Easy to hard</th><th>What changes</th></tr></thead>
+      <tbody>
+        <tr><td>Accent in babble</td><td>mild in quiet · mild +10 dB · moderate +10 · moderate +6 · strong +6 · strong +3 · strong 0 · strong −3 dB</td><td>Accent strength, and babble</td></tr>
+        <tr><td>Fast speech</td><td>1.3× · 1.5× · 1.7× · 1.9× · 2.1× · 2.3× · 2.6× · 3×</td><td>Time compression</td></tr>
+        <tr><td>Whisper</td><td>quiet · +15 · +10 · +6 · +3 · 0 dB</td><td>Whisper against babble</td></tr>
+        <tr><td>Phone line</td><td>clear (300–3400 Hz) · light hiss · thin · thinner · crackly · bad line (700–2200 Hz, +3 dB)</td><td>Narrower band, more noise</td></tr>
+        <tr><td>Muffled (through a wall)</td><td>3 kHz · 2.2 kHz · 1.6 kHz · 1.2 kHz · 900 Hz · 700 Hz · 550 Hz</td><td>The highest frequency that gets through</td></tr>
+        <tr><td>Robot voice (vocoded)</td><td>16 · 12 · 10 · 8 · 6 · 5 · 4 bands</td><td>Fewer bands, less detail</td></tr>
+      </tbody>
+    </table>
+    <div class="bet"><span class="label">The bet</span><p>Varied voices that train your ear to adapt to new ones, fast.</p></div>
+    <h3>The research</h3>
+    <p>Adapting to a new distortion is fast and front-loaded: across eight kinds, half the gain over 30 sentences came within about the first three (<a class="cite" href="#r-cooke2022">Cooke et al. 2022</a>), so the first few of a new kind are warm-ups. Hearing the distorted phrase again while knowing its words drives the learning (<a class="cite" href="#r-davis2005">Davis et al. 2005</a>), which carried over to new words and talkers of the same distortion (<a class="cite" href="#r-huyck2017">Huyck et al. 2017</a>) but only partly to another kind of vocoder (<a class="cite" href="#r-hervais2011">Hervais-Adelman et al. 2011</a>). An easy-to-hard ramp worked without any feedback as well as feedback did at a fixed hard level (<a class="cite" href="#r-guediche2016">Guediche, Fiez &amp; Holt 2016</a>), hence the ladders.</p>
+    <p>Accents hide in quiet and show in noise: English listeners in noise scored about 80 % with their own accent and 46 to 58 % with others (<a class="cite" href="#r-stringer2019">Stringer &amp; Iverson 2019</a>), so accent trials run in babble. Several accents helped with a new one in small studies (<a class="cite" href="#r-baeseberk2013">Baese-Berk et al. 2013</a>), unevenly (<a class="cite" href="#r-bradlow2023">Bradlow et al. 2023</a>), and a large replication found the benefit of variety smaller than claimed (<a class="cite" href="#r-brekelmans2022">Brekelmans et al. 2022</a>). So variety is a bet to measure: the Lab's New voice check-in plays speech rebuilt from a few tones, a kind you never train on, and tracks how fast you adapt.</p>
+    <h3>Tips</h3>
+    <ul class="dash">
+      <li><b>The replay is the lesson:</b> after every answer the words appear and the same voice plays again; listen every time.</li>
+      <li><b>Give a new voice three tries</b> before you judge it; the first few are warm-ups.</li>
+    </ul>
+    </div>
+  </article>
+
+  <!-- Repair -->
+  <article class="newpage" id="ex-repair">
+    <div class="exhead"><span class="kicker red">Exercise 4 · loud places</span><h2>Repair</h2><span class="bettag"><span class="tag">bet: a strategy</span></span>
+      <p class="trains">Words vanish under bursts of noise. Rebuild them from what came before and after.</p></div>
+    <div class="col">
+    <figure class="side phone"><img src="figures/repair.png" alt="A Repair trial: one voice ahead of you; one of its words is lost; four options for the lost word"><figcaption><span class="label">Figure 6 · Repair</span>One word of the sentence is lost under a burst; four candidates to choose from.</figcaption></figure>
+    <h3>What you do</h3>
+    <p>One word in each sentence is lost under a burst of noise or a gap, and at harder levels the rest of the sentence is broken up too, as if heard through a busy room's dips. Hold the whole sentence in mind, then tap the word that was there. The lost word can come early or late, so the help comes before or after it.</p>
+    <p>After each answer you hear the whole sentence, then the broken one again with its words on screen.</p>
+    <table class="dials">
+      <thead><tr><th>Dial</th><th>Easy to hard</th><th>What changes</th></tr></thead>
+      <tbody>
+        <tr><td>Word lost</td><td>30 % · 45 % · 60 % · 75 % · 90 % · 100 %</td><td>How much of the word is covered</td></tr>
+        <tr><td>Context</td><td>strong · some · little</td><td>How much the sentence predicts the word</td></tr>
+        <tr><td>Broken-up sentence</td><td>whole · 75 % kept · 65 % · 55 % · 50 % kept</td><td>Periodic gaps across the sentence</td></tr>
+        <tr><td>What fills the gaps</td><td>loud noise · noise · soft noise · silence</td><td>Noise invites the ear to fill in; silence does not</td></tr>
+      </tbody>
+    </table>
+    <div class="bet"><span class="label">The bet</span><p>A general strategy (hold the sentence, then repair it) plus listening in the dips of a noisy room.</p></div>
+    <h3>The research</h3>
+    <p>Listening through gaps improves quickly: thresholds in interrupted noise improved by 3.1 to 4.3 dB over six short lists, while steady noise offered nothing to learn (<a class="cite" href="#r-lie2024">Lie et al. 2024</a>). In a training study of interrupted sentences, five short sessions with clear-then-broken feedback raised scores by 7 to 12 points, carried over from silent to noise-filled gaps and back, and held for about three months; filling the gaps with noise added about 9 points on its own (<a class="cite" href="#r-benard2013">Benard &amp; Başkent 2013</a>).</p>
+    <p>Context can rescue a word after the fact: in one study, sentence context helped even more when it came after an unclear word than before it, most of all at the hardest noise levels (<a class="cite" href="#r-tinnemore2025">Tinnemore, Gordon-Salant &amp; Goupell 2025</a>). Nobody has trained that "hold and repair" habit as a skill and tested it on new material, as far as we found. That is Repair's bet.</p>
+    <h3>Tips</h3>
+    <ul class="dash">
+      <li><b>Wait for the end of the sentence</b> before you choose.</li>
+      <li><b>Let the noise do the filling:</b> with noise in the gap, trust what you seem to hear.</li>
+      <li><b>Listen through the gaps:</b> chopped speech keeps its rhythm and gives glimpses of most words.</li>
+    </ul>
+    </div>
+  </article>
+
+  <!-- Echo -->
+  <article class="newpage" id="ex-echo">
+    <div class="exhead"><span class="kicker red">Exercise 5 · remembering</span><h2>Echo</h2><span class="bettag"><span class="tag">bet: bridging</span></span>
+      <p class="trains">Hear a message once in a busy place (names, numbers, plans) and answer after a pause.</p></div>
+    <div class="col">
+    <figure class="side phone"><img src="figures/echo.png" alt="An Echo trial: three questions about the message, each with four options"><figcaption><span class="label">Figure 7 · Echo</span>The questions arrive after the message, in varying order; answer from memory.</figcaption></figure>
+    <h3>What you do</h3>
+    <p>A voice gives you a message in a busy place, once: who is calling, where to meet, at what time, what to bring. After a short pause, two or three questions ask for its details. Answer from memory.</p>
+    <p>A wrong pick that was in the message but answers another question is labelled as such: you heard it and filed it in the wrong place. A miss replays the message in the same noise with its words on screen.</p>
+    <table class="dials">
+      <thead><tr><th>Dial</th><th>Easy to hard</th><th>What changes</th></tr></thead>
+      <tbody>
+        <tr><td>Speech vs noise</td><td>+20 dB to −8 dB, in 0.5 dB steps; first trials at +15 dB</td><td>The café or party around the message</td></tr>
+        <tr><td>Details in the message</td><td>2 · 3 · 4 · 5</td><td>How much there is to hold</td></tr>
+        <tr><td>Speech rate</td><td>normal · 1.15× · 1.3× · 1.45× · 1.6×</td><td>How fast the message comes</td></tr>
+        <tr><td>Wait before questions</td><td>1 · 3 · 6 · 10 s</td><td>How long you hold it</td></tr>
+      </tbody>
+    </table>
+    <div class="bet"><span class="label">The bet</span><p>Listening under memory load on real-life content: details heard once in noise, held through a pause, then used.</p></div>
+    <h3>The research</h3>
+    <p>Pure memory drills have not carried over to listening in noise in the studies we could read (chapter 1), and attention seems to matter more than memory span in young listeners (<a class="cite" href="#r-oberfeld2016">Oberfeld &amp; Klöckner-Nowotny 2016</a>, abstract only). So Echo does not train memory on its own: it trains catching details that the noise threatens and keeping them long enough to act on, with the content of real messages. Older listeners with a smaller digit span kept less of a sentence's context for later recall (<a class="cite" href="#r-sun2022">Sun et al. 2022</a>), one reason the delay is a dial.</p>
+    <p>You answer by tapping after the pause, never by repeating aloud: in one study, saying a sound right after hearing it abolished its learning, while a delay of a few seconds restored it (<a class="cite" href="#r-baeseberk2022">Baese-Berk &amp; Samuel 2022</a>). Echo is a bridging bet: real-life content, so that what you practise looks like what you need.</p>
+    <h3>Tips</h3>
+    <ul class="dash">
+      <li><b>Give each detail a slot:</b> a message has a shape (who, where, when, what), and expecting it gives each detail a place to land.</li>
+      <li><b>Let the end repair the start</b> for places and things; names and numbers you have to catch as they come.</li>
+      <li><b>Tag each detail with its role</b> as you hear it, so it does not end up answering the wrong question.</li>
+    </ul>
+    </div>
+  </article>
+
+  <!-- Seek -->
+  <article class="newpage" id="ex-seek">
+    <div class="exhead"><span class="kicker red">Exercise 6 · loud places</span><h2>Seek</h2><span class="bettag"><span class="tag new">new bet: movement</span></span>
+      <p class="trains">Move your finger through a noisy room to find a faint voice; it gets clearer as you close in. Later: turn the listener on screen to hear better.</p></div>
+    <div class="col">
+    <figure class="side phone"><img src="figures/seek.png" alt="Seek after a search: the dotted path walked from the bottom of a 20-metre field toward the voice, the stop marked with a cross inside the voice’s found ring"><figcaption><span class="label">Figure 8 · Seek, after a search</span>The dotted line is the path walked by a simulated finger; the cross is where it let go, about a metre from the voice it was looking for.</figcaption></figure>
+    <h3>What you do</h3>
+    <p>A voice keeps calling one word somewhere in a noisy room about 20 m across. Put your finger on your dot and drag: the voice gets louder as you get closer. Let go where it is loudest, then tap the word it was calling. With decoys, other voices call other words; a short preview tells you whose voice to find. Afterwards the scene shows your path, where you stopped and where the voice was.</p>
+    <p>With headphones and wider variety, a head-turn view joins: a knob turns the listener, and feedback says how much of the search you spent with the voice 15 to 70 degrees to one side. The first Seek ever starts with a practice scene that does not count.</p>
+    <table class="dials">
+      <thead><tr><th>Dial</th><th>Easy to hard</th><th>What changes</th></tr></thead>
+      <tbody>
+        <tr><td>Voice vs noise (up close)</td><td>+15 dB to −12 dB; first trials at +12 dB</td><td>How faint the voice is even when you reach it</td></tr>
+        <tr><td>Decoy voices</td><td>none · 1 · 2 · 3 · 4</td><td>Other voices calling other words</td></tr>
+        <tr><td>Target size</td><td>large · medium · small · smaller · tiny</td><td>How close you must stop for it to count</td></tr>
+        <tr><td>Pause between calls</td><td>1 · 1.5 · 2.2 · 3 · 4 s</td><td>How often the voice gives you something to follow</td></tr>
+      </tbody>
+    </table>
+    <div class="bet"><span class="label">The bet (new)</span><p>Sound-guided movement: closing in on a voice by ear, and turning so that one ear faces it. Both are under-tested; Seek is our test.</p></div>
+    <h3>The research</h3>
+    <p>The idea comes from a game in which older hearing-aid users moved a fingertip through a sound scene and noticed when what they heard did not match what their movement predicted. After about 28 hours over eight weeks they identified about 25 % more words in noise, against no change with a placebo game; the gain did not last without practice, and it has not been independently replicated as far as we found (<a class="cite" href="#r-whitton2017">Whitton et al. 2017</a>, known to us from a news release).</p>
+    <p>Head orientation is a teachable tactic: turning the head away from the talker gave up to 8 dB in a room with little echo, and a turn of about 30 degrees gives most of that when the noise is behind; only about half of listeners turned by themselves, and after instruction everyone did, improving their self-set thresholds by about 3 dB (<a class="cite" href="#r-grange2016">Grange &amp; Culling 2016</a>); in a virtual restaurant a 30-degree turn gave 1.2 to 3.2 dB (<a class="cite" href="#r-grange2018">Grange et al. 2018</a>). Whether practising it in simulated scenes carries into real rooms has not been tested. Seek is new on both counts, so its Lab evidence is yours to help build.</p>
+    <h3>Tips</h3>
+    <ul class="dash">
+      <li><b>Walk, then compare:</b> in the open a voice gets about 6 dB louder each time you halve the distance. Louder means keep going.</li>
+      <li><b>Hold on to the preview voice</b> and pass the decoys by.</li>
+      <li><b>Point one ear at the voice</b> (headphones): about 30 degrees, not face-on.</li>
+    </ul>
+    </div>
+  </article>
+
+  <!-- Voices -->
+  <article class="newpage" id="ex-voices">
+    <div class="exhead"><span class="kicker red">Exercise 7 · familiar voices</span><h2>Voices</h2><span class="bettag"><span class="tag new">new bet: familiarity</span></span>
+      <p class="trains">Get to know a cast of voices, then pick your friend out of a crowd.</p></div>
+    <div class="col">
+    <figure class="side phone"><img src="figures/voices.png" alt="A Voices trial introducing a new cast member, with four names to choose from"><figcaption><span class="label">Figure 9 · Voices, meeting the cast</span>Meeting a new member of the cast: each has a name and a role at one of the night’s venues.</figcaption></figure>
+    <h3>What you do</h3>
+    <p>Meet a cast of voices, each with a name. Then hear a voice and tap who is talking, first in quiet, later in noise. As variety widens, you also find a voice you know in a crowd and tap what it said. A wrong pick plays the right voice and then the one you chose, side by side.</p>
+    <p><b>Voices from your life.</b> You can add recordings of people you know: record up to 20 seconds where your browser allows the microphone, or import a voice note. Each needs a name and a consent tick. They are stored on this device only, never in backups or exports (chapter 7), and you practise picking them out of a crowd.</p>
+    <table class="dials">
+      <thead><tr><th>Dial</th><th>Easy to hard</th><th>What changes</th></tr></thead>
+      <tbody>
+        <tr><td>Voices to choose from</td><td>2 · 3 · 4 · 5 · 6</td><td>The size of the line-up</td></tr>
+        <tr><td>Voice similarity</td><td>mixed · same sex · same sex, similar pitch</td><td>How alike the line-up sounds</td></tr>
+        <tr><td>Speech vs noise</td><td>+30 dB to −6 dB; first trials at +30 dB</td><td>Babble around the voice</td></tr>
+        <tr><td>Clip length</td><td>a sentence · a few words · one word</td><td>How much voice you get</td></tr>
+      </tbody>
+    </table>
+    <div class="bet"><span class="label">The bet (new)</span><p>Fast voice familiarity: getting to know new voices quickly, and getting quicker at it, practised on a cast and on voices from your own life.</p></div>
+    <h3>The research</h3>
+    <p>A familiar voice is easier to follow: friends' and partners' voices were about 10 points easier against a competing talker (<a class="cite" href="#r-domingo2020">Domingo, Holmes &amp; Johnsrude 2020</a>), and the benefit did not come from hearing finer differences in pitch or voice size (<a class="cite" href="#r-holmes2023">Holmes &amp; Johnsrude 2023</a>). It builds fast: about ten minutes of a who-is-talking task already made a voice easier to understand, and twenty minutes did no better than ten (<a class="cite" href="#r-holmes2021">Holmes, To &amp; Johnsrude 2021</a>). A familiar voice in the background, though, did not become easier to ignore (<a class="cite" href="#r-domingo2020">Domingo et al. 2020</a>), so Voices trains the voice you follow.</p>
+    <p>Training on a partner's voice is the most distinctive idea in existing hearing apps (our app survey, <a class="cite" href="#r-notes">research note R1</a>). Whether meeting many new voices makes you quicker at learning the next one is untested, as far as we found. That is Voices' bet.</p>
+    <h3>Tips</h3>
+    <ul class="dash">
+      <li><b>Pitch and size together:</b> listen for high or low, and for a big or small voice.</li>
+      <li><b>Know the voice you need to follow:</b> the people you talk to most are worth recording.</li>
+    </ul>
+    </div>
+  </article>
+
+  <!-- Missions -->
+  <article class="newpage" id="ex-missions">
+    <div class="exhead"><span class="kicker red">Exercise 8 · your week</span><h2>Missions</h2><span class="bettag"><span class="tag">bet: bridging</span></span>
+      <p class="trains">One real-world listening task a week, and a 20-second check-in.</p></div>
+    <div class="col">
+    <h3>What you do</h3>
+    <p>Each week brings one mission, the same for everyone that week: a listening tactic to try in a real conversation. You can swap it for another. Afterwards a 20-second check-in asks three things: did you try it, how much of the talk did you follow (0 to 10), and did the tactic help. A check-in where you tried it also goes into your listening diary in the Lab. Skipping a week costs nothing.</p>
+    <table class="compact" id="tab-missions">
+      <caption>The eight missions, and where they come from</caption>
+      <thead><tr><th style="width: 30%">Mission</th><th>The tactic and its source</th></tr></thead>
+      <tbody>
+        <tr><td><b>Turn about 30°</b></td><td>In a noisy place, point one ear toward your talker and keep the face in view (<a class="cite" href="#r-grange2016">Grange &amp; Culling 2016</a>; <a class="cite" href="#r-grange2018">Grange et al. 2018</a>)</td></tr>
+        <tr><td><b>Put the noise behind you</b></td><td>Choose a seat with the loudest noise behind or to the side; the head turn helps most with noise in the rear (<a class="cite" href="#r-grange2016">Grange &amp; Culling 2016</a>)</td></tr>
+        <tr><td><b>Close the distance</b></td><td>Every halving of distance gives the direct sound 6 dB more against the echo (chapter 1)</td></tr>
+        <tr><td><b>Let the room tune you in</b></td><td>Listen to a few sentences before deciding you cannot hear; ears calibrate to a room in seconds (<a class="cite" href="#r-brandewie2010">Brandewie &amp; Zahorik 2010</a>)</td></tr>
+        <tr><td><b>Lock on to one voice</b></td><td>Stay with one voice and one place; switching costs about 10 points (<a class="cite" href="#r-lin2015">Lin &amp; Carlile 2015</a>)</td></tr>
+        <tr><td><b>Ask for the missing piece</b></td><td>Say what you caught and ask for the gap (“Thursday at what time?”); in everyday sentences listeners restored 70 to 90 % of missing sounds from context (reported by <a class="cite" href="#r-bronkhorst2015">Bronkhorst 2015</a>)</td></tr>
+        <tr><td><b>Watch the face</b></td><td>Keep your eyes on the face while turned: a 30-degree turn did not impair lip-reading, and turn plus lip-reading together were reported to help cochlear-implant users by up to 9 dB (reported by <a class="cite" href="#r-grange2018">Grange et al. 2018</a>)</td></tr>
+        <tr><td><b>Get to know a voice</b></td><td>About ten minutes of listening makes a voice easier to follow (<a class="cite" href="#r-holmes2021">Holmes et al. 2021</a>)</td></tr>
+      </tbody>
+    </table>
+    <div class="bet"><span class="label">The bet</span><p>Explicit bridging: taking one trick from training into a real conversation each week, and noticing whether it helped.</p></div>
+    <h3>The research</h3>
+    <p>Most clinicians and websites advise facing a talker squarely, while lab studies favour a slight turn; after a short instruction, listeners turned their heads about five times more and heard better in the lab (<a class="cite" href="#r-grange2018">Grange et al. 2018</a>). Whether such tactics, practised in an app, get used in daily life is what the missions and the diary track. Self-reported listening rarely changed in controlled trials of earlier trainers (<a class="cite" href="#r-notes">research note R1</a>), so the diary asks about four specific situations each week, plus one overall rating.</p>
+    </div>
+  </article>
+</section>
+
+<!-- ============================================================ 05 lab -->
+<section class="chapter" id="ch-lab">
+  <header class="opener">
+    <span class="kicker red">Chapter 05</span><span class="no">05</span>
+    <h1>The Lab: measuring what carries over</h1>
+    <p class="lead">Getting better at the exercises is the expected part. The Lab asks the question that matters: does it carry over to voices, rooms and formats you never trained on? Short check-ins, a baseline that absorbs practice, a weekly trend with its margin, and a verdict in plain words.</p>
+  </header>
+  <div class="col">
+
+  <h2 id="lab-ladder">1. Near, mid and far</h2>
+  <p>Transfer research grades outcomes by their distance from training: near is an untrained test close to the trained task, far is a different kind of task or an outcome in daily life (<a class="cite" href="#r-notes">research note R4</a>). The Lab has seven check-ins along that ladder, and every one uses material you never train on: synthetic voices kept out of training, recordings of real people, words of their own, a hall you never visit in Far, and a kind of voice you never meet in the exercises. Runs are drawn as alternate forms (new combinations of items, voices and order), so you do not meet one fixed list every week.</p>
+
+  <table class="wide compact" id="tab-checkins">
+    <caption>Table 5 · The seven check-ins</caption>
+    <thead><tr><th style="width: 12%">Check-in</th><th style="width: 9%">Distance</th><th style="width: 33%">What you do</th><th style="width: 26%">What it measures</th><th style="width: 11%">Length</th><th>Run SD</th></tr></thead>
+    <tbody>
+      <tr><td><b>Matrix</b></td><td>near–mid</td><td>Five-word sentences (name, verb, number, kind, object) in steady noise, from voices you never train with; tap one word per column</td><td>The noise level at which you catch half the words; lower is better</td><td>20 sentences, about 3 min</td><td class="n">0.6 dB</td></tr>
+      <tr><td><b>Digits</b></td><td>mid</td><td>Three digits in steady noise, spoken by real people you never train with; type them</td><td>The noise level at which you get half the triplets fully right</td><td>24 triplets, about 2.5 min</td><td class="n">0.9 dB</td></tr>
+      <tr><td><b>Two voices</b></td><td>mid</td><td>Meet one real voice, then follow it while two others talk over it</td><td>How much louder the other two can be while you still follow yours</td><td>24 trials, about 2.5 min</td><td class="n">1.8 dB</td></tr>
+      <tr><td><b>Rooms</b></td><td>mid</td><td>Sentences from further and further away in a hall you never train in</td><td>The distance at which you still catch half the words; further is better</td><td>12 sentences, about 2 min</td><td class="n">working</td></tr>
+      <tr><td><b>New voice</b></td><td>mid</td><td>Sentences in a kind of voice you never train with: speech rebuilt from a few tones</td><td>How many words you catch, and how fast that rises as the voice grows familiar</td><td>16 sentences, about 2.5 min</td><td class="n">working</td></tr>
+      <tr><td><b>Story</b></td><td>far</td><td>A one-minute story in a busy café, then five questions</td><td>How much of a real passage you take in and keep</td><td>about 2 min</td><td class="n">working</td></tr>
+      <tr><td><b>Diary</b></td><td>far</td><td>Five quick questions about listening in your week, from 1 (very hard) to 5 (very easy)</td><td>How everyday listening went: loud places, distance, unusual talkers, remembering, and overall effort</td><td>about 1 min</td><td class="n">working</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Run SD is the run-to-run noise the trend model assumes for one run. Matrix and Digits sit within published values for such tests (matrix tests 0.4 to 0.6 dB with 20 sentences; digit triplets about 0.7 to 1 dB; <a class="cite" href="#r-notes">research note R4</a>); the Matrix value was checked in simulation. "Working" values are placeholders until pooled data can measure them. The Matrix words are our own: they share no word and no verb stem with the published British English matrix test.</p>
+
+  <h2 id="lab-baseline">2. The baseline</h2>
+  <aside class="side"><span class="label">Baseline blocks</span>
+    <p><b>Block 1</b> Matrix and Digits, both practice</p>
+    <p><b>Block 2</b> Matrix, Digits; Two voices (practice)</p>
+    <p><b>Block 3</b> Matrix, Digits, Two voices</p>
+    <p><b>Block 4</b> Two voices; Rooms, New voice, Story (practice)</p>
+    <p><b>Block 5</b> Rooms, New voice, Story; Diary</p>
+    <p class="muted">One block a day, starting after your first training session. A missed day simply moves the rest along.</p></aside>
+  <p>Practice is the main trap in measuring change: on a matrix sentence test, scores improve by 1.1 to 1.2 dB from the first list to the second through practice alone, and by another 0.3 to 0.5 dB by the third (<a class="cite" href="#r-puglisi2015">Puglisi et al. 2015</a>). So every check-in's first run is a practice run that never counts.</p>
+  <p>After your first training session, the Lab offers one short block a day, five blocks in all. Matrix, Digits and Two voices get a practice run and two measured runs; Rooms, New voice and Story get a practice run and one measured run; the Diary needs no practice. Training never waits for the Lab: the check-ins are offered, not required.</p>
+
+  <h2 id="lab-weekly">3. Weekly check-ins</h2>
+  <p>After the baseline, a check-in of about 8 to 9 minutes is offered once at least six and a half days have passed since the last one: Matrix and Two voices every week, one rotating check-in (Digits, then Rooms, New voice and Story in turn) and the Diary. While your Matrix verdict is not yet clear, for at most your first 8 check-ins, the check-in holds a second Matrix run (about 3 extra minutes), because two runs make each check-in steadier: in our simulations a true 1.5 dB gain read "clear gain" by the fourth check-in about 8 times in 10 with two runs, against about 6 in 10 with one. After 14 days or more away, the next check-in is a retention check: what stayed while you were gone.</p>
+
+  <h2 id="lab-verdict">4. Reading your trend</h2>
+  <p>Every run gives an estimate with its own uncertainty. The trend model fits all your runs at once: a starting level, a change per week, and a term that absorbs early practice, with test noise allowed for. It reports your gain over your baseline with a 90 % interval and one of four verdicts:</p>
+  <ul class="dash">
+    <li><b>Clear gain:</b> the gain reaches the smallest detectable change, and the 90 % interval lies wholly above zero.</li>
+    <li><b>Likely gain:</b> the chance that you improved at all is 90 % or more.</li>
+    <li><b>Not yet clear:</b> neither, so far. Keep going; more runs narrow the margin.</li>
+    <li><b>Below baseline:</b> a decline at least as large as the smallest detectable change, with the interval wholly below zero.</li>
+  </ul>
+  <div class="figrow wide">
+    <figure class="crop" style="flex: 0 0 72mm"><img src="figures/lab-trend.png" alt="The Matrix trend card: A clear gain, +1.6 dB, 90 % interval +0.6 to +2.5 dB, with a chart of runs over four weeks and a rising trend line above the baseline"><figcaption><span class="label">Figure 10 · A Matrix trend card</span>A simulated player whose true threshold improved 0.4 dB a week, with 0.55 dB of noise per run. The hollow dot is the practice run; the line and band are the trend and its 90 % interval.</figcaption></figure>
+    <div class="panel" style="flex: 1 1 0; margin: 0">
+      <h4>How to read the card</h4>
+      <ul class="dash small">
+        <li><b>Headline:</b> the verdict, then your gain over the baseline with its 90 % interval. A positive gain is better, whatever the unit.</li>
+        <li><b>The paragraph:</b> how large a change must be to count as clear with your runs so far, and the chance that you improved at all.</li>
+        <li><b>The chart:</b> one dot per run with its uncertainty, with better upward. The hollow dot is the practice run, the grey line your baseline, the blue line and band the trend and its 90 % interval.</li>
+        <li><b>Below the chart</b> (not shown): what the check-in measures, its run-to-run noise, and a table of every run.</li>
+      </ul>
+    </div>
+  </div>
+  <p>No verdict appears before a measured run at least 5 days after your baseline. The smallest detectable change is 1.96 times the uncertainty of the gain; for one run before and one after, that is the classic 2.77 times the run-to-run SD, and averaging <span class="n">k</span> runs on each side divides it by the square root of <span class="n">k</span> (<a class="cite" href="#r-blampied2022">Blampied 2022</a>; the arithmetic is in <a class="cite" href="#r-notes">research note R4</a>). For the Matrix check-in, 2.77 × 0.6 dB is about 1.7 dB with single runs and about 1.2 dB with two runs on each side.</p>
+  <p>That is the reason for the whole design. Controlled effects of listening training have been between about 0.3 and 1.3 dB (<a class="cite" href="#r-notes">research note R1</a>), smaller than the change one short clinical test can detect in one person. Averaged runs, alternate forms and a fitted trend are how a real gain of 1 to 1.5 dB can become visible in weeks rather than never.</p>
+
+  <h2 id="lab-what">5. What the numbers are, and what they are not</h2>
+  <p>Lab numbers compare you with yourself. They are training measures on Earshot's own materials, taken on your own device at your own volume: not clinical measures, not normed against a population, and not a hearing test. A Matrix threshold of −6 dB means little on its own; a fall from your baseline with a clear verdict means your listening with these materials improved. Focus mode compares check-ins with provisional reference values to guess your weakest situation, and labels them provisional, because no norms exist for these materials.</p>
+  <p>Keep the conditions steady from week to week (chapter 2). Thresholds in steady noise tolerate an unknown volume well, but with fluctuating sounds they shift with absolute level, by about 4 dB between 55 and 80 dB SPL in published data (<a class="cite" href="#r-notes">research note R4</a>).</p>
+
+  <h2 id="lab-audiologist">6. When to see an audiologist</h2>
+  <div class="panel red">
+    <p style="margin-bottom: 1.6mm"><b>Earshot cannot tell whether you have a hearing loss.</b> See an audiologist or a doctor if you notice a change in your hearing, ringing in your ears or pain, or if following conversations is a struggle more often than not: a hearing test can show whether something other than practice would help. A sudden change in hearing, in one ear or both, needs prompt medical attention.</p>
+  </div>
+  </div>
+</section>
+
+<!-- ============================================================ 06 game -->
+<section class="chapter" id="ch-game">
+  <header class="opener">
+    <span class="kicker red">Chapter 06</span><span class="no">06</span>
+    <h1>The game layer</h1>
+    <p class="lead">Earshot keeps the game where it helps learning: a night out to explore, a cast of voices to get to know, growth you can see in real units, and a weekly challenge to share. It leaves out what research found to hurt: streaks, lives and a running score during trials.</p>
+  </header>
+  <div class="col">
+
+  <h2 id="game-map">1. The night out</h2>
+  <p>The map holds twelve venues on three lines that leave from you: <b>Many voices</b> (café, restaurant, bar, house party, club, concert), <b>Far and echoey</b> (lecture hall, park, station, stadium, cathedral) and the <b>Phone line</b>. Each venue is a family of listening conditions, and each shows <b>your earshot</b> there: the level at which you get about 7 in 10 right with the venue's other dials set as they are there, in dB, metres or line quality.</p>
+  <div class="figrow wide">
+    <figure class="crop" style="flex: 0 0 72mm"><img src="figures/map.png" alt="The Night out map: lines of venues fanning out from you, Many voices to the right from café to concert, Far and echoey to the left from lecture hall to cathedral, and the phone line below; each open venue shows a number such as −5 dB or 22 m"><figcaption><span class="label">Figure 11 · The night out</span>A simulated player with 8 of 12 venues open. Each number is that player's earshot at the venue; dotted venues come later.</figcaption></figure>
+    <div class="panel" style="flex: 1 1 0; margin: 0">
+      <h4>Reading the map</h4>
+      <ul class="dash small">
+        <li><b>You</b> sit where the lines meet; venues further out along a line are harder.</li>
+        <li><b>Black dots</b> are open venues, a <b>ring</b> is the next venue on its line, <b>dotted rings</b> come later.</li>
+        <li><b>Under an open venue:</b> your earshot there, in dB on Many voices (lower is better), in metres on Far and echoey (further is better), as line quality on the Phone line.</li>
+        <li><b>30 m+</b> means even the hardest level there goes right more than 7 times in 10. <b>&gt; +12 dB</b> means even the easiest level is still beyond your edge; the easy trials build toward it.</li>
+        <li><b>Under a ring:</b> the mark the venue before it must reach, such as the −3 dB under House party.</li>
+      </ul>
+    </div>
+  </div>
+  <p>Three venues are open from the start: the café, the lecture hall and the phone line. A venue opens when the one before it on its line reaches its mark and the venue itself comes within your reach; once open, it never closes. Playing a venue runs a set in its conditions, and each venue lists more conditions from other exercises that you will find there.</p>
+
+  <h2 id="game-cast">2. The cast</h2>
+  <p>Earshot's training voices are a cast of named characters, each with a role at one of the venues. A cast card fills in when you meet its voice, and it turns "known" once you have picked that voice out by ear three times in Voices. Synthetic voices are labelled as synthetic.</p>
+
+  <h2 id="game-growth">3. Growth in real units</h2>
+  <p>Results come between sets, never during them, and in units that mean something. After a set, a dial that moved at least one step harder gets a line such as "Distance: 4 m to 6 m", and personal bests are kept per dial, in dB or metres. Milestones mark abilities, never time spent: "Equal footing" when you follow a voice as loud as the others (0 dB), "Through the crowd" at −6 dB. Each needs an estimate built from at least six trials of that dial. You see the milestones you have reached and only the next one for each dial, never a wall of locked badges, and a personal best or a milestone is a natural moment for an invitation to the Discord community.</p>
+
+  <h2 id="game-weekly">4. The weekly night out</h2>
+  <p>Each calendar week has one seeded challenge that everyone on the same version of Earshot plays identically: four stops (Crowd, Far, Strange voices and Repair) in a seeded order, each at a seeded venue, with six trials per stop on a fixed ladder from easy to hard. The first complete run of the week makes your card, spoiler-free: a tick or a cross per trial and the furthest level per stop, always with the link to <a class="ext" href="https://discord.gg/chmr">discord.gg/chmr</a>. Later runs that week are practice. Weekly trials never change your training levels.</p>
+  <p>There is no leaderboard. In a meta-analysis of gamified learning, competition on its own did not reliably improve outcomes, while competition combined with collaboration did (<a class="cite" href="#r-sailer2020">Sailer &amp; Homner 2020</a>), and points, levels and leaderboards raised the amount people did but not its quality (<a class="cite" href="#r-mekler2017">Mekler et al. 2017</a>). The card shows your own night, to share and compare if you like.</p>
+
+  <h2 id="game-streaks">5. Why there are no streaks</h2>
+  <p>Many apps count consecutive days and warn you before a streak breaks. Earshot never does. Across seven studies, people whose logged streak was broken engaged less afterwards than people whose streak stayed intact, whatever they had actually done, and more so when they blamed themselves for the break (<a class="cite" href="#r-silverman2023">Silverman &amp; Barasch 2023</a>, from the abstract and press reports). A single missed day did not materially affect how a habit formed (<a class="cite" href="#r-lally2010">Lally et al. 2010</a>), and among 61,293 gym members, the best of 53 interventions was a tiny bonus for coming back after a missed workout (<a class="cite" href="#r-milkman2021">Milkman et al. 2021</a>).</p>
+  <p>So the weekly ring starts again each week without comment, missed days cost nothing, and a return after a break is greeted with a fresh-ears set that shows what you kept, not a warning about what you missed.</p>
+
+  <h2 id="game-score">6. Why there is no score during trials</h2>
+  <p>During a set you see progress dots, never a score, lives or a countdown. In a children's working-memory game, an always-visible score cut training gains to less than a third (a slope of 0.10 against 0.35 without points), and a visible lives bar also hurt (<a class="cite" href="#r-katz2014">Katz et al. 2014</a>). Sound effects during trials slowed responses by capturing attention (Miranda &amp; Palmer 2014, reported by <a class="cite" href="#r-lumsden2016">Lumsden et al. 2016</a>), which for a listening trainer is reason enough to keep every timed sound clean: nothing decorative moves or plays while a sound is on.</p>
+  <p>Feedback itself is good for motivation when it informs. In a meta-analysis of 128 experiments, positive, informational feedback raised people's later free-choice interest in a task, while controlling feedback and rewards that depend on performance lowered it, most of all rewards that not everyone can earn (<a class="cite" href="#r-deci1999">Deci, Koestner &amp; Ryan 1999</a>, read through their 2001 review). Earshot's feedback tells you what happened and what to listen for, and its milestones are abilities that anyone can reach at their own pace.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 07 data -->
+<section class="chapter" id="ch-data">
+  <header class="opener">
+    <span class="kicker red">Chapter 07</span><span class="no">07</span>
+    <h1>Your data and privacy</h1>
+    <p class="lead">Everything Earshot knows about you stays in your browser, on your device. There is no account and no server, and the app sends your data nowhere.</p>
+  </header>
+  <div class="col">
+  <h2>1. On your device</h2>
+  <p>Your learner record, training log, Lab runs, diary and game progress are saved in your browser's storage on the device you use. Earshot needs no connection once it is open, and every sound is rendered on the device. If the browser blocks storage (some private windows and previews do), the app says so plainly and suggests a backup before you close it. Saves carry a version number, so progress survives updates.</p>
+
+  <h2>2. Backups and moving devices</h2>
+  <p><b>Settings › Data</b> (or <b>Lab › Export</b>) makes a backup file of your whole record. Import on another device merges it in, older backup versions are upgraded, and nothing on the receiving device is deleted. A damaged file is refused whole, so a half-broken backup can never overwrite good data. Backups carry no name except a nickname you typed yourself, and no device details. Two spreadsheet exports (CSV) list your check-in runs and your training sessions.</p>
+
+  <h2>3. The community export</h2>
+  <p>To help test the bets, the Lab can write a pool file meant for sharing. It holds a random pooling id, days and weeks counted from your own start instead of dates, no record ids, and no absolute times except the date of the export, in UTC. It includes your nickname, and device, language or time-zone details, only if you tick them. Trial-level answers are included so that pooled files can calibrate how hard each item is. You decide whether and where to share it; the app never uploads anything.</p>
+
+  <h2>4. Voices from your life</h2>
+  <p>Recordings of people you know are stored only in this browser's database on this device, as trimmed 16 kHz mono audio, without the original file's name or metadata. Each needs a name and a consent tick. They are never included in backups or exports, so they do not move to another device either. You can delete any of them at any time.</p>
+
+  <h2>5. Deleting everything</h2>
+  <p><b>Settings › Data › Delete everything</b> removes your record from this browser, after a confirmation. Export a backup first if you might want it back.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 08 credits -->
+<section class="chapter" id="ch-credits">
+  <header class="opener">
+    <span class="kicker red">Chapter 08</span><span class="no">08</span>
+    <h1>Credits and licences</h1>
+    <p class="lead">Earshot is free and open: built by the Chimera community on Discord, with voices, recordings, noises and tools that others shared under open licences.</p>
+  </header>
+  <div class="col">
+  <h2>1. Earshot itself</h2>
+  <ul class="dash">
+    <li><b>Code:</b> MIT licence (<code>LICENSE</code> in the repository).</li>
+    <li><b>This guide, its figures, and Earshot's other texts:</b> © 2026 the Chimera community, licensed under <a class="ext" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0</a> (<code>LICENSE-TEXTS.md</code>). The research notes behind it are in <code>docs/research</code> under the same licence.</li>
+    <li><b>Fonts:</b> Archivo and JetBrains Mono, SIL Open Font License 1.1 (fontsource 5.3.0 subsets; licence texts in <code>fonts/</code> and <code>docs/guide/fonts/</code>).</li>
+    <li><b>Original content:</b> all word lists, sentences, messages, stories and questions were written for Earshot and are CC BY-SA 4.0, except the CREMA-D sentences and the LibriVox readings listed below. None is copied from a clinical or commercial test.</li>
+  </ul>
+
+  <h2>2. Voices, recordings and noises</h2>
+  <p>All audio was rendered or converted at build time; no speech synthesiser or recogniser ships with the app. <code>LICENSES-ASSETS.md</code> in the repository and <b>About › Credits</b> in the app hold the full notices and a generated list of exactly what each build ships.</p>
+  </div>
+  <table class="compact" id="tab-assets">
+    <caption>Table 6 · Sources of Earshot's sounds</caption>
+    <thead><tr><th style="width: 27%">Source</th><th style="width: 17%">Licence</th><th style="width: 23%">Used for</th><th>Attribution</th></tr></thead>
+    <tbody>
+      <tr><td><b>Kokoro-82M</b> v1.0 by hexgrad (ONNX export of the kokoro-onnx project)</td><td>Apache License 2.0 (model weights)</td><td>Synthetic voices: US and UK English, and voices of other languages reading English</td><td>Speech synthesised with Kokoro-82M by hexgrad, Apache License 2.0. Its model card says the training data were permissive or public-domain audio plus synthetic audio from commercial synthesisers.</td></tr>
+      <tr><td><b>Piper voice en_US-libritts-high</b> (Rhasspy Piper; sherpa-onnx mirror)</td><td>Trained from scratch on LibriTTS, CC BY 4.0</td><td>A spread of synthetic speakers</td><td>Voices synthesised with the Piper voice en_US-libritts-high, trained on LibriTTS (Zen et al., 2019; CC BY 4.0), which derives from LibriSpeech and LibriVox recordings.</td></tr>
+      <tr><td><b>AudioMNIST</b> (Becker et al.)</td><td>MIT</td><td>Spoken digits from 8 talkers, for the Digits check-in only</td><td>Becker S, Vielhaben J, Ackermann M, Müller K-R, Lapuschkin S, Samek W (2023). AudioMNIST: exploring explainable artificial intelligence for audio analysis on a simple benchmark. Journal of the Franklin Institute. <a class="ext" href="https://doi.org/10.1016/j.jfranklin.2023.11.038">doi:10.1016/j.jfranklin.2023.11.038</a>. Copyright (c) 2018 soerenab.</td></tr>
+      <tr><td><b>CREMA-D</b> (Cao et al.)</td><td>Open Database License 1.0; contents under Database Contents License 1.0</td><td>Neutral sentences read by 8 actors, for the Two voices check-in only</td><td>Contains information from CREMA-D, made available under the ODbL 1.0, its contents under the DbCL 1.0. Cao H, Cooper DG, Keutmann MK, Gur RC, Nenkova A, Verma R (2014). CREMA-D: crowd-sourced emotional multimodal actors dataset. IEEE Transactions on Affective Computing 5(4):377–390. Earshot's CREMA-D subset is offered under the same terms.</td></tr>
+      <tr><td><b>LibriVox</b> recordings via the Microsoft DNS Challenge 2020 data</td><td>Public domain</td><td>Read sentences from volunteer readers, as background talkers</td><td>Read speech from LibriVox volunteers (public domain), via the Microsoft DNS Challenge dataset.</td></tr>
+      <tr><td><b>DEMAND</b> noise database via Microsoft MS-SNSD</td><td>CC BY-SA 3.0</td><td>Café, cafeteria, station, square, traffic and metro ambience; a restaurant scene for the Story check-in only</td><td>Ambience from DEMAND (Thiemann J, Ito N, Vincent E, 2013, The Diverse Environments Multi-channel Acoustic Noise Database), CC BY-SA 3.0, via MS-SNSD. Earshot's loops are adaptations under the same licence.</td></tr>
+      <tr><td><b>Freesound</b> clips via MS-SNSD</td><td>CC0</td><td>Crowd babble and a room hum</td><td>Crowd babble and room hum from Freesound (CC0), via MS-SNSD.</td></tr>
+      <tr><td>Party bed</td><td>MIT (our generator) plus the CC0 babble</td><td>A synthetic beat under crowd babble</td><td>Generated by Earshot's audio tools.</td></tr>
+    </tbody>
+  </table>
+  <div class="col">
+  <h2>3. Tools used at build time only</h2>
+  <p>None of these ships with the app; they made or checked its sounds and word lists. The CMU Pronouncing Dictionary (BSD-style licence) for rhymes and sound-alike word lists; espeak-ng through phonemizer (GPL-3.0) to turn text into phonemes for the synthesisers, with no espeak code or data in the app; the speech recognisers NVIDIA Parakeet TDT 0.6B v2 (CC BY 4.0; NVIDIA does not endorse this project) and Whisper base.en (MIT) through sherpa-onnx (Apache-2.0), which checked that every clip says its text; and onnxruntime, onnx, kokoro-onnx, numpy, scipy, soundfile and ffmpeg with libmp3lame for synthesis, signal processing and encoding.</p>
+  <p class="small muted">Naming these projects does not mean that any of them endorses Earshot. The research behind the guide is listed in chapter 9; the studies are their authors' work, summarised here in our own words.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 09 references -->
+<section class="chapter" id="ch-refs">
+  <header class="opener">
+    <span class="kicker red">Chapter 09</span><span class="no">09</span>
+    <h1>References</h1>
+    <p class="lead">Every source the guide cites, with a link where our notes record one, and how much of it we read: the full text, the abstract only, or a report of it in another source.</p>
+  </header>
+  <div class="refs">
+    <h3>Listening training and what carried over</h3>
+    <p id="r-anderson2013">Anderson S, White-Schwoch T, Choi HJ, Kraus N (2013). Training changes processing of speech cues in older adults with hearing loss. Frontiers in Systems Neuroscience 7:97. <a class="ext" href="https://doi.org/10.3389/fnsys.2013.00097">doi:10.3389/fnsys.2013.00097</a> <span class="depth">[full text]</span></p>
+    <p id="r-fallahnezhad2023">Fallahnezhad T, Pourbakht A, Toufan R (2023). The effect of computer-based auditory training on speech-in-noise perception in adults: a systematic review and meta-analysis. Indian Journal of Otolaryngology and Head &amp; Neck Surgery 75(4):4198–4211. <a class="ext" href="https://doi.org/10.1007/s12070-023-03920-0">doi:10.1007/s12070-023-03920-0</a> <span class="depth">[full text]</span></p>
+    <p id="r-gao2020">Gao X, Yan T, Huang T, Li X, Zhang Y-X (2020). Speech in noise perception improved by training fine auditory discrimination: far and applicable transfer of perceptual learning. Scientific Reports 10:19320. <a class="ext" href="https://doi.org/10.1038/s41598-020-76295-9">doi:10.1038/s41598-020-76295-9</a> <span class="depth">[full text]</span></p>
+    <p id="r-hennessy2022">Hennessy S, Mack WJ, Habibi A (2022). Speech-in-noise perception in musicians and non-musicians: a multi-level meta-analysis. Hearing Research 416:108442. <a class="ext" href="https://doi.org/10.1016/j.heares.2022.108442">doi:10.1016/j.heares.2022.108442</a> <span class="depth">[full text]</span></p>
+    <p id="r-henshaw2013">Henshaw H, Ferguson MA (2013). Efficacy of individual computer-based auditory training for people with hearing loss: a systematic review of the evidence. PLOS ONE 8(5):e62836. <a class="ext" href="https://doi.org/10.1371/journal.pone.0062836">doi:10.1371/journal.pone.0062836</a> <span class="depth">[full text]</span></p>
+    <p id="r-henshaw2015">Henshaw H, McCormack A, Ferguson MA (2015). Intrinsic and extrinsic motivation is associated with computer-based auditory training uptake, engagement, and adherence for people with hearing loss. Frontiers in Psychology 6:1067. <a class="ext" href="https://doi.org/10.3389/fpsyg.2015.01067">doi:10.3389/fpsyg.2015.01067</a> <span class="depth">[full text]</span></p>
+    <p id="r-lelo2022">Lelo de Larrea-Mancera ES, Philipp MA, Stavropoulos T, Carrillo AA, Cheung S, Koerner TK, Molis MR, Gallun FJ, Seitz AR (2022). Training with an auditory perceptual learning game transfers to speech in competition. Journal of Cognitive Enhancement. Preprint: <a class="ext" href="https://doi.org/10.1101/2021.01.26.428343">doi:10.1101/2021.01.26.428343</a> <span class="depth">[full text of the preprint and dissertation chapter]</span></p>
+    <p id="r-madsen2019">Madsen SMK, Marschall M, Dau T, Oxenham AJ (2019). Speech perception is similar for musicians and non-musicians across a wide range of conditions. Scientific Reports 9:10404. <a class="ext" href="https://doi.org/10.1038/s41598-019-46728-1">doi:10.1038/s41598-019-46728-1</a> <span class="depth">[full text]</span></p>
+    <p id="r-saunders2016">Saunders GH, et al. (2016). A randomized control trial: supplementing hearing aid use with [a commercial home] auditory training [programme]; 279 hearing-aid users. Ear and Hearing. PMID 26901263. <a class="ext" href="https://pubmed.ncbi.nlm.nih.gov/26901263/">pubmed.ncbi.nlm.nih.gov/26901263</a> <span class="depth">[abstract only]</span></p>
+    <p id="r-whitton2017">Whitton JP, Hancock KE, Shannon JM, Polley DB (2017). Audiomotor perceptual training enhances speech intelligibility in background noise. Current Biology 27(21):3237–3247. <a class="ext" href="https://doi.org/10.1016/j.cub.2017.09.014">doi:10.1016/j.cub.2017.09.014</a> <span class="depth">[secondary report: news releases; full text not opened]</span></p>
+    <p id="r-worschech2021">Worschech F, Marie D, Jünemann K, et al. (2021). Improved speech in noise perception in the elderly after 6 months of musical instruction. Frontiers in Neuroscience 15:696240. <a class="ext" href="https://doi.org/10.3389/fnins.2021.696240">doi:10.3389/fnins.2021.696240</a> <span class="depth">[full text, about two thirds]</span></p>
+
+    <h3>Voices, masking and space</h3>
+    <p id="r-bronkhorst2015">Bronkhorst AW (2015). The cocktail-party problem revisited: early processing and selection of multi-talker speech. Attention, Perception, &amp; Psychophysics 77:1465–1487. <a class="ext" href="https://doi.org/10.3758/s13414-015-0882-9">doi:10.3758/s13414-015-0882-9</a> <span class="depth">[full text; secondary source for the older studies it reports]</span></p>
+    <p id="r-domingo2020">Domingo Y, Holmes E, Johnsrude IS (2020). The benefit to speech intelligibility of hearing a familiar voice. Journal of Experimental Psychology: Applied. <a class="ext" href="https://discovery-pp.ucl.ac.uk/10083754/">discovery-pp.ucl.ac.uk/10083754</a> <span class="depth">[full text, author manuscript]</span></p>
+    <p id="r-fullgrabe2015">Füllgrabe C, Moore BCJ, Stone MA (2015). Age-group differences in speech identification despite matched audiometrically normal hearing: contributions from auditory temporal processing and cognition. Frontiers in Aging Neuroscience 6:347. <a class="ext" href="https://doi.org/10.3389/fnagi.2014.00347">doi:10.3389/fnagi.2014.00347</a> <span class="depth">[full text]</span></p>
+    <p id="r-grange2016">Grange JA, Culling JF (2016). The benefit of head orientation to speech intelligibility in noise. Journal of the Acoustical Society of America 139:703–712. <a class="ext" href="https://orca.cardiff.ac.uk/91059/">orca.cardiff.ac.uk/91059</a> <span class="depth">[full text]</span></p>
+    <p id="r-grange2018">Grange JA, Culling JF, Bardsley B, Mackinney LI, Hughes SE, Backhouse SS (2018). Turn an ear to hear: how hearing-impaired listeners can exploit head orientation to enhance their speech intelligibility in noisy social settings. Trends in Hearing 22. <a class="ext" href="https://doi.org/10.1177/2331216518802701">doi:10.1177/2331216518802701</a> <span class="depth">[full text]</span></p>
+    <p id="r-holmes2021">Holmes E, To G, Johnsrude IS (2021). How long does it take for a voice to become familiar? Speech intelligibility and voice recognition are differentially sensitive to voice training. Psychological Science. <a class="ext" href="https://doi.org/10.1177/0956797621991137">doi:10.1177/0956797621991137</a> <span class="depth">[full text]</span></p>
+    <p id="r-holmes2023">Holmes E, Johnsrude IS (2023). Intelligibility benefit for familiar voices is not accompanied by better discrimination of fundamental frequency or vocal tract length. Hearing Research 429:108704. <a class="ext" href="https://doi.org/10.1016/j.heares.2023.108704">doi:10.1016/j.heares.2023.108704</a> <span class="depth">[full text]</span></p>
+    <p id="r-lin2015">Lin G, Carlile S (2015). Costs of switching auditory spatial attention in following conversational turn-taking. Frontiers in Neuroscience 9:124. <a class="ext" href="https://doi.org/10.3389/fnins.2015.00124">doi:10.3389/fnins.2015.00124</a> <span class="depth">[full text]</span></p>
+    <p id="r-oberfeld2016">Oberfeld D, Klöckner-Nowotny F (2016). Individual differences in selective attention predict speech identification at a cocktail party. eLife 5:e16747. <a class="ext" href="https://doi.org/10.7554/eLife.16747">doi:10.7554/eLife.16747</a> <span class="depth">[abstract only]</span></p>
+    <p id="r-rosen2013">Rosen S, Souza P, Ekelund C, Majeed AA (2013). Listening to speech in a background of other talkers: effects of talker number and noise vocoding. Journal of the Acoustical Society of America 133:2431–2443. <a class="ext" href="https://doi.org/10.1121/1.4794379">doi:10.1121/1.4794379</a> <span class="depth">[full text]</span></p>
+    <p id="r-sun2022">Sun J, Zhang Z, Sun B, Liu H, Wei C, Liu Y (2022). The effect of aging on context use and reliance on context in speech: a behavioral experiment with Repeat–Recall Test. Frontiers in Aging Neuroscience 14:924193. <a class="ext" href="https://doi.org/10.3389/fnagi.2022.924193">doi:10.3389/fnagi.2022.924193</a> <span class="depth">[full text]</span></p>
+    <p id="r-swaminathan2015">Swaminathan J, Mason CR, Streeter TM, Best V, Kidd G Jr, Patel AD (2015). Musical training, individual differences and the cocktail party problem. Scientific Reports 5:11628. <a class="ext" href="https://doi.org/10.1038/srep11628">doi:10.1038/srep11628</a> <span class="depth">[full text]</span></p>
+    <p id="r-vanengen2012">Van Engen KJ (2012). Speech-in-speech recognition: a training study. Language and Cognitive Processes 27:1089–1107. <a class="ext" href="https://doi.org/10.1080/01690965.2012.654644">doi:10.1080/01690965.2012.654644</a> <span class="depth">[full text of the dissertation chapter it comes from]</span></p>
+    <p id="r-zenke2022">Zenke K, Rosen S (2022). Spatial release of masking in children and adults in non-individualized virtual environments. Journal of the Acoustical Society of America 152:3384–3395. <a class="ext" href="https://doi.org/10.1121/10.0016360">doi:10.1121/10.0016360</a> <span class="depth">[full text]</span></p>
+
+    <h3>Distance, rooms and gaps</h3>
+    <p id="r-arxiv2024">Combined assessment of auditory distance perception and externalization (2024). arXiv 2408.14198. <a class="ext" href="https://arxiv.org/pdf/2408.14198">arxiv.org/pdf/2408.14198</a> <span class="depth">[full text; used for its summary of distance cues]</span></p>
+    <p id="r-beeston2014">Beeston AV, Brown GJ, Watkins AJ (2014). Perceptual compensation for the effects of reverberation on consonant identification: evidence from studies with monaural stimuli. Journal of the Acoustical Society of America 136:3072–3084. <a class="ext" href="https://doi.org/10.1121/1.4900596">doi:10.1121/1.4900596</a> <span class="depth">[full text]</span></p>
+    <p id="r-benard2013">Benard MR, Başkent D (2013). Perceptual learning of interrupted speech. PLOS ONE 8(3). Author copy: <a class="ext" href="https://dbspl.nl/pubs/">dbspl.nl/pubs</a> <span class="depth">[full text]</span></p>
+    <p id="r-brandewie2010">Brandewie E, Zahorik P (2010). Prior listening in rooms improves speech intelligibility. Journal of the Acoustical Society of America 128(1):291–299. <a class="ext" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2921430">pmc.ncbi.nlm.nih.gov/articles/PMC2921430</a> <span class="depth">[full text]</span></p>
+    <p id="r-lie2024">Lie S, Zekveld AA, Smits C, Kramer SE, Versfeld NJ (2024). Learning effects in speech-in-noise tasks: effect of masker modulation and masking release. Journal of the Acoustical Society of America 156(1):341–349. <a class="ext" href="https://doi.org/10.1121/10.0026519">doi:10.1121/10.0026519</a> <span class="depth">[full text]</span></p>
+    <p id="r-tinnemore2025">Tinnemore AR, Gordon-Salant S, Goupell MJ (2025). Context effects for degraded speech: effects of age, preceding or subsequent contextual cues, and signal-to-noise ratio. Journal of the Acoustical Society of America 158:447–460. <a class="ext" href="https://doi.org/10.1121/10.0037182">doi:10.1121/10.0037182</a> <span class="depth">[full text]</span></p>
+    <p id="r-vlahou2019">Vlahou E, Seitz AR, Kopčo N (2019). Nonnative implicit phonetic training in multiple reverberant environments. Attention, Perception, &amp; Psychophysics 81:935–947. <a class="ext" href="https://doi.org/10.3758/s13414-019-01680-0">doi:10.3758/s13414-019-01680-0</a> <span class="depth">[full text]</span></p>
+    <p id="r-vlahou2021">Vlahou E, Ueno K, Shinn-Cunningham BG, Kopčo N (2021). Calibration of consonant perception to room reverberation. Journal of Speech, Language, and Hearing Research. <a class="ext" href="https://doi.org/10.1044/2021_JSLHR-20-00396">doi:10.1044/2021_JSLHR-20-00396</a> <span class="depth">[full text]</span></p>
+
+    <h3>Unusual voices and perceptual learning</h3>
+    <p id="r-baeseberk2013">Baese-Berk MM, Bradlow AR, Wright BA (2013). Accent-independent adaptation to foreign accented speech. Journal of the Acoustical Society of America 133(3):EL174–EL180. <a class="ext" href="https://doi.org/10.1121/1.4789864">doi:10.1121/1.4789864</a> <span class="depth">[full text]</span></p>
+    <p id="r-baeseberk2022">Baese-Berk MM, Samuel AG (2022). Just give it time: differential effects of disruption and delay on perceptual learning. Attention, Perception, &amp; Psychophysics. <a class="ext" href="https://doi.org/10.3758/s13414-022-02463-w">doi:10.3758/s13414-022-02463-w</a> <span class="depth">[full text]</span></p>
+    <p id="r-bradlow2023">Bradlow AR, Bassard AM, Paller KA (2023). Generalized perceptual adaptation to second-language speech: variability, similarity, and intelligibility. Journal of the Acoustical Society of America 154(3):1601–1613. <a class="ext" href="https://doi.org/10.1121/10.0020914">doi:10.1121/10.0020914</a> <span class="depth">[full text]</span></p>
+    <p id="r-brekelmans2022">Brekelmans G, Lavan N, Saito H, Clayards M, Wonnacott E (2022). Does high variability training improve the learning of non-native phoneme contrasts over low variability training? A replication. Journal of Memory and Language 126:104352. <a class="ext" href="https://ora.ox.ac.uk/objects/uuid:6d460df2-e4c8-48bc-b3ff-af4fa5c749f1">ora.ox.ac.uk/objects/uuid:6d460df2-e4c8-48bc-b3ff-af4fa5c749f1</a> <span class="depth">[full text]</span></p>
+    <p id="r-cooke2022">Cooke M, Scharenborg O, Meyer BT (2022). The time course of adaptation to distorted speech. Journal of the Acoustical Society of America 151(4):2636–2646. <a class="ext" href="https://doi.org/10.1121/10.0010235">doi:10.1121/10.0010235</a> <span class="depth">[full text]</span></p>
+    <p id="r-davis2005">Davis MH, Johnsrude IS, Hervais-Adelman A, Taylor K, McGettigan C (2005). Lexical information drives perceptual learning of distorted speech: evidence from the comprehension of noise-vocoded sentences. Journal of Experimental Psychology: General 134(2):222–241. <a class="ext" href="https://www.mrc-cbu.cam.ac.uk/personal/matt.davis/pubs/davis_et_al_JEPG_2005.pdf">mrc-cbu.cam.ac.uk (author PDF)</a> <span class="depth">[full text]</span></p>
+    <p id="r-fuhrmeister2020">Fuhrmeister P, Myers EB (2020). Desirable and undesirable difficulties: influences of variability, training schedule, and aptitude on nonnative phonetic learning. Attention, Perception, &amp; Psychophysics 82:2049–2065. <a class="ext" href="https://doi.org/10.3758/s13414-019-01925-y">doi:10.3758/s13414-019-01925-y</a> <span class="depth">[full text]</span></p>
+    <p id="r-guediche2016">Guediche S, Fiez JA, Holt LL (2016). Adaptive plasticity in speech perception: effects of external information and internal predictions. Journal of Experimental Psychology: Human Perception and Performance. <a class="ext" href="https://labs.la.utexas.edu/holtlab/files/2024/07/2016_GuedicheFiezHolt.pdf">labs.la.utexas.edu (author PDF)</a> <span class="depth">[full text]</span></p>
+    <p id="r-hervais2011">Hervais-Adelman A, Davis MH, Johnsrude IS, Taylor KJ, Carlyon RP (2011). Generalization of perceptual learning of vocoded speech. Journal of Experimental Psychology: Human Perception and Performance 37(1):283–295. <a class="ext" href="https://doi.org/10.1037/a0020772">doi:10.1037/a0020772</a> <span class="depth">[full text]</span></p>
+    <p id="r-huyck2017">Huyck JJ, Smith RH, Hawkins S, Johnsrude IS (2017). Generalization of perceptual learning of degraded speech across talkers. Journal of Speech, Language, and Hearing Research. <a class="ext" href="https://doi.org/10.1044/2017_JSLHR-H-16-0300">doi:10.1044/2017_JSLHR-H-16-0300</a> <span class="depth">[full text]</span></p>
+    <p id="r-loebach2010">Loebach JL, Pisoni DB, Svirsky MA (2010). Effects of semantic context and feedback on perceptual learning of speech processed through an acoustic simulation of a cochlear implant. Journal of Experimental Psychology: Human Perception and Performance 36(1):224. <a class="ext" href="https://doi.org/10.1037/a0017609">doi:10.1037/a0017609</a> <span class="depth">[full text]</span></p>
+    <p id="r-mclaughlin2024">McLaughlin DJ, Baese-Berk MM, Van Engen KJ (2024). Exploring effects of brief daily exposure to unfamiliar accent on listening performance and cognitive load. Frontiers in Language Sciences 3. <a class="ext" href="https://par.nsf.gov/servlets/purl/10530863">par.nsf.gov/servlets/purl/10530863</a> <span class="depth">[full text]</span></p>
+    <p id="r-nogaki2007">Nogaki G, Fu Q-J, Galvin JJ III (2007). The effect of training rate on recognition of spectrally shifted speech. Ear and Hearing 28(2):132–140. <a class="ext" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3580208">pmc.ncbi.nlm.nih.gov/articles/PMC3580208</a> <span class="depth">[full text]</span></p>
+    <p id="r-stringer2019">Stringer L, Iverson P (2019). Accent intelligibility differences in noise across native and non-native accents: effects of talker–listener pairing at acoustic–phonetic and lexical levels. Journal of Speech, Language, and Hearing Research 62(7):2213–2226. <a class="ext" href="https://discovery-pp.ucl.ac.uk/id/eprint/10078794/7/Iverson_Accent%20Intelligibility%20Differences%20in%20Noise%20Across%20Native%20and%20Nonnative%20Accents_AAM.pdf">discovery-pp.ucl.ac.uk (author manuscript)</a> <span class="depth">[full text]</span></p>
+    <p id="r-tzeng2016">Tzeng CY, Alexander JED, Sidaras SK, Nygaard LC (2016). The role of training structure in perceptual learning of accented speech. Journal of Experimental Psychology: Human Perception and Performance 42:1793–1805. <a class="ext" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5083239">pmc.ncbi.nlm.nih.gov/articles/PMC5083239</a> <span class="depth">[full text]</span></p>
+    <p id="r-wright2010">Wright BA, Sabin AT, Zhang Y, Marrone N, Fitzgerald MB (2010). Enhancing perceptual learning by combining practice with periods of additional sensory stimulation. Journal of Neuroscience 30(38):12868–12877. <a class="ext" href="https://doi.org/10.1523/JNEUROSCI.0487-10.2010">doi:10.1523/JNEUROSCI.0487-10.2010</a> <span class="depth">[abstract and a news report]</span></p>
+    <p id="r-wright2015">Wright BA, Baese-Berk MM, Marrone N, Bradlow AR (2015). Enhancing speech learning by combining task practice with periods of stimulus exposure without practice. Journal of the Acoustical Society of America 138(2):928–937. <a class="ext" href="https://doi.org/10.1121/1.4927411">doi:10.1121/1.4927411</a> <span class="depth">[abstract only]</span></p>
+    <p id="r-xie2018rapid">Xie X, Weatherholtz K, Bainton L, Rowe E, Burchill Z, Liu L, Jaeger TF (2018). Rapid adaptation to foreign-accented speech and its transfer to an unfamiliar talker. Journal of the Acoustical Society of America 143(4):2013–2031. <a class="ext" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5895469">pmc.ncbi.nlm.nih.gov/articles/PMC5895469</a> <span class="depth">[full text]</span></p>
+    <p id="r-xie2018sleep">Xie X, Earle FS, Myers EB (2018). Sleep facilitates generalisation of accent adaptation to a new talker. Language, Cognition and Neuroscience. <a class="ext" href="https://myerslab.uconn.edu/wp-content/uploads/sites/291/2018/02/LCN2018.pdf">myerslab.uconn.edu (author PDF)</a> <span class="depth">[full text]</span></p>
+
+    <h3>Measurement and safe listening</h3>
+    <p id="r-blampied2022">Blampied NM (2022). Reliable change and the reliable change index: still useful after all these years? The Cognitive Behaviour Therapist 15:e50. <a class="ext" href="https://doi.org/10.1017/S1754470X22000484">doi:10.1017/S1754470X22000484</a> <span class="depth">[full text]</span></p>
+    <p id="r-puglisi2015">Puglisi GE, Warzybok A, Hochmuth S, Visentin C, Astolfi A, Prodi N, Kollmeier B (2015). An Italian matrix sentence test for the evaluation of speech intelligibility in noise. International Journal of Audiology 54(Suppl 2):44–50. <a class="ext" href="https://doi.org/10.3109/14992027.2015.1061709">doi:10.3109/14992027.2015.1061709</a> <span class="depth">[full text]</span></p>
+    <p id="r-schwarz2026">Schwarz T, Schell-Majoor L, Saak S, Bruns T, Kollmeier B (2026). Remote matrix sentence test on uncalibrated consumer devices: test–retest reliability and laboratory agreement in normal hearing. Trends in Hearing 30. <a class="ext" href="https://doi.org/10.1177/23312165261469957">doi:10.1177/23312165261469957</a> <span class="depth">[full text]</span></p>
+    <p id="r-who2019">World Health Organization and International Telecommunication Union (2019; ITU-T H.870, updated 2022). Safe listening devices and systems: a WHO–ITU standard. <a class="ext" href="https://www.who.int/publications-detail/safe-listening-devices-and-systems-a-who-itu-standard">who.int (publication page)</a>; <a class="ext" href="https://itu.int/en/ITU-D/Digital-Inclusion/Documents/Safe_listening_standard.pdf">itu.int (standard, PDF)</a> <span class="depth">[full text]</span></p>
+    <p id="r-woods2017">Woods KJP, Siegel MH, Traer J, McDermott JH (2017). Headphone screening to facilitate web-based auditory experiments. Attention, Perception, &amp; Psychophysics. <a class="ext" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5693749">pmc.ncbi.nlm.nih.gov/articles/PMC5693749</a> <span class="depth">[full text]</span></p>
+
+    <h3>Progression, motivation and game design</h3>
+    <p id="r-clement2015">Clement B, Roy D, Oudeyer P-Y, Lopes M (2015). Multi-armed bandits for intelligent tutoring systems. Journal of Educational Data Mining 7(2). <a class="ext" href="https://arxiv.org/abs/1310.3174">arxiv.org/abs/1310.3174</a> <span class="depth">[full text]</span></p>
+    <p id="r-deci1999">Deci EL, Koestner R, Ryan RM (1999). A meta-analytic review of experiments examining the effects of extrinsic rewards on intrinsic motivation. Psychological Bulletin 125(6):627–668. <a class="ext" href="https://pubmed.ncbi.nlm.nih.gov/10589297/">pubmed.ncbi.nlm.nih.gov/10589297</a>. Read through: Deci EL, Koestner R, Ryan RM (2001). Extrinsic rewards and intrinsic motivation in education: reconsidered once again. Review of Educational Research 71(1):1–27. <a class="ext" href="https://www.selfdeterminationtheory.org/SDT/documents/2001_DeciKoestnerRyan.pdf">selfdeterminationtheory.org (PDF)</a> <span class="depth">[full text of the 2001 review]</span></p>
+    <p id="r-destefano2016">Destefano M, Gray WD (2016). Where should researchers look for strategy discoveries during the acquisition of complex task performance? The case of Space Fortress. Proceedings of the Annual Meeting of the Cognitive Science Society 38. <a class="ext" href="https://escholarship.org/content/qt5vz6t146/qt5vz6t146.pdf">escholarship.org (PDF)</a> <span class="depth">[full text]</span></p>
+    <p id="r-donner2015">Donner Y, Hardy JL (2015). Piecewise power laws in individual learning curves. Psychonomic Bulletin &amp; Review 22:1308–1319. <a class="ext" href="https://doi.org/10.3758/s13423-015-0811-x">doi:10.3758/s13423-015-0811-x</a> <span class="depth">[secondary report: a summary on the Psychonomic Society site]</span></p>
+    <p id="r-hung2014">Hung S-C, Seitz AR (2014). Prolonged training at threshold promotes robust retinotopic specificity in perceptual learning. Journal of Neuroscience 34(25):8423–8431. <span class="depth">[full text]</span></p>
+    <p id="r-katz2014">Katz B, Jaeggi S, Buschkuehl M, Stegman A, Shah P (2014). Differential effect of motivational features on training improvements in school-based cognitive training. Frontiers in Human Neuroscience 8:242. <a class="ext" href="https://doi.org/10.3389/fnhum.2014.00242">doi:10.3389/fnhum.2014.00242</a> <span class="depth">[full text]</span></p>
+    <p id="r-kelly2015">Kelly K, Wang Y, Thompson T, Heffernan N (2015). Defining mastery: knowledge tracing versus N-consecutive correct responses. Educational Data Mining 2015, poster. <a class="ext" href="https://www.educationaldatamining.org/EDM2015/proceedings/poster630-631.pdf">educationaldatamining.org (PDF)</a> <span class="depth">[full text]</span></p>
+    <p id="r-kumar2022">Kumar A, Benjamin AS, Heathcote A, Steyvers M (2022). Comparing models of learning and relearning in large-scale cognitive training data sets. npj Science of Learning 7. <a class="ext" href="https://escholarship.org/content/qt6mb1w98z/qt6mb1w98z.pdf">escholarship.org (PDF)</a> <span class="depth">[full text]</span></p>
+    <p id="r-lally2010">Lally P, van Jaarsveld CHM, Potts HWW, Wardle J (2010). How are habits formed: modelling habit formation in the real world. European Journal of Social Psychology 40:998–1009. <a class="ext" href="https://doi.org/10.1002/ejsp.674">doi:10.1002/ejsp.674</a> <span class="depth">[full text]</span></p>
+    <p id="r-liu2012">Liu J, Lu Z-L, Dosher BA (2012). Mixed training at high and low accuracy levels leads to perceptual learning without feedback. Vision Research 61:15–24. <a class="ext" href="https://sites.socsci.uci.edu/~maplab/webdocs/LiuLuDosherVR2012.pdf">sites.socsci.uci.edu (author PDF)</a> <span class="depth">[full text]</span></p>
+    <p id="r-lumsden2016">Lumsden J, Edwards EA, Lawrence NS, Coyle D, Munafò MR (2016). Gamification of cognitive assessment and cognitive training: a systematic review of applications and efficacy. JMIR Serious Games 4(2):e11. <a class="ext" href="https://games.jmir.org/2016/2/e11">games.jmir.org/2016/2/e11</a> <span class="depth">[full text]</span></p>
+    <p id="r-mednick2002">Mednick SC, Nakayama K, Cantero JL, et al. (2002). The restorative effect of naps on perceptual deterioration. Nature Neuroscience 5(7):677–681. <a class="ext" href="https://doi.org/10.1038/nn864">doi:10.1038/nn864</a> <span class="depth">[full text]</span></p>
+    <p id="r-mekler2017">Mekler ED, Brühlmann F, Tuch AN, Opwis K (2017). Towards understanding the effects of individual gamification elements on intrinsic motivation and performance. Computers in Human Behavior 71:525–534. <a class="ext" href="https://doi.org/10.1016/j.chb.2015.08.048">doi:10.1016/j.chb.2015.08.048</a> <span class="depth">[full text]</span></p>
+    <p id="r-milkman2021">Milkman KL, et al. (2021). Megastudies improve the impact of applied behavioural science. Nature 600:478–483. <a class="ext" href="https://doi.org/10.1038/s41586-021-04128-4">doi:10.1038/s41586-021-04128-4</a> <span class="depth">[full text]</span></p>
+    <p id="r-papousek2016">Papoušek J, Stanislav V, Pelánek R (2016). Impact of question difficulty on engagement and learning. Intelligent Tutoring Systems (ITS 2016). <a class="ext" href="https://doi.org/10.1007/978-3-319-39583-8_28">doi:10.1007/978-3-319-39583-8_28</a> <span class="depth">[full text]</span></p>
+    <p id="r-perrachione2011">Perrachione TK, Lee J, Ha LYY, Wong PCM (2011). Learning a novel phonological contrast depends on interactions between individual differences and training paradigm design. Journal of the Acoustical Society of America 130(1):461–472. <a class="ext" href="https://doi.org/10.1121/1.3593366">doi:10.1121/1.3593366</a> <span class="depth">[full text]</span></p>
+    <p id="r-raviv2022">Raviv L, Lupyan G, Green SC (2022). How variability shapes learning and generalization. Trends in Cognitive Sciences. <a class="ext" href="https://doi.org/10.1016/j.tics.2022.03.007">doi:10.1016/j.tics.2022.03.007</a> <span class="depth">[full text, about half]</span></p>
+    <p id="r-sailer2020">Sailer M, Homner L (2020). The gamification of learning: a meta-analysis. Educational Psychology Review 32:77–112. <a class="ext" href="https://doi.org/10.1007/s10648-019-09498-w">doi:10.1007/s10648-019-09498-w</a> <span class="depth">[full text, most of it]</span></p>
+    <p id="r-silverman2023">Silverman J, Barasch A (2023). On or off track: how (broken) streaks affect consumer decisions. Journal of Consumer Research 49(6):1095–1117. <a class="ext" href="https://doi.org/10.1093/jcr/ucac029">doi:10.1093/jcr/ucac029</a> <span class="depth">[abstract and press reports]</span></p>
+    <p id="r-wilson2019">Wilson RC, Shenhav A, Straccia M, Cohen JD (2019). The Eighty Five Percent Rule for optimal learning. Nature Communications 10:4646. <a class="ext" href="https://doi.org/10.1038/s41467-019-12552-4">doi:10.1038/s41467-019-12552-4</a> <span class="depth">[full text]</span></p>
+
+    <h3>Project notes</h3>
+    <p id="r-notes">Earshot research notes R1–R6 (2026): R1 listening training and its outcomes, including a survey of existing apps; R2 perceptual learning of degraded and unusual speech; R3 cocktail-party and distance listening; R4 measurement and check-in design; R5 progression and game design; R6 corpora and licences. In the Earshot repository under <code>docs/research</code>, CC BY-SA 4.0, with the reading depth of every source and the list of sources we could not open.</p>
+  </div>
+</section>
+
+<!-- ============================================================ back -->
+<section class="back" aria-label="Join us">
+  <div class="join">
+    <p class="kicker red">Come and test the bets with us</p>
+    <h2 style="font-size: 22pt; margin: 3mm 0 4mm">Earshot was built by the Chimera community on Discord.</h2>
+    <p class="lead">You are invited to join us there.</p>
+    <p><a class="addr" href="https://discord.gg/chmr">discord.gg/chmr</a></p>
+  </div>
+  <div class="figrow" style="margin-top: 22mm">
+    <div class="panel" style="flex: 1 1 0; margin: 0"><h4>Play</h4><p class="small"><span data-url="pages">The web version (GitHub Pages)</span>, or the single file <code>earshot.html</code>, offline on any device.</p></div>
+    <div class="panel" style="flex: 1 1 0; margin: 0"><h4>Source</h4><p class="small"><span data-url="repo">The Earshot repository on GitHub</span>: code (MIT), texts and this guide (CC BY-SA 4.0), research notes.</p></div>
+    <div class="panel" style="flex: 1 1 0; margin: 0"><h4>This guide</h4><p class="small">Version 0.1.0, November 2026. Text and figures © 2026 the Chimera community, <a class="ext" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</p></div>
+  </div>
+</section>
+
+</body>
+</html>
