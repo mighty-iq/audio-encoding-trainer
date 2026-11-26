@@ -37,8 +37,8 @@ so players know where the synthetic voices come from.
 
 | Font | Licence | Files |
 |---|---|---|
-| Archivo (text) | SIL Open Font License 1.1 | `fonts/`, fontsource 5.3.0 latin subset, with its OFL text |
-| JetBrains Mono (numbers, dB, metres) | SIL Open Font License 1.1 | `fonts/`, fontsource 5.3.0 latin subset, with its OFL text |
+| Archivo (text) | SIL Open Font License 1.1 | app: `fonts/`, fontsource 5.3.0 latin subset; guide PDF: `docs/guide/fonts/`, latin-ext subset; each with its OFL text |
+| JetBrains Mono (numbers, dB, metres) | SIL Open Font License 1.1 | app: `fonts/`, fontsource 5.3.0 latin subset; guide PDF: `docs/guide/fonts/`, latin-ext subset; each with its OFL text |
 
 ## Word data and build-time tools (nothing below ships as a program)
 
