@@ -1,6 +1,10 @@
-# Earshot — plan (draft for the owner's go; times UTC)
+# Earshot — plan (approved; times UTC)
 
-Status: DRAFT, 2026-11-26. Becomes the approved plan when the owner says go (answers on the decision board).
+Status: APPROVED 2026-11-26 16:44 UTC (owner's go; all recommendations accepted: name Earshot, look Audiogram,
+voices mixed real + synthetic, game frame Night out, all eight exercises kept).
+Owner's priorities, most important first: loud places; far away / echoey rooms; accents and unusual speech;
+remembering what was heard; fun; fast visible progress; proof of carry-over; short sessions. Default exercise weights
+follow this order (Crowd, Repair and Seek for loud places; Far; Strange voices; Echo; Voices).
 Evidence: docs/research/R1–R6. Claims below cite the note that holds the source and its reading depth.
 
 ## 1. Concept
