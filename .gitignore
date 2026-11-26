@@ -1,0 +1,14 @@
+# Owner's private files (never committed)
+BRIEF.md
+RULES.md
+.privacy.local
+# Dependencies, outputs and scratch
+node_modules/
+test-results/
+tests/out/
+.cache/
+*.log
+.DS_Store
+# Raw corpora and generated scratch audio never live in the repo
+corpora/
+scratch/
