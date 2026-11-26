@@ -78,10 +78,15 @@
   }
   function comfortOf(lr, ex, ck, d, zs) { return towardEasy(d, solv(lr, ex, d, M().fc, ck, zs)); }
   // Every dial eased by the same share so that the product reaches p (anchors, warm-ups).
-  function equalShare(lr, ex, ck, act, p, zs) {
+  function pinnedF(lr, ex, ck, act, pins, zs) {
+    var F = 1; act.forEach(function (d) { if (pins[d.id] !== undefined) F *= comp(lr, ex, d, pins[d.id], ck, zs); });
+    return F;
+  }
+  function equalShare(lr, ex, ck, act, p, zs, fixed, fDiv) {
     var dials = {}, n = act.length;
     act.forEach(function (d) { dials[d.id] = easiest(d); });
-    var each = Math.pow(Math.max(0.01, Math.min(0.999, needF(lr, ex, dials, p))), 1 / Math.max(1, n));
+    if (fixed) Object.keys(fixed).forEach(function (k) { dials[k] = fixed[k]; });
+    var each = Math.pow(Math.max(0.01, Math.min(0.999, needF(lr, ex, dials, p) / Math.max(0.05, fDiv || 1))), 1 / Math.max(1, n));
     act.forEach(function (d) { dials[d.id] = towardEasy(d, solv(lr, ex, d, Math.min(0.999, each), ck, zs)); });
     return dials;
   }
@@ -212,19 +217,24 @@
       out.coach = { dial: out.focus, value: trial[out.focus], p: Math.round(r0.p * 100) / 100 };
       return out;
     }
+    var pins = pinsOf(set, act, lr), free = act.filter(function (d) { return pins[d.id] === undefined; });
+    if (Object.keys(pins).length) out.pinned = pins;
     if (out.warmup || out.anchor) {
       var tp = out.warmup ? md.warm : md.anchor;
-      dials = equalShare(lr, ex, ck, act, tp, zs);
-      out.focus = (ctx.lastFocus && dials[ctx.lastFocus] !== undefined) ? ctx.lastFocus : act[0].id;
+      dials = free.length ? equalShare(lr, ex, ck, free, tp, zs, pins, pinnedF(lr, ex, ck, act, pins, zs)) : {};
+      Object.keys(pins).forEach(function (id) { dials[id] = pins[id]; });
+      out.focus = set.focus && dials[set.focus] !== undefined ? set.focus : (ctx.lastFocus && dials[ctx.lastFocus] !== undefined) ? ctx.lastFocus : (free[0] || act[0]).id;
       if (family) out.focus = act.filter(function (d) { return d.family; })[0].id;
       out.dials = dials; out.target = tp; out.p = pAt(lr, ex, ck, act, dials, zs);
+      if (out.p < md.floor && Object.keys(pins).length) easePins(lr, ex, ck, act, dials, pins, md, zs, out);
       return out;
     }
     // edge trial: decide the focus among dials that can still be pushed (not saturated, not floored)
     var comfort = {};
-    act.forEach(function (d) { comfort[d.id] = comfortOf(lr, ex, ck, d, zs); });
-    var probe = [];
-    act.forEach(function (d) {
+    act.forEach(function (d) { comfort[d.id] = pins[d.id] !== undefined ? pins[d.id] : comfortOf(lr, ex, ck, d, zs); });
+    var probe = [], cands = free.length ? free : act;
+    if (set.focus && cands.some(function (d) { return d.id === set.focus; })) cands = cands.filter(function (d) { return d.id === set.focus; });
+    cands.forEach(function (d) {
       var tr = JSON.parse(JSON.stringify(comfort));
       var r = levelFor(lr, ex, ck, act, d, tr, md.target, rng, zs);
       probe.push({ d: d, r: r, dials: tr });
@@ -247,10 +257,11 @@
     dials = chosen.dials;
     out.focus = chosen.d.id; out.p = chosen.r.p; out.target = md.target;
     if (out.p < md.floor) {
-      // adaptation floor: ease the other dials, then everything
-      act.forEach(function (d) { if (d !== chosen.d) dials[d.id] = easiest(d); });
+      // adaptation floor: ease the other free dials, then pinned dials one step at a time, then the focus dial
+      act.forEach(function (d) { if (d !== chosen.d && pins[d.id] === undefined) dials[d.id] = easiest(d); });
       var r2 = levelFor(lr, ex, ck, act, chosen.d, dials, md.target, rng, zs, true);
       out.p = r2.p;
+      if (out.p < md.floor && Object.keys(pins).length) { easePins(lr, ex, ck, act, dials, pins, md, zs, out); var r3 = levelFor(lr, ex, ck, act, chosen.d, dials, md.target, rng, zs, true); out.p = r3.p; }
       if (out.p < md.floor) { dials[chosen.d.id] = easiest(chosen.d); out.p = pAt(lr, ex, ck, act, dials, zs); out.floor = true; }
     }
     if (chosen.r.saturated) out.saturated = true;
@@ -258,12 +269,32 @@
     return out;
   }
   function pick(act, dials) { var o = {}; act.forEach(function (d) { o[d.id] = dials[d.id]; }); return o; }
+  // Pinned dials (venue sets: ctx.set.pin = {dialId: value}), snapped, active dials only.
+  function pinsOf(set, act, lr) {
+    var pin = set && set.pin, out = {};
+    if (!pin) return out;
+    act.forEach(function (d) { if (pin[d.id] !== undefined && pin[d.id] !== null) out[d.id] = lr.snap(d, pin[d.id]); });
+    return out;
+  }
+  // Ease pinned dials one step at a time (never past their easiest level) until p reaches the floor.
+  function easePins(lr, ex, ck, act, dials, pins, md, zs, out) {
+    var guard = 0, ids = Object.keys(pins);
+    while (out.p < md.floor && guard++ < 40) {
+      var moved = false;
+      ids.forEach(function (id) {
+        var d = E.dialDef(ex, id), x = dials[id], nx = d.kind === 'ord' ? x - 1 : x - d.dir * d.step * 2;
+        if (d.kind === 'ord' ? nx >= d.min : (d.dir > 0 ? nx >= d.min : nx <= d.max)) { dials[id] = lr.snap(d, nx); moved = true; (out.eased = out.eased || {})[id] = dials[id]; }
+      });
+      if (!moved) break;
+      out.p = pAt(lr, ex, ck, act, dials, zs);
+    }
+  }
   function focusPick(lr, ex, ck, ok, lab) {
     var weakest = lab && lab.weakest && PROBE_MAP[lab.weakest];
     if (weakest && weakest.ex === ex && weakest.dial) { var hit = ok.filter(function (q) { return q.d.id === weakest.dial; })[0]; if (hit) return hit; }
     return ok.slice().sort(function (a, b) { return z(lr, ex, a.d.id, ck) - z(lr, ex, b.d.id, ck); })[0];
   }
 
-  E.controller = { exposureN: exposureN, famStats: famStats, next: next, levelFor: levelFor, pAt: pAt, equalShare: equalShare, comfortOf: comfortOf, chooseFamily: chooseFamily,
+  E.controller = { supports: { pin: true }, exposureN: exposureN, famStats: famStats, next: next, levelFor: levelFor, pAt: pAt, equalShare: equalShare, comfortOf: comfortOf, chooseFamily: chooseFamily,
     bandit: bandit, PROBE_MAP: PROBE_MAP, FAMILY_ORDER: FAMILY_ORDER };
 })(typeof window !== 'undefined' ? window : globalThis);

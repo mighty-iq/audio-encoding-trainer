@@ -81,6 +81,7 @@
         if (typeof obj.seed === 'string') s.seed = obj.seed;
       }
       self.state = s;
+      self._bound = true; // an explicit load wins over the lazy read from the store
       return self;
     }
     function key(ck, id) { return ck + '.' + id; }
@@ -192,11 +193,10 @@
         self._bound = true;
       } catch (e) { /* storage blocked: keep memory state */ }
     }
+    // persistence is the caller's: the shell calls learner.save() after every answer and at set ends
     function update(trial, result) {
       sync();
-      var out0 = updateRaw(trial, result);
-      if (self._bound) save();
-      return out0;
+      return updateRaw(trial, result);
     }
     function updateRaw(trial, result) {
       var st = self.state, ex = trial.ex, set = trial.setting || {}, md = M();

@@ -25,12 +25,12 @@
     opts = opts || {};
     var lr = E.lrOf(opts.learner), seed = opts.seed !== undefined ? opts.seed : 'set:' + ex + ':' + lr.state.n;
     var meta = E.dialMeta[ex] || {};
-    var sc = { ex: ex, mode: opts.mode || 'edge', lr: lr, rng: ES.core.rng(seed), seed: seed, i: 0,
+    var sc = { ex: ex, pin: opts.pin || null, focusDial: opts.focus || null, mode: opts.mode || 'edge', lr: lr, rng: ES.core.rng(seed), seed: seed, i: 0,
       n: opts.trials || meta.setTrials || 20, headphones: !!opts.headphones, lab: opts.lab || null, overrides: opts.overrides || null,
       playerSeed: opts.playerSeed || (lr.state.seed = lr.state.seed || ('p' + ES.core.hash(String(lr.clock())))),
       met: opts.met, avoidVoices: opts.avoidVoices || null, breadth: opts.breadth, kind: opts.kind || 'normal',
       set: { __flow: true, i: 0, sinceAnchor: 0, anchorGap: 3 + (ES.core.hash(String(seed)) % 2), misses: 0, block: null, lastFamily: null,
-        kind: opts.kind || 'normal', hint: opts.hint || null },
+        kind: opts.kind || 'normal', hint: opts.hint || null, pin: opts.pin || null, focus: opts.focus || null },
       synth: opts.synth || null, avgS: {}, avgN: {}, recentVoices: [], lastRoom: null, results: [], voices: {}, startIdx: index(lr, ex, lr.ctxKey(ex, !!opts.headphones)), pending: null };
     if (sc.kind === 'fresh') sc.fresh = { before: sc.startIdx, daysAway: opts.daysAway || null };
     return sc;
@@ -43,6 +43,7 @@
     return b === undefined ? 0.2 : b;
   }
   function next(sc) {
+    if (sc.pending) return sc.pending; // an aborted, unanswered trial is shown again
     if (sc.i >= sc.n) return null;
     var lr = sc.lr, ex = sc.ex, plat = lr.state.plat[ex] || {};
     if (plat.anchorBoost > 0) sc.set.anchorGap = Math.min(sc.set.anchorGap, 2);
