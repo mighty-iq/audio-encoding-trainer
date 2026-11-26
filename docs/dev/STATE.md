@@ -1,10 +1,13 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-26 19:08 UTC
+Updated: 2026-11-26 20:09 UTC
 
 ## Phase
-2 — Build. Owner said go at 16:44 UTC and accepted every recommendation (Earshot, Audiogram, mixed voices, Night out,
-all 8 exercises). Wave 1 builders running against docs/dev/CONTRACTS.md.
+2 → 3 overlap. Built and verified by their builders: shell, audio, engine (5 modes, solver/shortcut/sim checks,
+plateau retuned), exA (Crowd, Far, Strange, Repair), lab (7 probes, stats: 1.5 dB gain clear by week 4 in 79 %),
+game (map, cast, weekly, progress). Still building: stimuli (full voice set, probe materials), exB (Echo, Seek,
+Voices, Missions). Reviews RV-code (2 high/11 medium) and RV-claims (2 high/13 medium) done on e079caf →
+FIX ROUND 1 running (docs/dev/reviews/FIX-ROUND-1.md: rulings + per-owner assignments; all 7 builders active).
 
 ## Running subagents (IDs in the lead's container notes)
 - shell → index.html, css/, fonts/, js/core/, js/ui/, js/app.js, tools/build-*.mjs, tests/unit/run.mjs, tests/e2e/
@@ -27,16 +30,15 @@ Each keeps docs/dev/progress/<owner>.md; cross-owner needs in docs/dev/requests.
   (~0.2–0.9 s per clip); MP3 16 kHz 24–32 kbps ≈ 3–4 KB/s; Web Audio offline mixing, HRTF, convolver work from file://.
 
 ## In progress (lead)
-- M6 first playable build SENT (19:08 UTC): private test-build artifact (link in BRIEF.md), built with
-  `node tools/build-single.mjs --test` from c354f7c; 3.2 MB; starter pack (12 voices, 216 phrases) + babble/beds/probe.
-  db capability declared (collection `playtest`); shell asked to mirror playtest reports there.
-- Engine builder DONE (report in docs/dev/progress/engine.md; decisions logged). exB launched for echo/seek/voices/missions.
-- Known copy issue for review: number foils explained as "sounds like" (two vs eight) in Crowd feedback.
+- Test build republished (19:30 UTC) with map, Lab, cast, weekly; playtest db sync on (no reports yet).
+- Lead-owned done: LICENSE (MIT), LICENSE-TEXTS.md (CC BY-SA 4.0), README, fixlist, contracts updates, warm-up wiring.
 
 ## Next three steps
-1. Republish the test build to the same slug after each meaningful landing (full voice set, map, lab, exB).
-2. Read playtest reports (db_list playtest on the test-build slug, or the owner's pasted block) → BRIEF.md → fixes.
-3. Phase 3 prep: review briefs (code, play-through, claims vs code, stimuli validity, texts/a11y), guide outline.
+1. Collect fix-round-1 replies; rebuild; run all unit + e2e suites; republish the test build.
+2. When stimuli lands probe materials and content: RV-stimuli, RV-play, RV-a11y and fresh-player tests on a new
+   snapshot (docs/dev/briefs/phase3.md), then fix round 2.
+3. Guide PDF (builder brief in phase3.md), Discord post, release build (playtest off), verification table, release
+   checklist page, build log and playbook merge; then wait for the owner's yes.
 
 ## Open questions
 - Owner to rename the repo to Earshot (taps sent).
