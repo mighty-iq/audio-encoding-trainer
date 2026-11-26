@@ -43,6 +43,9 @@
   align-items: center; gap: 8px; padding: 0 16px; pointer-events: none; }
 html.sheet-open #toasts { top: calc(12px + env(safe-area-inset-top)); bottom: auto; }
 .toast { max-width: 520px; padding: 10px 14px; border-radius: var(--r-1); background: var(--ink); color: var(--on-ink); font-size: var(--fs-2); box-shadow: var(--shadow-2); }
+.toast.has-action { display: flex; align-items: center; gap: 12px; padding-right: 6px; pointer-events: auto; }
+.toast-btn { flex: none; min-height: var(--tap); padding: 0 12px; border: 1px solid currentColor; border-radius: var(--r-1); background: transparent;
+  color: inherit; font-weight: 600; cursor: pointer; }
 
 #banners:empty { display: none; }
 .banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px max(16px, env(safe-area-inset-right)) 6px max(16px, env(safe-area-inset-left));

@@ -15,7 +15,7 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const BEGIN = '<!-- scripts:begin -->', END = '<!-- scripts:end -->';
 
 export const AREAS = [
-  { dir: 'js/core', order: ['ns.js', 'util.js', 'rng.js', 'store-schema.js', 'store-merge.js', 'store.js', 'clock.js', 'router.js', 'ui.js', 'field.js', 'answer.js', 'chimera.js', 'playtest.js'] },
+  { dir: 'js/core', order: ['ns.js', 'util.js', 'rng.js', 'store-schema.js', 'store-merge.js', 'store.js', 'clock.js', 'router.js', 'ui.js', 'field.js', 'answer.js', 'chimera.js', 'playtest.js', 'download.js'] },
   { dir: 'data', order: ['voices.js', 'vocab.js', 'manifest.js', 'packs.js'], shallow: true },
   { dir: 'audio', match: /^pack-[a-z0-9_-]+\.js$/i, shallow: true },
   { dir: 'js/audio', order: ['ctx.js', 'dsp/core.js', 'dsp/fft.js', 'dsp/filter.js', 'dsp/tsm.js', 'dsp/vocode.js', 'dsp/whisper.js', 'dsp/noise.js',

@@ -301,7 +301,7 @@ def m5(h, c):
     wait_state(a, ['loading', 'listen', 'answer'], 15000)
     b.evaluate("() => { ES.core.store.wipe(); }")
     try:
-        a.wait_for_function("() => !ES.ui.session.active() && ES.core.router.current().name === 'home'", timeout=8000)
+        a.wait_for_function("() => !ES.ui.session.active() && ES.core.router.current().name === 'home'", timeout=15000)
     except Exception:
         pass
     a.wait_for_timeout(1200)

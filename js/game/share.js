@@ -85,16 +85,15 @@
     });
   }
   function fileName(res) { return 'earshot-weekly-' + res.week + '.png'; }
-  /** Try a download; false when the page cannot (sandbox, blocked downloads). */
-  function download(blob, name) {
-    try {
-      if (!blob || !win.URL || !win.URL.createObjectURL) return false;
-      var url = win.URL.createObjectURL(blob), a = win.document.createElement('a');
-      a.href = url; a.download = name; a.rel = 'noopener'; a.style.display = 'none';
-      win.document.body.appendChild(a); a.click(); win.document.body.removeChild(a);
-      setTimeout(function () { try { win.URL.revokeObjectURL(url); } catch (e) { /* ignore */ } }, 4000);
-      return true;
-    } catch (e) { return false; }
+  /** Save the card from a tap through ES.core.download (shell): the artifact host's downloads in the claude.ai viewer,
+      else a browser download whose toast offers Copy for the card's text; where saving is impossible the image is
+      shown full size to save by hand, with the same text to copy. → Promise<{ok, how, message}> */
+  function save(cv, res, text) {
+    var name = fileName(res);
+    return toBlob(cv).then(function (blob) {
+      if (!blob) { showImage(cv, res, 'This browser could not make the image file.', text); return { ok: false, how: 'blocked', message: '' }; }
+      return ES.core.download.save(name, blob, 'image/png', { copyText: text, fallback: function (r) { showImage(cv, res, r.message, text); } });
+    });
   }
   /** Copy the image to the clipboard. → Promise<bool> */
   function copyImage(blob) {
@@ -114,15 +113,17 @@
       return n.share(data).then(function () { return true; }, function () { return false; });
     } catch (e) { return Promise.resolve(false); }
   }
-  /** Last resort: the image full size in a sheet, to save by hand. */
-  function showImage(cv, res) {
+  /** Last resort: the image full size in a sheet, to save by hand; note says why (else "Saving is blocked here"),
+      and text (the card as text) can be copied. */
+  function showImage(cv, res, note, text) {
     var src = '';
     try { src = cv.toDataURL('image/png'); } catch (e) { src = ''; }
     return ES.ui.sheet({ title: 'Your card', body: function (b) {
-      b.appendChild(ES.core.util.el('p', { class: 'hint' }, 'Saving is blocked here. Press and hold the image (or right-click it) to save or copy it.'));
+      b.appendChild(ES.core.util.el('p', { class: 'hint' }, (note || 'Saving is blocked here.') + ' Press and hold the image (or right-click it) to save or copy it.'));
       if (src) b.appendChild(ES.core.util.el('img', { class: 'g-shareimg', src: src, alt: 'Weekly Night Out ' + res.week + ': ' + res.right + ' of ' + res.n + ' right' }));
-    }, actions: [{ label: 'Done', kind: 'primary' }] });
+    }, actions: [text ? { label: 'Copy text', attrs: { 'data-card-copy': '' }, onClick: function () { ES.ui.copyText(text, { toast: 'Card text copied', title: 'Your card as text' }); return false; } } : null,
+      { label: 'Done', kind: 'primary' }].filter(Boolean) });
   }
 
-  G.share = { draw: draw, toBlob: toBlob, download: download, copyImage: copyImage, shareSheet: shareSheet, showImage: showImage, fileName: fileName, SIZE: [W, H] };
+  G.share = { draw: draw, toBlob: toBlob, save: save, copyImage: copyImage, shareSheet: shareSheet, showImage: showImage, fileName: fileName, SIZE: [W, H] };
 })(window.ES, window);

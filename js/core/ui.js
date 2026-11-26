@@ -123,14 +123,25 @@
     return h.closed.then(function (v) { return v === true; });
   }
 
+  /** toast(text, {kind, ms, action:{label, onClick, attrs}}): a short note; with an action it carries one button
+      (it then takes taps and stays longer). */
   function toast(text, opts) {
     opts = opts || {};
     if (quiet) { queued.push([text, opts]); return; }
     var box = doc().getElementById('toasts');
     if (!box) return;
-    var t = U.el('div', { class: ['toast', opts.kind && 'toast-' + opts.kind] }, text);
+    var act = opts.action && opts.action.label ? opts.action : null;
+    var t = U.el('div', { class: ['toast', opts.kind && 'toast-' + opts.kind, act && 'has-action'] }, [U.el('span', { class: 'toast-text' }, text)]);
+    function drop() { if (t.parentNode) t.parentNode.removeChild(t); }
+    if (act) {
+      var attrs = { type: 'button', class: 'toast-btn' };
+      Object.keys(act.attrs || {}).forEach(function (k) { attrs[k] = act.attrs[k]; });
+      var b = U.el('button', attrs, act.label);
+      b.addEventListener('click', function () { drop(); try { act.onClick(); } catch (e) { /* the caller reports */ } });
+      t.appendChild(b);
+    }
     box.appendChild(t);
-    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, opts.ms || 3200);
+    setTimeout(drop, opts.ms || (act ? 8000 : 3200));
   }
   /** Quiet mode while a stimulus plays: toasts wait until it ends. */
   function setQuiet(on) {

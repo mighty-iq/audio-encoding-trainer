@@ -56,7 +56,7 @@
         });
       } }),
       ES.ui.button('Download image', { attrs: { 'data-download-image': '' }, onClick: function () {
-        withBlob(function (blob) { if (!G.share.download(blob, G.share.fileName(res))) G.share.showImage(canvas, res); });
+        if (canvas) G.share.save(canvas, res, text());       // saving goes through ES.core.download (shell)
       } })
     ]);
     box.appendChild(el('p', { class: 'eyebrow mono' }, res.complete ? 'Your card' : 'Your night so far'));

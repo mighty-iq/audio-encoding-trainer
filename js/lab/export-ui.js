@@ -1,7 +1,7 @@
 /* ES.lab.exportUi — delivering exports and taking imports (CONTRACTS §0: downloads may be blocked).
-   deliver(file): tries a download (Blob + a[download]) and always opens a sheet with the file's name and size and a
-   "Copy the text" button (clipboard → execCommand → a copy box), because sandboxed previews refuse downloads
-   silently; the sheet carries the Chimera invitation after an export. open(): the export choices (backup, CSV,
+   deliver(file) → Promise: saves through ES.core.download, then opens a sheet with the file's name and size, what
+   happened, and a "Copy the text" button (clipboard → execCommand → a copy box), because sandboxed previews refuse
+   downloads silently; the sheet carries the Chimera invitation after an export (none after a declined save). open(): the export choices (backup, CSV,
    community pool with its two switches). importSheet(): a file or pasted text, reported in plain words.
    MIT licence. */
 (function (root) {
@@ -11,30 +11,24 @@
   var E = L.exportUi = {};
   function U() { return ES.core.util; }
 
-  E.download = function (name, text, mime) {
-    try {
-      var blob = new root.Blob([text], { type: mime || 'application/json' }), URLo = root.URL || root.webkitURL;
-      var url = URLo.createObjectURL(blob), a = U().el('a', { href: url, download: name, class: 'offscreen' });
-      root.document.body.appendChild(a); a.click(); root.document.body.removeChild(a);
-      setTimeout(function () { try { URLo.revokeObjectURL(url); } catch (e) { /* ignore */ } }, 5000);
-      return true;
-    } catch (e) { return false; }
-  };
+  // Saving goes through ES.core.download (shell): the artifact host's downloads where the page runs in the
+  // claude.ai viewer, else a browser download; the sheet says what happened and keeps Copy for every case.
   E.deliver = function (file) {
-    var u = U(), ok = E.download(file.name, file.text, file.mime), kb = Math.max(1, Math.round(file.text.length / 1024));
-    E.last = { kind: file.kind, name: file.name, text: file.text, downloaded: ok };
-    ES.hooks.emit('export', { kind: file.kind, bytes: file.text.length });
-    var h = ES.ui.sheet({ title: file.kind === 'pooled' ? 'Pool file ready' : 'Export ready', cls: 'sheet-export', body: function (b) {
-      b.setAttribute('data-lab-export-done', file.kind);
-      b.appendChild(u.el('p', null, [u.el('span', { class: 'mono' }, file.name), ' · ' + kb + ' KB']));
-      b.appendChild(u.el('p', { class: 'hint' }, ok ? 'If no download started (some previews block downloads), copy the text and keep it in a file or a note.'
-        : 'Downloads are blocked here: copy the text and keep it in a file or a note.'));
-      if (file.kind === 'pooled') b.appendChild(u.el('p', { class: 'hint' }, 'This file holds a random code, your check-in results and your training time per week: no name' +
-        (file.obj && file.obj.nickname ? ' except your nickname' : '') + (file.obj && file.obj.device ? ', plus the device details you switched on.' : ', no device details.')));
-      ES.core.chimera.invite('export', { el: b });
-    }, actions: [{ label: 'Copy the text', attrs: { 'data-lab-copy': '' }, onClick: function () { ES.ui.copyText(file.text, { title: file.name, toast: 'Copied' }); return false; } },
-      { label: 'Done', kind: 'primary' }] });
-    return h;
+    var u = U(), kb = Math.max(1, Math.round(file.text.length / 1024));
+    return ES.core.download.save(file.name, file.text, file.mime, { ui: false }).then(function (res) {
+      E.last = { kind: file.kind, name: file.name, text: file.text, downloaded: !!res.ok, how: res.how };
+      if (res.how === 'declined' || res.how === 'rate_limited') return null;   // declined: nothing said; busy: a toast
+      ES.hooks.emit('export', { kind: file.kind, bytes: file.text.length });
+      return ES.ui.sheet({ title: file.kind === 'pooled' ? 'Pool file ready' : 'Export ready', cls: 'sheet-export', body: function (b) {
+        b.setAttribute('data-lab-export-done', file.kind);
+        b.appendChild(u.el('p', null, [u.el('span', { class: 'mono' }, file.name), ' · ' + kb + ' KB']));
+        b.appendChild(u.el('p', { class: 'hint', 'data-save-result': res.how }, res.message));
+        if (file.kind === 'pooled') b.appendChild(u.el('p', { class: 'hint' }, 'This file holds a random code, your check-in results and your training time per week: no name' +
+          (file.obj && file.obj.nickname ? ' except your nickname' : '') + (file.obj && file.obj.device ? ', plus the device details you switched on.' : ', no device details.')));
+        ES.core.chimera.invite('export', { el: b });
+      }, actions: [{ label: 'Copy the text', attrs: { 'data-lab-copy': '' }, onClick: function () { ES.ui.copyText(file.text, { title: file.name, toast: 'Copied' }); return false; } },
+        { label: 'Done', kind: 'primary' }] });
+    });
   };
 
   /** The export choices. */

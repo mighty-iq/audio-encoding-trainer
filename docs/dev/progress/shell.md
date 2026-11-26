@@ -128,3 +128,11 @@ all failing before). Status per finding:
   record before a reload; a real drop happened in one run and the session came back). Separately the test browser
   sometimes never commits the reload navigation (an idle new renderer; about 1 in 4 under load): the M11 cases
   repeat, up to three attempts, with a warning. Last run: shell_round1 117/117 (8d79e75 + test changes).
+
+## 2026-11-26 23:28 UTC — round 2, item 1: one download helper
+- js/core/download.js: `ES.core.download.save(name, data, mime, opts)`; claude.use('downloads') asked once at start-up
+  (polls up to 4 s for window.claude.use; only that member is read; a request in flight is awaited up to 2 s by a save;
+  null after ~12 s); toast with an optional button (js/core/ui.js, .toast.has-action). Call sites: Settings backup,
+  Lab exports (ES.lab.exportUi.deliver), weekly card (ES.game.share.save). Test: tests/e2e/shell_download.py
+  (fake window.claude Proxy: resolves; rejects with declined, rate_limited, host_unavailable, unavailable, no code;
+  without it: anchor download, toast Copy, blocked Blob URLs).

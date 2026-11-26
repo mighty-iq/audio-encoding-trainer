@@ -1,7 +1,7 @@
-/* ES.ui.settingsData.section() — the Data part of Settings: where the record lives, export (download with a
-   copy-box fallback when downloads are blocked), import (file or pasted text; a damaged or newer backup is refused
-   whole with a plain message, so nothing changes) and delete everything (confirmed). Backups carry no name except a nickname the player typed,
-   and no device facts; own-voice recordings never leave the device. */
+/* ES.ui.settingsData.section() — the Data part of Settings: where the record lives, export (saved through
+   ES.core.download, with Copy and Show for every case), import (file or pasted text; a damaged or newer backup is
+   refused whole with a plain message, so nothing changes) and delete everything (confirmed). Backups carry no name
+   except a nickname the player typed, and no device facts; own-voice recordings never leave the device. */
 (function (ES, win) {
   'use strict';
   var U = ES.core.util;
@@ -13,31 +13,23 @@
     if (!st.saved) return st.lastError === 'quota' ? 'Not saved: storage is full. Export a backup, then delete data to free space.' : 'Not saved: the last write failed.';
     return 'Saved on this device only · ' + kb + ' KB' + (st.nearFull ? ' · storage is nearly full' : '');
   }
-  function download(name, text, mime) {
-    try {
-      var blob = new Blob([text], { type: mime || 'application/json' });
-      var url = (win.URL || win.webkitURL).createObjectURL(blob);
-      var a = U.el('a', { href: url, download: name, class: 'offscreen' });
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function () { try { (win.URL || win.webkitURL).revokeObjectURL(url); } catch (e) { /* ignore */ } }, 5000);
-      return true;
-    } catch (e) { return false; }
-  }
+  /** The backup file, saved through ES.core.download (the artifact host's downloads, else a browser download); the
+      sheet shows what happened, keeps Copy and Show for every case, and carries the export invitation. A save the
+      player declined shows nothing; "try again" comes as a toast. */
   function exportBackup() {
     var data = ES.core.store.exportAll(), text = JSON.stringify(data, null, 1);
-    var name = 'earshot-backup-' + U.isoUtc().slice(0, 10) + '.json', ok = download(name, text);
-    ES.hooks.emit('export', { kind: 'backup', bytes: text.length });
-    var h = ES.ui.sheet({ title: 'Backup ready', cls: 'sheet-export', body: function (b) {
-      b.appendChild(U.el('p', null, [U.el('span', { class: 'mono' }, name), ' · ' + Math.max(1, Math.round(text.length / 1024)) + ' KB']));
-      b.appendChild(U.el('p', { class: 'hint' }, ok ? 'If no download started (some previews block downloads), copy the text and keep it in a file or a note.'
-        : 'Downloads are blocked here: copy the text and keep it in a file or a note.'));
-      ES.core.chimera.invite('export', { el: b });
-    }, actions: [{ label: 'Copy the text', attrs: { 'data-copy-backup': '' }, onClick: function () { ES.ui.copyText(text, { title: 'Your backup', toast: 'Backup copied' }); return false; } },
-      { label: 'Show the text', attrs: { 'data-show-backup': '' }, onClick: function () { ES.ui.copyBox(text, { title: 'Your backup', hint: 'Select all of the text and copy it into a file or a note.' }); return false; } },
-      { label: 'Done', kind: 'primary' }] });
-    return h;
+    var name = 'earshot-backup-' + U.isoUtc().slice(0, 10) + '.json';
+    return ES.core.download.save(name, text, 'application/json', { ui: false }).then(function (res) {
+      if (res.how === 'declined' || res.how === 'rate_limited') return null;
+      ES.hooks.emit('export', { kind: 'backup', bytes: text.length });
+      return ES.ui.sheet({ title: res.ok ? 'Backup ready' : 'Backup not saved', cls: 'sheet-export', body: function (b) {
+        b.appendChild(U.el('p', null, [U.el('span', { class: 'mono' }, name), ' · ' + Math.max(1, Math.round(text.length / 1024)) + ' KB']));
+        b.appendChild(U.el('p', { class: 'hint', 'data-save-result': res.how }, res.message));
+        ES.core.chimera.invite('export', { el: b });
+      }, actions: [{ label: 'Copy the text', attrs: { 'data-copy-backup': '' }, onClick: function () { ES.ui.copyText(text, { title: 'Your backup', toast: 'Backup copied' }); return false; } },
+        { label: 'Show the text', attrs: { 'data-show-backup': '' }, onClick: function () { ES.ui.copyBox(text, { title: 'Your backup', hint: 'Select all of the text and copy it into a file or a note.' }); return false; } },
+        { label: 'Done', kind: 'primary' }] });
+    });
   }
   function describe(rep) {
     if (rep.ok) {
@@ -114,5 +106,5 @@
     ], 'data');
   }
 
-  ES.ui.settingsData = { section: section, exportBackup: exportBackup, importBackup: importBackup, deleteAll: deleteAll, statusText: statusText, download: download };
+  ES.ui.settingsData = { section: section, exportBackup: exportBackup, importBackup: importBackup, deleteAll: deleteAll, statusText: statusText };
 })(window.ES, window);
