@@ -1,22 +1,15 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-26 20:09 UTC
+Updated: 2026-11-26 21:59 UTC
 
 ## Phase
-2 → 3 overlap. Built and verified by their builders: shell, audio, engine (5 modes, solver/shortcut/sim checks,
-plateau retuned), exA (Crowd, Far, Strange, Repair), lab (7 probes, stats: 1.5 dB gain clear by week 4 in 79 %),
-game (map, cast, weekly, progress). Still building: stimuli (full voice set, probe materials), exB (Echo, Seek,
-Voices, Missions). Reviews RV-code (2 high/11 medium) and RV-claims (2 high/13 medium) done on e079caf →
-FIX ROUND 1 running (docs/dev/reviews/FIX-ROUND-1.md: rulings + per-owner assignments; all 7 builders active).
+3 — review, fix, release (overlapping the last build work). Fix round 1 done by engine, lab, game, exA, exB; shell's
+fix round 1 is uncommitted in the working tree (31 files) and the shell builder is resuming after a server restart
+(~21:55 UTC). Stimuli: stage 1 (probe materials) committed; stages 2–3 (content, more voices) running.
+Guide PDF (35 pages) and announcement done (33d8ea5). All exercises exist (exB done).
 
 ## Running subagents (IDs in the lead's container notes)
-- shell → index.html, css/, fonts/, js/core/, js/ui/, js/app.js, tools/build-*.mjs, tests/unit/run.mjs, tests/e2e/
-- audio → js/audio/**, tests/unit/audio*, tests/e2e/audio_*.py
-- stimuli → tools/audio/**, data/**, audio/**, docs/dev/STIMULI.md, LICENSES-ASSETS.md (starter pack first)
-- engine → js/engine/**, tests/unit/engine*, tests/sim/**
-- exA → js/ex/{crowd,far,strange,repair,strategies}.js · lab → js/lab/** · game → js/game/**
-Each keeps docs/dev/progress/<owner>.md; cross-owner needs in docs/dev/requests.md. The session server restarted at
-~18:18 UTC; every builder was resumed from its transcript (background jobs it had running were lost).
+- shell (fix round 1) · stimuli (stages 2–3, data/credits.js, M2, C11, C35). Everyone else finished.
 
 ## Done
 - Research R1–R6 complete (docs/research/), ACCESS.md lists sources not opened (core: Whitton 2017, Wright 2010/2015,
@@ -34,11 +27,10 @@ Each keeps docs/dev/progress/<owner>.md; cross-owner needs in docs/dev/requests.
 - Lead-owned done: LICENSE (MIT), LICENSE-TEXTS.md (CC BY-SA 4.0), README, fixlist, contracts updates, warm-up wiring.
 
 ## Next three steps
-1. Collect fix-round-1 replies; rebuild; run all unit + e2e suites; republish the test build.
-2. When stimuli lands probe materials and content: RV-stimuli, RV-play, RV-a11y and fresh-player tests on a new
-   snapshot (docs/dev/briefs/phase3.md), then fix round 2.
-3. Guide PDF (builder brief in phase3.md), Discord post, release build (playtest off), verification table, release
-   checklist page, build log and playbook merge; then wait for the owner's yes.
+1. When the shell commits: build-index, full unit + e2e suites, rebuild and republish the test build.
+2. New snapshot → RV-stimuli, RV-play, RV-a11y, fresh-player tests (docs/dev/briefs/phase3.md) → fix round 2.
+3. Release: release build (playtest off), guide with URLs, VERIFY.md table, release checklist page, build log,
+   playbook merge; wait for the owner's yes to merge build → main.
 
 ## Open questions
 - Owner to rename the repo to Earshot (taps sent).
