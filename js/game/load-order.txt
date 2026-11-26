@@ -1,0 +1,20 @@
+# Load order of the game layer (tools/build-index.mjs reads this). Pure files first: they load in Node.
+data.js
+core.js
+venues.js
+fallback.js
+cast.js
+milestones.js
+weekly.js
+returns.js
+record.js
+# DOM: styles, shared pieces, share card, screens
+style.js
+ui.js
+share.js
+screen-map.js
+screen-venue.js
+screen-cast.js
+screen-weekly.js
+screen-progress.js
+*
