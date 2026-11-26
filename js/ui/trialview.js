@@ -142,6 +142,7 @@
     }
     function start() { load('Getting the sound ready…'); }
     function listen(buf) {
+      clearCaption();
       setState('listen', mode === 'demo' ? 'Listen to the example…' : 'Listen…');
       playBuf(buf, function (r) {
         if (aborted || state !== 'listen' || r.stopped) return;
@@ -156,10 +157,13 @@
     function showCaption() {
       var on = false;
       try { on = !!ES.TEST_BUILD && (!!(ES.CONFIG && ES.CONFIG.captions) || /[?&]captions=1(&|$)/.test(String(win.location.search))); } catch (e) { on = false; }
-      if (!on || !trial.meta || !trial.meta.text || !prompt.parentNode) return;
-      var old = prompt.parentNode.querySelector('.trial-caption');
-      if (old) old.parentNode.removeChild(old);
-      prompt.parentNode.appendChild(U.el('p', { class: 'trial-caption', 'data-caption': '' }, 'Test aid · said: ' + trial.meta.text));
+      if (!on || !prompt.parentNode) return;
+      clearCaption();
+      var m = trial.meta || {}, said = m.text || (m.items && m.items.length ? m.items.join(' · ') : '(no text for this trial)');
+      prompt.parentNode.appendChild(U.el('p', { class: 'trial-caption', 'data-caption': '' }, 'Test aid · said: ' + said));
+    }
+    function clearCaption() {
+      try { var old = prompt.parentNode && prompt.parentNode.querySelectorAll('.trial-caption'); for (var i = 0; old && i < old.length; i++) old[i].parentNode.removeChild(old[i]); } catch (e) { /* ignore */ }
     }
     /** No sound came through: nothing is shown as heard, nothing is scored; a tap unlocks audio and plays again. */
     function noSound(buf) {
