@@ -21,7 +21,6 @@
       bet: 'a general strategy: hold the sentence, then repair it' },
     bet: 'A general strategy, hold the sentence and then repair it, plus listening in the gaps.',
     betNew: false,
-    venues: ['club', 'concert', 'station', 'phone', 'stadium'],
     view: 'keyword', feedback: 'standard',
     strategies: ['repair.wait', 'repair.fill', 'repair.glimpse'],
     tips: [
@@ -156,6 +155,10 @@
   }
   M.tutorial = {};
   Object.defineProperty(M.tutorial, 'steps', { get: steps, enumerable: true });
+
+  // Night out venues that use this exercise: read from the game's map (ES.game.venues), else this list.
+  var VENUES = ['cafe', 'bar', 'party', 'club', 'phone'];
+  Object.defineProperty(M, 'venues', { enumerable: true, get: function () { var k = K(); return k ? k.venuesOf(M.id, VENUES) : VENUES.slice(); } });
 
   ES.ex.repair = M;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -22,7 +22,6 @@
       bet: 'variety that teaches you to adapt to any new voice' },
     bet: 'Varied voices that train your ear to adapt to new ones, fast.',
     betNew: false,
-    venues: ['phone', 'station', 'restaurant'],
     view: 'keyword', feedback: 'popout',
     strategies: ['strange.replay', 'strange.few', 'strange.noise'],
     tips: [
@@ -123,6 +122,10 @@
   }
   M.tutorial = {};
   Object.defineProperty(M.tutorial, 'steps', { get: steps, enumerable: true });
+
+  // Night out venues that use this exercise: read from the game's map (ES.game.venues), else this list.
+  var VENUES = ['cafe', 'party', 'concert', 'lecture', 'station', 'phone'];
+  Object.defineProperty(M, 'venues', { enumerable: true, get: function () { var k = K(); return k ? k.venuesOf(M.id, VENUES) : VENUES.slice(); } });
 
   ES.ex.strange = M;
 })(typeof window !== 'undefined' ? window : globalThis);

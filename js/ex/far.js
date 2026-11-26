@@ -19,7 +19,6 @@
       bet: 'adapting to rooms, trained across many rooms' },
     bet: 'Room adaptation, trained across many rooms so that it can carry over to rooms you have never heard.',
     betNew: false,
-    venues: ['cathedral', 'station', 'lecture', 'park', 'stadium'],
     view: 'keyword', feedback: 'standard',
     strategies: ['far.tune-in', 'far.starts', 'far.closer'],
     tips: [
@@ -128,6 +127,10 @@
   }
   M.tutorial = {};
   Object.defineProperty(M.tutorial, 'steps', { get: steps, enumerable: true });
+
+  // Night out venues that use this exercise: read from the game's map (ES.game.venues), else this list.
+  var VENUES = ['restaurant', 'lecture', 'park', 'station', 'stadium', 'cathedral'];
+  Object.defineProperty(M, 'venues', { enumerable: true, get: function () { var k = K(); return k ? k.venuesOf(M.id, VENUES) : VENUES.slice(); } });
 
   ES.ex.far = M;
 })(typeof window !== 'undefined' ? window : globalThis);

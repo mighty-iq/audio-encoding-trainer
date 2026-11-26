@@ -54,6 +54,15 @@
     return d.kind === 'ord' && d.values ? d.values[clamp(Math.round(s[id]), 0, d.values.length - 1)] : s[id];
   }
 
+  /** Venues of the Night out map that use exercise ex (the game layer owns the map); fallback when it is absent. */
+  function venuesOf(ex, fallback) {
+    var G = ES.game && ES.game.venues;
+    if (G && typeof G.forExercise === 'function') {
+      try { var v = G.forExercise(ex).map(function (x) { return x.id; }); if (v.length) return v; } catch (e) { /* fall back */ }
+    }
+    return fallback.slice();
+  }
+
   /* ---- Help sheet: the goal, each dial in plain words with its real range, tips, the bet ---- */
   function helpBody(mod, el) {
     var u = U(), h = typeof mod.helpData === 'function' ? mod.helpData() : {}, notes = h.dials || {};
@@ -207,7 +216,7 @@
   }
 
   hide('_kit', { clone: clone, clamp: clamp, round: round, report: report, q: q, cap: cap,
-    dialsOf: dialsOf, dialOf: dialOf, easyEnd: easyEnd, hardEnd: hardEnd, fmt: fmt, range: range, edge: edge, value: value,
+    venuesOf: venuesOf, dialsOf: dialsOf, dialOf: dialOf, easyEnd: easyEnd, hardEnd: hardEnd, fmt: fmt, range: range, edge: edge, value: value,
     helpBody: helpBody, openHelp: openHelp, slotsOf: slotsOf, answerIndex: answerIndex, placeAnswers: placeAnswers,
     missLine: missLine, findReplay: findReplay, audioAlone: audioAlone, audioNear: audioNear, audioClean: audioClean,
     ROOM_M: ROOM_M, roomBox: roomBox, clusterSamePlace: clusterSamePlace, tutorialTrial: tutorialTrial });

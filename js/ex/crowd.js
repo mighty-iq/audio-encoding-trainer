@@ -18,7 +18,6 @@
       bet: 'attention control and voice cues against competing talkers' },
     bet: 'Attention control and voice and place cues against competing talkers; ever-changing crowds aim to keep the skill general.',
     betNew: false,
-    venues: ['cafe', 'restaurant', 'bar', 'party', 'club', 'concert'],
     view: 'keyword', feedback: 'standard',
     strategies: ['crowd.lock-on', 'crowd.borrowed', 'crowd.space'],
     tips: [
@@ -167,6 +166,10 @@
     { kind: 'caption', minMs: 3500, then: 'tap',
       text: 'From here the crowd adapts to you: louder, more alike, more voices, always near your edge. After each answer you can hear your voice alone, then the crowd again.' }
   ] };
+
+  // Night out venues that use this exercise: read from the game's map (ES.game.venues), else this list.
+  var VENUES = ['cafe', 'restaurant', 'bar', 'party', 'club', 'concert'];
+  Object.defineProperty(M, 'venues', { enumerable: true, get: function () { var k = K(); return k ? k.venuesOf(M.id, VENUES) : VENUES.slice(); } });
 
   ES.ex.crowd = M;
 })(typeof window !== 'undefined' ? window : globalThis);
