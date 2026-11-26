@@ -201,12 +201,23 @@
     var X = ES.ex && ES.ex[ex];
     return (X && X.name) || { crowd: 'Crowd', far: 'Far', strange: 'Strange voices', repair: 'Repair', echo: 'Echo', seek: 'Seek', voices: 'Voices' }[ex] || ex;
   }
-  /** Venues whose head or "also here" conditions use exercise ex. */
+  /** Can this build make the condition? Strange's accent family needs accented training voices (RV-claims C12:
+      without them the generator plays another family, so the row and the weekly stop would promise accents). */
+  function condAvailable(cond) {
+    if (!cond || cond.ex !== 'strange' || cond.dial !== 'accent') return true;
+    var I = E().items || {}, A = I.adapt, X = I.data;
+    try {
+      if (!A || !X || typeof A.isNative !== 'function') return false;
+      var idx = X.idx();
+      return idx.voices.some(function (v) { return !A.isNative(X.voice(v)); });
+    } catch (e) { return false; }
+  }
+  /** Venues whose head or "also here" conditions use exercise ex (conditions this build can make). */
   function forExercise(ex) {
-    return D().VENUES.filter(function (v) { return v.head.ex === ex || v.also.some(function (c) { return c.ex === ex; }); });
+    return D().VENUES.filter(function (v) { return [v.head].concat(v.also).some(function (c) { return c.ex === ex && condAvailable(c); }); });
   }
 
   ES.game.venues = { MIN_N: MIN_N, list: function () { return D().VENUES.slice(); }, get: venueOf, earshot: earshot, condEarshot: condEarshot,
     reaches: reaches, inReach: inReach, venueName: venueName, atText: atText, state: state, newlyOpen: newlyOpen, next: next, ruleText: ruleText, describe: describe, meaning: meaning,
-    pinsFor: pinsFor, plan: plan, supports: supports, forExercise: forExercise, exName: exName, speechVsNoise: speechVsNoise };
+    pinsFor: pinsFor, plan: plan, supports: supports, forExercise: forExercise, condAvailable: condAvailable, exName: exName, speechVsNoise: speechVsNoise };
 })(typeof window !== 'undefined' ? window : globalThis);

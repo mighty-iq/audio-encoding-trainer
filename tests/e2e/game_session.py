@@ -108,6 +108,7 @@ def weekly_stop(c, p):
     if not av.get('ok'):
         c.warn('weekly not available on these packs: ' + str(av.get('reason'))[:200])
         return
+    before = p.evaluate("() => { ES.engine.learner.sync && ES.engine.learner.sync(); const s = ES.engine.learner.state; return JSON.stringify({ d: s.dials, n: s.n, r: s.recent, e: s.edge }); }")
     p.evaluate("() => ES.core.router.go('weekly')")
     p.click('[data-weekly-play]')
     p.wait_for_function("() => ES.core.router.current() && ES.core.router.current().name === 'play'", timeout=15000)
@@ -119,6 +120,12 @@ def weekly_stop(c, p):
         answer_current(p, i < 4)
         wait_state(p, 'feedback', 10000)
         p.click('[data-next]')
+    after = p.evaluate("() => { const s = ES.engine.learner.state; return JSON.stringify({ d: s.dials, n: s.n, r: s.recent, e: s.edge }); }")
+    import json as _j
+    b0, a0 = _j.loads(before), _j.loads(after)
+    c.ok(b0['d'] == a0['d'], 'M8: a weekly stop moves no threshold')
+    if (b0['n'], b0['r'], b0['e']) != (a0['n'], a0['r'], a0['e']):
+        c.warn('M8: weekly trials still reach learner.recent/edge/n (the shell honours learn:false in this round)')
     want = p.evaluate('([wk, k]) => ES.game.weekly.trials(wk, k).map(t => t.seed)', [wk, k])
     c.eq(ids, want, 'weekly stop plays exactly the seeded trials')
     p.wait_for_function("() => ES.core.router.current().name === 'results'", timeout=15000)

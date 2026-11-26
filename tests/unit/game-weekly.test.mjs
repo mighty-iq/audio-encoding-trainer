@@ -86,6 +86,31 @@ export const tests = {
     assert.equal(W.result('2026-W48', r).practice.length, 1, 'the practice run is kept apart');
     assert.equal(W.result('2026-W48', r).right, 13);
   },
+  async 'M8: weekly trials never teach the learner, on a first run or a replay'(ES0, assert, env) {
+    const ES = await spawnGame(env), W = ES.game.weekly, wk = '2026-W48';
+    const p = W.plan(wk);
+    assert.equal(p.learn, false);
+    p.sets.forEach((s) => assert.equal(s.learn, false, 'set ' + s.stop + ' carries learn:false'));
+    const lr = ES.engine.learner, before = JSON.stringify(lr.state.dials);
+    for (let run = 0; run < 2; run++) {                // first run and a replay of the identical items
+      [0, 1, 2, 3].forEach((k) => W.trials(wk, k).forEach((t) => {
+        assert.equal(t.setting.noUpdate, true); assert.equal(t.meta.learn, false);
+        lr.update(JSON.parse(JSON.stringify(t)), { prop: 1, correct: true });
+      }));
+    }
+    assert.equal(JSON.stringify(lr.state.dials), before, 'no threshold moved');
+  },
+  async 'C12: no accent stop when the build has no accented voices'(ES0, assert, env) {
+    const ES = await spawnGame(env), V = ES.data.voices, A = ES.engine.items.adapt;
+    const weeks = Array.from({ length: 40 }, (_, i) => '2027-W' + String(i + 1).padStart(2, '0'));
+    const dials = (E) => weeks.map((w) => E.game.weekly.route(w).stops.find((s) => s.ex === 'strange').dial);
+    assert.ok(dials(ES).includes('accent'), 'with accented voices the accent stop can be drawn');
+    Object.keys(V).forEach((id) => { if (!A.isNative(V[id])) delete V[id]; });
+    ES.engine.items.data.reset();
+    assert.equal(ES.game.venues.condAvailable({ ex: 'strange', dial: 'accent' }), false);
+    assert.ok(!dials(ES).includes('accent'), 'never without them');
+    assert.ok(!ES.game.venues.forExercise('strange').some((v) => v.id === 'cafe'), 'the café offers no accent row');
+  },
   'the plan holds the stops still to play, each with its six fixed trials'(ES, assert) {
     const W = ES.game.weekly, r = { weekly: {} };
     W.recordStop(r, '2026-W48', 1, '110000', 5);

@@ -1,6 +1,8 @@
 """All of the game layer's browser suites under one browser lock (the lock queue is shared by every builder):
 screens on fresh and long-term profiles, the weekly challenge, and a real session (skipped without real data).
-Run: python3 tests/e2e/game_all.py   (no outer flock: harness.browser_lock takes /tmp/earshot-browser.lock itself)"""
+Run: tools/with-browser.sh python3 tests/e2e/game_all.py --held [screens|weekly|session]
+     (--held: the wrapper already holds a browser slot; without it the harness takes one itself)."""
+import contextlib
 import sys
 
 from playwright.sync_api import sync_playwright
@@ -12,9 +14,11 @@ import game_session
 
 
 def main():
-    only = set(sys.argv[1:])
+    args = sys.argv[1:]
+    held = '--held' in args
+    only = set(a for a in args if not a.startswith('--'))
     c = Checks('game_all')
-    with browser_lock(timeout=3600), sync_playwright() as pw, http_server() as base:
+    with (contextlib.nullcontext() if held else browser_lock(timeout=3600)), sync_playwright() as pw, http_server() as base:
         browser = launch(pw)
         try:
             for name, mod in (('screens', game_screens), ('weekly', game_weekly), ('session', game_session)):

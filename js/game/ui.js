@@ -172,30 +172,12 @@
     return true;
   }
 
-  // FALLBACK placement until the shell emits `results:news` and appends ES.game.homeCard() (requests.md 18:12 UTC).
-  var placed = {};
+  // The shell's screen between sets hosts the news block (hook `results:news`); Home calls ES.game.homeCard().
   if (ES.hooks && ES.hooks.on) {
     ES.hooks.on('results:news', function (p) {
       if (!p || !p.el || p.done) return;
       var b = newsBlock(G.record.newsFor(p.index));
-      if (b) { p.el.appendChild(b); }
-      placed['r' + p.index] = true;
-    });
-    ES.hooks.on('route', function (info) {
-      var doc = win.document;
-      if (!info || !doc) return;
-      if (info.name === 'results' && info.params && !info.params.done && !placed['r' + info.params.set]) {
-        var scr = doc.querySelector('[data-screen="results"]'), inv = scr && scr.querySelector('.invites');
-        if (scr && !scr.querySelector('[data-game-news]')) {
-          var b = newsBlock(G.record.newsFor(info.params.set));
-          if (b && inv) inv.parentNode.insertBefore(b, inv); else if (b) (scr.querySelector('.wrap') || scr).appendChild(b);
-        }
-      }
-      if (info.name === 'results') placed = {};
-      if (info.name === 'home') {
-        var home = doc.querySelector('[data-screen="home"] .home-cards');
-        if (home && !home.querySelector('[data-game-home]')) { try { home.appendChild(homeCard()); } catch (e) { /* the home works without it */ } }
-      }
+      if (b) p.el.appendChild(b);
     });
   }
 

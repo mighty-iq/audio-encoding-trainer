@@ -53,6 +53,11 @@ export const tests = {
       strings.forEach((s) => assert.ok(!bad.test(s), f + ': ' + s));
     });
   },
+  'C31: the map says level, in decibels, metres or line quality'(ES, assert) {
+    const src = fs.readFileSync(path.join(ROOT, 'js', 'game', 'screen-map.js'), 'utf8');
+    assert.ok(src.includes('a level in decibels, metres or line quality, never a guess'));
+    assert.ok(!src.includes('a number in decibels or metres'));
+  },
   'every share text and the card footer name the Chimera link; texts carry no raw numbers from nowhere'(ES, assert) {
     const W = ES.game.weekly;
     for (let w = 1; w <= 52; w += 7) {

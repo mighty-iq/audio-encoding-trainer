@@ -6,6 +6,9 @@
    part of the player's record can change it (tests/unit/game-weekly.test.mjs). No leaderboards: the card shows
    your own night, spoiler-free (✓/✕ per trial, the furthest level per stop), and always carries the Chimera link.
    The first complete run of a week is that week's card; later runs are practice and keep the card as it was.
+   Weekly trials never teach the learner (fix round 1, M8): the plan's sets carry `learn:false`, every trial carries
+   setting.noUpdate and meta.learn = false, so neither a first run nor a replay of the same 24 items moves a level.
+   A stop the build cannot make (an accent stop without accented voices: RV-claims C12) is never drawn.
    Record: game.weekly[week] = {v, ver, at, stops:{k:{marks, at}}, done, practice}. */
 (function (root) {
   'use strict';
@@ -46,7 +49,8 @@
     wk = validWeek(wk) ? wk : weekKey();
     var r = ES.core.rng(seedOf(wk)), order = r.shuffle(ORDER), D = ES.game.data;
     var stops = order.map(function (ex, k) {
-      var opts = STOPS[ex], pick = opts[r.int(0, opts.length - 1)], v = D.venue(pick[0]);
+      var opts = STOPS[ex].filter(function (o) { return ES.game.venues.condAvailable({ ex: ex, dial: o[2] || null }); });
+      var pick = opts[r.int(0, opts.length - 1)], v = D.venue(pick[0]);
       var cond = v.head.ex === ex && (!pick[2] || v.head.dial === pick[2]) ? v.head
         : v.also.filter(function (c) { return c.ex === ex && (!pick[2] || c.dial === pick[2]); })[0];
       var d = K().dialDef(ex, cond.dial), pins = {};
@@ -69,14 +73,17 @@
       var dials = {};
       Object.keys(st.pins).forEach(function (id) { dials[id] = st.pins[id]; });
       dials[st.dial] = lvl;
-      var setting = { dials: dials, focus: st.dial, anchor: false, warmup: false, seed: seedOf(wk) + ':' + k + ':' + i };
+      var setting = { dials: dials, focus: st.dial, anchor: false, warmup: false, noUpdate: true, seed: seedOf(wk) + ':' + k + ':' + i };
       var t = gen.make(ES.core.rng(seedOf(wk) + ':' + k + ':' + i), setting, ctx);
+      t.setting = t.setting || {};
+      t.setting.noUpdate = true;                     // generators copy only dials/focus/anchor/warmup
       var v = t.meta && t.meta.voices && t.meta.voices[0];
       if (v) { ctx.recentVoices = [v].concat(ctx.recentVoices).slice(0, 3); }
       if (t.meta && t.meta.room) ctx.lastRoom = t.meta.room;
       t.seed = setting.seed;
       t.meta = t.meta || {};
       t.meta.weekly = { week: wk, stop: k, rung: i };
+      t.meta.learn = false;
       t.meta.levelText = 'Stop ' + (k + 1) + ' of 4 · ' + K().levelText(st.ex, st.dial, lvl);
       return t;
     });
@@ -129,10 +136,10 @@
     var rt = route(wk), res = result(wk, opts.rec), en = entry(opts.rec || K().rec(), wk), done = en && en.done;
     var todo = rt.stops.filter(function (s) { return done || opts.all || !res.stops[s.k].marks; });
     var sets = todo.map(function (s) {
-      return { exId: s.ex, trials: s.ramp.length, kind: 'weekly', week: wk, stop: s.k, venue: s.venue, interlude: null,
+      return { exId: s.ex, trials: s.ramp.length, kind: 'weekly', week: wk, stop: s.k, venue: s.venue, interlude: null, learn: false,
         title: 'Weekly · ' + s.name + ' · ' + s.exName, make: function (i) { return copy(trials(wk, s.k)[i]); } };
     });
-    return { kind: 'weekly', title: 'Weekly Night Out', week: wk, practice: !!done, sets: sets, done: { name: 'weekly', params: { week: wk, after: true } } };
+    return { kind: 'weekly', title: 'Weekly Night Out', week: wk, practice: !!done, learn: false, sets: sets, done: { name: 'weekly', params: { week: wk, after: true } } };
   }
   function copy(t) { return JSON.parse(JSON.stringify(t)); }
 

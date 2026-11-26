@@ -33,9 +33,10 @@
       ex: s.venue.head.ex, dial: s.venue.head.dial, points: h.map(function (p) { return { t: p[0], y: p[1] }; }) });
   }
   function alsoList(v, open) {
-    if (!v.also.length) return null;
+    var rows = v.also.filter(G.venues.condAvailable);
+    if (!rows.length) return null;
     var S = ES.ui.session, can = function (ex) { return open && S && S.supports && S.supports.plan && (typeof S.runnable !== 'function' || S.runnable(ex)); };
-    return [el('h2', { class: 'g-sec' }, 'Also here'), el('ul', { class: 'g-also' }, v.also.map(function (c) {
+    return [el('h2', { class: 'g-sec' }, 'Also here'), el('ul', { class: 'g-also' }, rows.map(function (c) {
       var e = G.venues.condEarshot(c), d = G.core.dialDef(c.ex, c.dial);
       var val = e.status === 'none' ? 'not measured yet' : e.text;
       var play = can(c.ex) ? ES.ui.button('Play', { small: true, attrs: { 'data-play-also': c.ex + '.' + c.dial, 'aria-label': 'Play a set: ' + c.label },

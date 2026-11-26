@@ -100,3 +100,27 @@ Notes for whoever resumes:
 - The cast follows data/voices.js `cast` fields (20 voices in the current packs); nothing to change when it grows.
 - Lesson: `git rm` leaves a staged change in the shared index that another builder's commit can sweep up; stage and
   commit in one command.
+
+## 2026-11-26 20:14 UTC — fix round 1 (docs/dev/reviews/FIX-ROUND-1.md; RV-code, RV-claims on e079caf)
+- M8 fixed (game part): weekly plan and every set carry `learn:false`; every weekly trial carries setting.noUpdate
+  and meta.learn = false (generators drop extra setting fields, so it is set on the returned spec), so no threshold
+  moves on a first run or a replay. Tests: tests/unit/game-weekly.test.mjs "M8 …" (fails on the old weekly.js);
+  browser: tests/e2e/game_session.py checks the dial records are unchanged across a real weekly stop. recent/edge/n
+  still change until the shell honours `learn:false` (its part of M8; the suite warns until then).
+- C19 fixed: overnight lines say "Your last day's hardest (…), retested with other voices where possible", nothing
+  about "yesterday" or "voices new to you"; the Home card's added sentence follows R2 (accent learning carried over
+  to a new talker only after a night's sleep). The planner's own sentence is the engine's (C19 planner.js part).
+- C25 fixed: fresh-ears texts name the source as online training games ("…skill mostly survived breaks and came back
+  within a game or two"), not a rule about listening.
+- C31 fixed: map intro says "a level in decibels, metres or line quality, never a guess".
+- C10 (game part, js/game/returns.js:49-52) fixed: the fresh-ears line no longer prints the engine's index number
+  (its sign and units read the wrong way for dB dials); it says held / rose / a little rust.
+- C12 (game part, js/game/data.js:28, js/game/weekly.js:21) fixed: venues.condAvailable() hides the Café "Accents" row
+  (and ES.game.venues.forExercise('strange') leaves the café out) and the weekly never draws the accent stop when the
+  build has no accented voices (engine adapt.isNative). Test: game-weekly "C12 …".
+- M4 (game part, the Home card via returns.upcoming) fixed: the overnight card shows only before the day's first
+  session. Test: game-growth "returns: the overnight card shows only before the day's first session (M4)".
+- FALLBACK removed: the shell's `results:news` hook and Home's ES.game.homeCard() call (64e57ff) host the news block
+  and the home card; js/game/ui.js keeps only the hook listener.
+- Every new or changed test was run against the pre-fix files (they fail) and the fixed ones (they pass).
+- Browser runs now go through `tools/with-browser.sh python3 tests/e2e/game_all.py --held` (one slot).

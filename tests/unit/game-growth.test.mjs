@@ -86,9 +86,13 @@ export const tests = {
     const held = R.afterSet({ ex: 'crowd', fresh: { daysAway: 5, before: 1.2, after: 1.0 } })[0];
     assert.equal(held.kind, 'fresh'); assert.ok(/held after 5 days away/.test(held.text), held.text);
     const rust = R.afterSet({ ex: 'far', fresh: { daysAway: 9, before: 2, after: 0.5 } })[0];
-    assert.ok(/little rust/.test(rust.text) && /comes back/.test(rust.text), rust.text);
+    assert.ok(/little rust after 9 days away/.test(rust.text) && /online training games/.test(rust.text), rust.text);   // C25: source named as games
+    const rose = R.afterSet({ ex: 'crowd', fresh: { daysAway: 3, before: 0, after: 1.2 } })[0];
+    assert.equal(rose.text, 'Your level held after 3 days away, and even rose.');
+    [held, rust, rose].forEach((x) => assert.ok(!/\d\s*(dB|points)|index/.test(x.text), 'C10: no index number in ' + x.text));
     const on = R.afterSet({ ex: 'crowd', overnight: { n: 3, prop: 0.833, expected: 0.72, focus: 'similar' } })[0];
-    assert.equal(on.text, 'Yesterday’s hardest (voice similarity), with voices new to you: 83 % of words right over 3 trials (the model expected about 72 %).');
+    assert.equal(on.text, 'Your last day’s hardest (voice similarity), retested with other voices where possible: 83 % of words right over 3 trials (the model expected about 72 %).');
+    assert.ok(!/new to you|yesterday/i.test(on.text), 'C19 wording');
     [held, rust, on].forEach((x) => assert.ok(!/streak|missed|lost your|penalt/i.test(x.text)));
   },
   async 'returns: the next session opens with fresh ears after ≥ 2 days, else the overnight check'(ES0, assert, env) {
@@ -98,6 +102,17 @@ export const tests = {
     const f = ES.game.returns.upcoming({ log: log(now - 3 * DAY), now });
     assert.equal(f.kind, 'fresh');
     assert.ok(!/missed|streak/i.test(f.text));
+    assert.ok(/online training games/.test(f.text), 'C25 wording');
+  },
+  async 'returns: the overnight card shows only before the day’s first session (M4)'(ES0, assert, env) {
+    const ES = await spawnGame(env), now = new Date(2026, 10, 26, 19).getTime(), yday = now - DAY + 3600e3;
+    const set = { ex: 'crowd', n: 20, focus: 'tmr', end: { tmr: -2 } };
+    const L = { sessions: [{ id: 'y', start: yday, end: yday + 6e5, sets: [set] }] };
+    const o = ES.game.returns.upcoming({ log: L, now });
+    assert.ok(o && o.kind === 'overnight', 'first session of the day: overnight check offered ' + JSON.stringify(o));
+    const today = new Date(2026, 10, 26, 9).getTime();
+    L.sessions.push({ id: 't', start: today, end: today + 6e5, sets: [set] });
+    assert.equal(ES.game.returns.upcoming({ log: L, now }), null, 'after a session today: no second overnight check');
   },
   async 'settle: one set updates levels, venues, openings, milestones and cast in one write'(ES0, assert, env) {
     const ES = await spawnGame(env);

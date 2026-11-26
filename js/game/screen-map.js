@@ -97,7 +97,7 @@
       el('p', { class: 'eyebrow mono' }, 'The night out · ' + open + ' of ' + st.length + ' venues open'),
       el('h1', { class: 'h-mid' }, 'Your earshot, venue by venue'),
       el('p', { class: 'g-sub' }, measured ? 'Each number is the level where you get about 7 in 10 right at that venue. A venue opens when the one before it reaches its mark and it comes within your reach.'
-        : 'Three venues are open from the start. Your earshot at each one appears after your first sets there: a number in decibels or metres, never a guess.'),
+        : 'Three venues are open from the start. Your earshot at each one appears after your first sets there: a level in decibels, metres or line quality, never a guess.'),
       el('div', { class: 'g-map-layout' }, [el('figure', { class: 'g-map-fig' }, drawMap(st)),
         el('div', { class: 'g-lines' }, G.data.LINES.map(function (l) { return lineCard(l, st); }))]),
       ES.ui.w.footer()
