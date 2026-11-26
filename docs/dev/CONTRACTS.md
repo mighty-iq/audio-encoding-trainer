@@ -156,3 +156,12 @@ controller, plateau, planner) → lab/* → game/* → ex/* → ui/screens/* →
   stats:{runEstimate, trend}, exporter:{json, csv, pooled, importJson} }` + screens.
 - Game (`js/game/**`): `ES.game = { venues, cast, weekly, share, milestones }` + screens; hooks into `ES.hooks`
   events (`set:done`, `session:done`, `pb`, `milestone`, `plateau`, `export`).
+
+## 12. Lead rulings (binding; added 2026-11-26 17:31 UTC)
+- R1 `room.size`: a word — 'small' | 'medium' | 'large' | 'hall'. The renderer maps words to shoebox dimensions
+  (length × width × height, m): small 5 × 4 × 2.7, medium 10 × 7 × 3.2, large 22 × 15 × 6, hall 38 × 24 × 12, and
+  derives the critical distance from these and rt60. A number is also accepted (length in m; width 0.7 × length;
+  height 3 m below 12 m length, else 0.3 × length). The engine keeps distances inside the room (dist ≤ 0.8 × length).
+- R2 `{type:'wsola', rate}`: rate is the SPEED factor — 2 means twice as fast, output duration = input / rate.
+  Valid 0.67–3. (The DSP function may keep its own duration-ratio argument; render-prep converts.)
+- R3 Times in every committed file come from `date -u`; the container clock is local.
