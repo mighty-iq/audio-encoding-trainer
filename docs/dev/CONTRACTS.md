@@ -38,7 +38,8 @@ lab `js/lab/**`; game `js/game/**`. Each will get its own brief.
   `ES.core.hash(string)` → uint32. Algorithm: sfc32 seeded by hash; fork derives a child seed from label.
 - `ES.core.store`: `init()→Promise<{mode:'persistent'|'memory',reason}>`, `get(key)`, `set(key,obj)→bool`,
   `update(key,fn)`, `status()→{mode,saved,lastError,bytes,nearFull,newerVersion}`, `exportAll()`, `importAll(obj)`,
-  `wipe()`. Keys and schemas in §7. Prefix `earshot.v1.`; revision counter; `storage` event merge by record id;
+  `wipe()`, plus `peek(key)` (no copy), `hold()`/`release()` (writes wait during stimuli), `flush()`;
+  hooks `store:status`, `app:ready`, `tutorial:done`, `results:interlude`. Keys and schemas in §7. Prefix `earshot.v1.`; revision counter; `storage` event merge by record id;
   every field has a merge rule; a record from a newer schema → read-only memory mode with a lasting banner.
 - `ES.core.clock`: one active-time clock: `start()`, `pause(reason)`, `resume()`, `activeMs()`, `input()`;
   idle limit 60 s; hidden tab pauses; a second pause keeps the first start.
@@ -117,6 +118,7 @@ TrialSpec (the contract between generator, renderer and views):
 - `game`: `{v, venues:{id:{at,best}}, cast:{voice:{met, seen, idOk}}, badges:{id:at}, pbs:{key:val}, weekly:{wk:{...}}}`
 - `diary`: `{v, entries:[{week, at, items:[...]}], events:[...]}`; `missions`: `{v, weeks:{wk:{id, done, rating}}}`
 - Own voices: IndexedDB `earshot-own` (blobs), never exported, deletable from Settings.
+- `playtest` (shell): ratings, notes, errors, frame stats, sets, screens; never in backups; copied via the report.
 
 ## 8. Look (Audiogram) — shell implements tokens; everyone uses them
 Light: bg #FAFAF7, surface #FFFFFF, surface-2 #F1F1EC, ink #15171B, ink-2 #474C54, ink-3 #686E77, rule #DCDDD7,
