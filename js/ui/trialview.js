@@ -241,6 +241,12 @@
         cancelAuto();
         if (primeT) { clearTimeout(primeT); primeT = null; }
         if (state === 'listen' || state === 'loading' || state === 'prime') { loadTok++; stopPlayer(); needsReplay = true; setState('paused', 'Paused'); }
+        else if ((state === 'feedback' || state === 'example') && player) {     // a replay was playing: stop it
+          stopPlayer();
+          body.removeAttribute('data-playing');
+          status.textContent = '';
+          setReplays(true);
+        }
       },
       resume: function () {
         if (!needsReplay || aborted) return;

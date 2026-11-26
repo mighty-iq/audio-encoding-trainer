@@ -33,9 +33,16 @@ def run(h):
             wait_ready(pg)
             close_sheets(pg)
             c.eq(pg.evaluate("ES.core.router.current().name"), want, f'{label}: #{target} opens {want}')
-        pg.goto(url + '#map')
-        pg.wait_for_timeout(200)
-        c.ok(pg.locator('[data-placeholder="map"]').count() == 1, f'{label}: placeholder screens say a later build')
+        free = pg.evaluate("Object.keys(ES.ui.placeholders).filter(n => !ES.ui.screens[n])")
+        taken = pg.evaluate("Object.keys(ES.ui.placeholders).filter(n => ES.ui.screens[n])")
+        if free:
+            pg.evaluate("(n) => ES.core.router.go(n)", free[0])
+            pg.wait_for_timeout(150)
+            c.ok(pg.locator(f'[data-placeholder="{free[0]}"]').count() == 1, f'{label}: an unregistered screen shows its later-build placeholder ({free[0]})')
+        for name in taken[:3]:
+            pg.evaluate("(n) => ES.core.router.go(n)", name)
+            pg.wait_for_timeout(150)
+            c.ok(pg.locator(f'[data-placeholder="{name}"]').count() == 0, f'{label}: a registered module screen replaces the placeholder ({name})')
         mine, other = tab.split()
         c.ok(not mine, f'{label}: no page errors from shell files', mine[:5])
         for who, text in other:

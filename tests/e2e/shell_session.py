@@ -13,7 +13,15 @@ def index(pg):
 
 def run(h):
     c = Checks('session')
-    tab = new_tab(h.browser, viewport=(390, 844), config={'testBuild': True})
+    for size in ((390, 844), (1366, 768)):
+        one(h, c, size)
+    return c
+
+
+def one(h, c, size):
+    tag = f'{size[0]}x{size[1]}'
+    c.ok(True, f'--- session at {tag}')
+    tab = new_tab(h.browser, viewport=size, config={'testBuild': True})
     pg = tab.page
     pg.goto(file_url())
     wait_ready(pg)
@@ -74,7 +82,7 @@ def run(h):
             c.ok(pg.locator('.key.wrong .glyph-wrong').count() >= 1, 'feedback: ✕ glyph on the wrong pick')
             c.ok(pg.locator('.key.answer .glyph-right').count() >= 1, 'feedback: ✓ glyph on the right answer')
             c.ok(pg.inner_text('.fb-head').strip() in ('Not quite', 'Partly right'), 'feedback in words, not colour alone')
-            shot(pg, 'session_feedback_wrong_390')
+            shot(pg, f'session_feedback_wrong_{tag}')
             pg.click('[data-replay="0"]')
             pg.wait_for_function("() => !document.querySelector('.trial-body').hasAttribute('data-playing')", timeout=8000)
             c.ok(True, 'replay: target alone plays and returns')
@@ -98,7 +106,7 @@ def run(h):
     for label in ('Fun 4', 'Clarity 5', 'Difficulty 3'):
         pg.click(f'[aria-label="{label}"]')
     c.ok(pg.locator('.rating.rated').count() == 1, 'playtest: three taps saved')
-    shot(pg, 'session_results_390', full=True)
+    shot(pg, f'session_results_{tag}', full=True)
     pg.click('[data-next-set]')
 
     # Set 2: quick right answers, Next each time.
@@ -116,7 +124,7 @@ def run(h):
     c.ok('Finish session' in pg.inner_text('[data-next-set]'), 'last set offers Finish session')
     pg.click('[data-next-set]')
     pg.wait_for_selector('.results-done', timeout=8000)
-    shot(pg, 'session_done_390', full=True)
+    shot(pg, f'session_done_{tag}', full=True)
     log = pg.evaluate("ES.core.store.peek('log')")
     c.eq(len(log['sessions']), 1, 'log: one session')
     c.eq(len(log['sessions'][0]['sets']), 2, 'log: two sets')
@@ -130,8 +138,7 @@ def run(h):
     pg.wait_for_selector('.home')
     c.ok('1 session' in pg.inner_text('.week'), 'weekly ring counts the session')
     mine, other = tab.split()
-    c.ok(not mine, 'no page errors from shell files', mine[:5])
+    c.ok(not mine, f'{tag}: no page errors from shell files', mine[:5])
     for who, text in other:
-        c.warn(f'error from {who}: {text}')
+        c.warn(f'{tag}: error from {who}: {text}')
     pg.context.close()
-    return c

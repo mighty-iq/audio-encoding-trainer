@@ -49,3 +49,15 @@ Next: run storage/srcdoc/ui suites; look at their screenshots; final full run; c
   suites force the demo with ES_CONFIG.demo; new suite tests/e2e/shell_real.py covers real trials.
 - Pending: run storage, srcdoc, ui, real suites (the browser lock was held by another builder's test); final full
   run; look at real-trial screenshots; commit.
+
+## 2026-11-26 18:39 UTC — verification round
+- e2e (each suite under the shared lock): open 36/36, session 39/39 (now at 390×844 and 1366×768), layout 195/195
+  (4 sizes × light/dark + tutorial at 360×640), ui 26/26, real 16/16 (real voice trials through flow + ES.audio),
+  storage 21/21, srcdoc 17/17 (sandboxed preview: no console errors after the focus/clipboard guards).
+- Unit: 57 with the core filter (45 core + lab-core), 96 across all owners' unit files.
+- Interlude player (js/ui/interlude.js) fills the Results slot for planner sets with interlude (flow.exposure).
+- Pausing during a replay now stops it. Learner saves skipped when the engine's learner is store-bound.
+- Looked at: real trial 360×640 (Far, room outline), real feedback 390×844 (Voices), tutorial example 360×640,
+  real results, sandboxed trial with Not-saved chip, storage-full banner, copy box, blocked banner.
+Open for the lead: CLAUDE.md commands could list `node tools/build-index.mjs` (regenerate the script block after new
+files land; `--check` in CI); Far rooms: the picture draws room {w, d, cx, cy} in metres (cy default 0.18·d ahead).
