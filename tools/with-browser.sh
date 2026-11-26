@@ -4,11 +4,9 @@
 # Slot 1 is the classic lock file, so plain `flock /tmp/earshot-browser.lock` users keep working.
 while :; do
   for lock in /tmp/earshot-browser.lock /tmp/earshot-browser.lock2; do
-    if flock -n "$lock" -c 'true' 2>/dev/null; then
-      flock -n "$lock" "$@" && exit 0
-      rc=$?
-      [ "$rc" -ne 1 ] && exit "$rc"   # 1 = lock lost to a racer: try again
-    fi
+    flock -n -E 75 "$lock" "$@"
+    rc=$?
+    [ "$rc" -ne 75 ] && exit "$rc"   # 75 = slot busy: try the other slot
   done
   sleep 2
 done
