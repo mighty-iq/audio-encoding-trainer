@@ -1,6 +1,6 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-26 18:30 UTC
+Updated: 2026-11-26 19:08 UTC
 
 ## Phase
 2 — Build. Owner said go at 16:44 UTC and accepted every recommendation (Earshot, Audiogram, mixed voices, Night out,
@@ -27,16 +27,16 @@ Each keeps docs/dev/progress/<owner>.md; cross-owner needs in docs/dev/requests.
   (~0.2–0.9 s per clip); MP3 16 kHz 24–32 kbps ≈ 3–4 KB/s; Web Audio offline mixing, HRTF, convolver work from file://.
 
 ## In progress (lead)
-- First playable build: shell, engine, audio, exA, lab committed; starter pack partly rendered (8 voices, 133
-  phrases). Smoke test (tests via tools/with-browser.sh): tutorial flow works; Crowd generator throws "not enough
-  voices" on real data → engine asked to relax constraints (requests.md).
+- M6 first playable build SENT (19:08 UTC): private test-build artifact (link in BRIEF.md), built with
+  `node tools/build-single.mjs --test` from c354f7c; 3.2 MB; starter pack (12 voices, 216 phrases) + babble/beds/probe.
+  db capability declared (collection `playtest`); shell asked to mirror playtest reports there.
+- Engine builder DONE (report in docs/dev/progress/engine.md; decisions logged). exB launched for echo/seek/voices/missions.
+- Known copy issue for review: number foils explained as "sounds like" (two vs eight) in Crowd feedback.
 
 ## Next three steps
-1. When the engine fix + starter pack land: rebuild dist/earshot.html, smoke-test a full set, publish a private
-   test-build artifact with playtest mode on, send it to the owner with one line on what to try.
-2. Launch exB (echo, seek, voices, missions) when a wave-1 builder finishes (keep ≤ 7 agents).
-3. Push at the next quiet point: squash-free push needs every unpushed commit clean (privacy check flags local times
-   written as UTC in commit 2f0064c → rewrite unpushed history before pushing).
+1. Republish the test build to the same slug after each meaningful landing (full voice set, map, lab, exB).
+2. Read playtest reports (db_list playtest on the test-build slug, or the owner's pasted block) → BRIEF.md → fixes.
+3. Phase 3 prep: review briefs (code, play-through, claims vs code, stimuli validity, texts/a11y), guide outline.
 
 ## Open questions
 - Owner to rename the repo to Earshot (taps sent).
