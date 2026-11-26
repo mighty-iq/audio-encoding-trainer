@@ -75,3 +75,28 @@ Decisions (each cheap to change; reasons):
 
 Browser tests: run WITHOUT an outer `flock` (harness.browser_lock takes /tmp/earshot-browser.lock itself; wrapping
 it deadlocks). Logs: tests/out/game-screens.log, screenshots tests/out/game/.
+
+## 2026-11-26 19:35 UTC — state at hand-off (commits 9bc5f91, b3b9706, f1a6f81, 365e9fd)
+Done and verified:
+- Unit: `node tests/unit/run.mjs game-` → 30/30 (venues, weekly, growth, hooks; engine flow sets answered in Node).
+- Browser: `python3 tests/e2e/game_all.py` (one browser slot via harness.browser_lock; no wrapper) → screens on a fresh
+  profile (nothing invented anywhere) and the simulated long-term profile at 390×844 light, 360×640 dark, 1366×768
+  light (no horizontal scroll, map fits, charts with tooltip and table view); weekly identical in two separate
+  browser runs and for a long-term profile (data fixture page), card image 1200×675, copy text carries the Chimera
+  link, PNG download, blocked download → image shown to save by hand; a real session through the shell (real
+  packs, audio rendered): nothing from the game during a set, news block between sets, cast met, home card; a venue
+  set holds the café pins and returns to the venue; a weekly stop plays exactly the seeded trials and records marks.
+- Shell picked up 18:12/18:52: session.start(plan) with pin/focus to flow, plan.make for the weekly, done route,
+  plan.title in the trial bar, supports {plan, make, pin}.
+Open (requests.md):
+- 19:16 game → engine: chooseFamily should take the family of `set.focus` (Phone line venue and every Strange
+  "Also here" row currently play a family the bandit picks).
+- 18:12 (5)(6) game → shell: `results:news` hook and Home appending ES.game.homeCard(); FALLBACK insertion in
+  js/game/ui.js works meanwhile (route 'results' → before `.invites`; route 'home' → `.home-cards`).
+- index.html: regenerate with `node tools/build-index.mjs` when files change (shell); all game files are listed now.
+Notes for whoever resumes:
+- Recalibrate venue pins/marks and weekly ramps with `node tests/unit/game-calibrate.mjs` if the engine's priors or
+  dials change; `--fixture` rewrites tests/fixtures/game-longterm.js (simulated learner, no real data).
+- The cast follows data/voices.js `cast` fields (20 voices in the current packs); nothing to change when it grows.
+- Lesson: `git rm` leaves a staged change in the shared index that another builder's commit can sweep up; stage and
+  commit in one command.
