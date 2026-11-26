@@ -1,6 +1,6 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-26 21:59 UTC
+Updated: 2026-11-26 22:29 UTC
 
 ## Phase
 3 — review, fix, release (overlapping the last build work). Fix round 1 done by engine, lab, game, exA, exB; shell's
@@ -9,7 +9,8 @@ fix round 1 is uncommitted in the working tree (31 files) and the shell builder 
 Guide PDF (35 pages) and announcement done (33d8ea5). All exercises exist (exB done).
 
 ## Running subagents (IDs in the lead's container notes)
-- shell (fix round 1) · stimuli (stages 2–3, data/credits.js, M2, C11, C35). Everyone else finished.
+- Reviews on snapshot 75c28ba (/tmp/rv-snap2): FRESH-A, FRESH-B (fresh players, captions aid ?captions=1),
+  RV-stimuli, RV-play-a11y → docs/dev/reviews/*.md. Stimuli stage 3 (LibriVox talkers, re-renders, ledger) running.
 
 ## Done
 - Research R1–R6 complete (docs/research/), ACCESS.md lists sources not opened (core: Whitton 2017, Wright 2010/2015,
