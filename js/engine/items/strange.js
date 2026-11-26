@@ -15,7 +15,7 @@
     for (var i = 0; i < a.length; i++) if (dials[a[i].id] !== undefined && dials[a[i].id] !== null) return a[i];
     return null;
   }
-  function isAccented(vo) { return vo && !NATIVE[vo.accent]; }
+  function isAccented(vo) { return !!vo && !I.adapt.isNative(vo); }
 
   function make(rng, setting, ctx) {
     ctx = ctx || {};
@@ -27,21 +27,22 @@
     Object.keys(dials).forEach(function (k) { if (k !== d.id) delete dials[k]; });
     var lvl = Math.max(d.min, Math.min(d.max, Math.round(dials[d.id]))), v = d.values[lvl];
     dials[d.id] = lvl;
-    var items = V.sus || [];
+    var A = I.adapt, items = A.susItems(), withMat = {};
+    A.voicesWith(items).forEach(function (v) { withMat[v] = 1; });
     var answers = X.keyPool('strange', items, function (it) { return it.keys.map(function (k) { return it.words[k]; }); });
     var pool, filter;
     if (d.id === 'accent') {
       // accented voices of the wanted strength (nearest tier available); the accent pool widens with breadth
       var tierOk = function (vo) { return isAccented(vo) && Math.abs((vo.tier || 2) - v.tier) === 0; };
       filter = function (vo) { return tierOk(vo); };
-      pool = X.voicePool({ kinds: ['sentence'], filter: filter, order: ctx.playerSeed || 'p' });
-      if (pool.length < 2) pool = X.voicePool({ kinds: ['sentence'], filter: isAccented, order: ctx.playerSeed || 'p' });
+      pool = X.voicePool({ filter: function (vo, v) { return withMat[v] && filter(vo); }, order: ctx.playerSeed || 'p' });
+      if (pool.length < 2) pool = X.voicePool({ filter: function (vo, v) { return withMat[v] && isAccented(vo); }, order: ctx.playerSeed || 'p' });
       var accents = C.uniq(pool.map(function (x) { return X.voice(x).accent; }));
       var nAcc = Math.max(1, Math.round(1 + breadth * (accents.length - 1)));
       var keepAcc = ctx.accent && accents.indexOf(ctx.accent) >= 0 ? [ctx.accent] : accents.slice(0, nAcc);
       pool = pool.filter(function (x) { return keepAcc.indexOf(X.voice(x).accent) >= 0; });
     } else {
-      pool = X.voicePool({ kinds: ['sentence'], filter: function (vo) { return !isAccented(vo); }, order: ctx.playerSeed || 'p' });
+      pool = X.voicePool({ filter: function (vo, v) { return withMat[v] && !isAccented(vo); }, order: ctx.playerSeed || 'p' });
       var nKeep = Math.max(3, Math.round(3 + breadth * (pool.length - 3)));
       pool = pool.slice(0, nKeep);
     }
@@ -49,7 +50,7 @@
     var ok = idx.poolCache['strange:items'] || (idx.poolCache['strange:items'] = items.filter(function (it) {
       return it.keys && it.keys.length >= 2 && it.keys.every(function (k) { return answers.indexOf(C.norm(it.words[k])) >= 0; });
     }));
-    var hit = X.itemVoice(rng, ok, 'sentence', pool, C.recentOf(ctx));
+    var hit = X.itemVoice(rng, ok, 'any', pool, C.recentOf(ctx));
     if (!hit) throw new Error('strange: no phrase for family ' + d.id);
     var fx = [], beds = [];
     if (d.id === 'fast') fx.push({ type: 'wsola', rate: v });
@@ -84,10 +85,10 @@
       setting: { dials: dials, focus: d.id, anchor: !!setting.anchor, warmup: !!setting.warmup },
       audio: audio,
       question: { prompt: 'Which words did you hear?', slots: [s1, s2] },
-      feedback: { text: '“' + hit.item.text + '”', popout: true,
+      feedback: { text: '“' + hit.item.text + '”', popout: true, levelLabel: d.levels[lvl],
         replays: [{ label: 'Again, with the words', audio: audio, showText: true }] },
       picture: { voices: [{ id: 'v0', role: 'target', az: 0, dist: 1, label: '' }] },
-      meta: { items: [k1, k2], voices: [hit.voice], family: d.id, probe: false, ctxKey: 'strange', cond: cond,
+      meta: { items: [k1, k2], voices: [hit.voice], family: d.id, levelLabel: d.levels[lvl], probe: false, ctxKey: 'strange', cond: cond,
         accent: vo.accent, synthetic: vo.src === 'kokoro' || vo.src === 'piper-libritts', offsetDb: (c && c.diff) || 0, text: hit.item.text }
     };
   }
@@ -97,5 +98,5 @@
     for (var i = 0; i < 3; i++) { var t = make(rng.fork('x' + i), setting, ctx); out.push({ text: t.meta.text, textFirst: true, audio: t.audio }); }
     return out;
   }
-  I.strange = { make: make, exposure: exposure, families: function () { return E.dials.strange.map(function (d) { return d.id; }); } };
+  I.strange = { ready: function () { return I.adapt.ready('strange'); }, make: make, exposure: exposure, families: function () { return E.dials.strange.map(function (d) { return d.id; }); } };
 })(typeof window !== 'undefined' ? window : globalThis);

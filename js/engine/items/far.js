@@ -17,17 +17,18 @@
     var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var distM = val('dist', dials.dist || 0), rt = val('rt60', dials.rt60 || 0), snr = dials.noise !== undefined ? dials.noise : 20;
-    var items = (V.phrases && V.phrases.length ? V.phrases : V.sus) || [];
+    var A = I.adapt, items = A.farItems(), withMat = {};
+    A.voicesWith(items).forEach(function (v) { withMat[v] = 1; });
     var answers = X.keyPool('far', items, function (it) { return it.keys.map(function (k) { return it.words[k]; }); });
-    var pool = X.voicePool({ kinds: ['sentence'], breadth: breadth, order: ctx.playerSeed || 'p', minN: 4, avoid: ctx.avoidVoices });
+    var pool = X.voicePool({ filter: function (vo, v) { return withMat[v]; }, breadth: breadth, order: ctx.playerSeed || 'p', minN: 4, avoid: ctx.avoidVoices });
     var idx = X.idx(); idx.poolCache = idx.poolCache || {};
     var ok = idx.poolCache['far:items'] || (idx.poolCache['far:items'] = items.filter(function (it) {
       return it.keys.length >= 2 && it.keys.every(function (k) { return answers.indexOf(C.norm(it.words[k])) >= 0; });
     }));
-    var hit = X.itemVoice(rng, ok, 'sentence', pool, C.recentOf(ctx));
+    var hit = X.itemVoice(rng, ok, 'any', pool, C.recentOf(ctx));
     if (!hit) throw new Error('far: no phrase available');
     // carrier: another sentence by the same voice in the same room
-    var carriers = X.kindsOf(hit.voice, 'sentence').filter(function (id) { return id !== hit.clip; });
+    var carriers = X.kindsOf(hit.voice, 'sentence').concat(X.kindsOf(hit.voice, 'phrase')).filter(function (id) { return id !== hit.clip; });
     var carrier = C.pick(rng, carriers);
     // room: keep the last room unless switching (probability grows with breadth); size follows reverberation
     var sizeIdx = Math.min(3, Math.max(0, Math.floor(dials.rt60 / 2.6)));
@@ -55,8 +56,12 @@
     var dist = idx.poolCache['far:dist'] || (idx.poolCache['far:dist'] = [0, 1].map(function (j) {
       return C.answerDist(ok, function (it) { return C.norm(it.words[it.keys[j]]); });
     }));
-    var s1 = C.slot(rng, { label: 'First word', answer: k1, pool: dist[0].support, draw: dist[0].draw, neighbours: X.neighbours, avoid: avoid1 });
-    var s2 = C.slot(rng, { label: 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, neighbours: X.neighbours, avoid: avoid2 });
+    var cs = hit.item.kind === 'phrase';
+    var s1 = C.slot(rng, { label: cs ? 'Word' : 'First word', answer: k1, pool: dist[0].support, draw: dist[0].draw, neighbours: X.neighbours, avoid: avoid1 });
+    var s2 = C.slot(rng, { label: cs ? 'Number' : 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, neighbours: X.neighbours, avoid: avoid2 });
+    // a slot needs three or more possible answers in this build; else it is not asked
+    var slots = [s1, s2].filter(function (sl, j) { return dist[j].support.length >= 3 && sl.options.length >= 2; });
+    if (!slots.length) slots = [s1];
     var near = { out: audio.out, dur: audio.dur, spatial: audio.spatial, beds: [],
       parts: [{ clip: hit.clip, at: 0.3, db: 0, role: 'target' }], room: null };
     near.dur = Math.round((0.3 + ((meta(hit.clip) && meta(hit.clip).dur) || 1.5) + 0.5) * 100) / 100;
@@ -66,7 +71,7 @@
       id: 'far-' + C.seedOf(rng).toString(36), ex: 'far', seed: setting.seed || null,
       setting: { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup },
       audio: audio,
-      question: { prompt: 'Which words did the voice say after the first sentence?', slots: [s1, s2] },
+      question: { prompt: cs ? 'What did the voice say after the first phrase?' : 'Which words did the voice say after the first sentence?', slots: slots },
       feedback: { text: '“' + hit.item.text + '”, from ' + distM + ' m in a ' + size + ' room (' + rt + ' s echo).',
         replays: [{ label: 'Up close', audio: near }, { label: 'Again from ' + distM + ' m', audio: audio }] },
       picture: { voices: [{ id: 'v0', role: 'target', az: az, dist: distM, label: '' }], room: { size: size, rt60: rt } },
@@ -78,5 +83,5 @@
     var t = make(rng, setting, ctx);
     return [{ text: t.meta.text, audio: t.feedback.replays[0].audio }, { text: t.meta.text, audio: t.audio }];
   }
-  I.far = { make: make, exposure: exposure };
+  I.far = { make: make, exposure: exposure, ready: function () { return I.adapt.ready('far'); } };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -74,7 +74,10 @@
   function session(opts) {
     opts = opts || {};
     var lr = E.lrOf(opts.learner), mode = opts.mode || 'edge', now = opts.now || lr.clock(), rng = opts.rng || ES.core.rng('plan:' + now);
-    var minutes = opts.minutes || opts.sessionMin || 15, nSets = Math.max(1, Math.round(minutes / 3)), avail = (opts.available || E.exercises).filter(function (ex) { return E.items[ex]; });
+    // only exercises with material in this build (items[ex].ready), among those the caller can run
+    var minutes = opts.minutes || opts.sessionMin || 15, nSets = Math.max(1, Math.round(minutes / 3)), avail = (opts.available || E.exercises).filter(function (ex) {
+      var g = E.items[ex]; if (!g) return false; try { return !g.ready || g.ready(); } catch (e) { return false; } });
+    if (!avail.length) return { sets: [], minutes: minutes, notes: [{ kind: 'nodata', text: 'No exercise has its sounds installed yet.' }], mode: mode };
     var sets = [], notes = [], w = weights(mode, { available: avail, learner: lr, lab: opts.lab }), C = E.items.common;
     var today = sessions(opts.log).filter(function (s) { return dayKey(s.start) === dayKey(now); }).length;
     if (today >= 3) notes.push({ kind: 'sleep', text: 'Third session today. Skills settle during sleep, so tomorrow is the best time for the next one. Nothing is lost by stopping here.' });

@@ -13,11 +13,11 @@
   function castVoices() {
     var idx = X.idx(); idx.poolCache = idx.poolCache || {};
     if (idx.poolCache['voices:cast']) return idx.poolCache['voices:cast'];
-    var out = idx.voices.filter(function (v) { var vo = idx.vdat[v]; return vo.cast && vo.cast.name && (X.kindsOf(v, 'word').length || X.kindsOf(v, 'sentence').length); });
+    var out = idx.voices.filter(function (v) { var vo = idx.vdat[v]; return vo.cast && vo.cast.name && I.adapt.anyClips(v); });
     idx.poolCache['voices:cast'] = out;
     return out;
   }
-  function nameOf(v) { var vo = X.voice(v); return vo && vo.cast ? vo.cast.name : v; }
+  function nameOf(v) { var vo = X.voice(v), n = vo && vo.cast ? vo.cast.name : v; return n.charAt(0).toUpperCase() + n.slice(1); }
   function similarTo(t, v) {
     var a = X.voice(t), b = X.voice(v), s = X.semis(a.f0, b.f0);
     return a.sex === b.sex && s !== null && Math.abs(s) < 2;
@@ -33,7 +33,7 @@
     return { list: C.sample(rng, cand, k - 1), level: 0 };
   }
   function utterance(rng, v, len, nouns) {
-    var words = X.kindsOf(v, 'word'), sents = X.kindsOf(v, 'sentence');
+    var words = X.kindsOf(v, 'word'), sents = X.kindsOf(v, 'sentence').concat(X.kindsOf(v, 'phrase'));
     if (len === 'word' && words.length) return [C.pick(rng, words)];
     if (len === 'phrase' && words.length >= 2) return C.sample(rng, words, 2);
     if (sents.length) return [C.pick(rng, sents)];
@@ -74,20 +74,28 @@
       prompt = 'Who is talking?';
       fb = 'That was ' + nameOf(target) + '.';
     } else {
-      target = C.pick(rng, met);
+      var A = I.adapt, phr = A.phraseMode();
+      target = C.pick(rng, met.filter(function (v) { return phr ? A.callsignBy(v).length : X.kindsOf(v, 'word').length; })) || C.pick(rng, met);
       var nOther = Math.max(1, Math.min(3, k - 1)), used = [];
-      var tw = null;
-      for (var a = 0; a < 40 && !tw; a++) { var w = nouns[C.ri(rng, nouns.length)]; if (X.has(target, 'word', w)) tw = w; }
+      var tw = null, tclip = null;
+      if (phr) { var tp = C.pick(rng, A.callsignBy(target)); if (tp) { tw = tp.word; tclip = tp.clip; } }
+      for (var a = 0; a < 40 && !tw; a++) { var w = nouns[C.ri(rng, nouns.length)]; if (X.has(target, 'word', w)) { tw = w; tclip = X.clipFor(target, 'word', w); } }
       used.push(C.norm(tw));
-      parts.push({ clip: X.clipFor(target, 'word', tw), at: 0.4, db: 0, role: 'target' });
-      var crowd = C.sample(rng, X.voicePool({ kinds: ['word'], avoid: [target] }), nOther), spoken = [];
+      parts.push({ clip: tclip, at: 0.4, db: 0, role: 'target' });
+      var crowd = C.sample(rng, X.voicePool({ filter: function (vo, v) { return phr ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }, avoid: [target] }), nOther), spoken = [];
       crowd.forEach(function (v) {
+        if (phr) {
+          var cp = C.pick(rng, A.callsignBy(v).filter(function (p) { return used.indexOf(p.word) < 0; }));
+          if (cp) { used.push(cp.word); spoken.push(cp.word); parts.push({ clip: cp.clip, at: 0.4 + rng.next() * 0.1, db: -snr, role: 'masker' }); others.push(v); }
+          return;
+        }
         for (var b2 = 0; b2 < 40; b2++) {
           var w2 = nouns[C.ri(rng, nouns.length)];
           if (used.indexOf(C.norm(w2)) < 0 && X.has(v, 'word', w2)) { used.push(C.norm(w2)); spoken.push(w2); parts.push({ clip: X.clipFor(v, 'word', w2), at: 0.4 + rng.next() * 0.1, db: -snr, role: 'masker' }); others.push(v); break; }
         }
       });
-      slots = [C.slot(rng, { label: 'What did ' + nameOf(target) + ' say?', answer: tw, spoken: spoken, pool: nouns, neighbours: X.neighbours })];
+      var pcv = X.idx().poolCache = X.idx().poolCache || {}, dv = phr ? pcv['voices:dist'] || (pcv['voices:dist'] = C.answerDist(A.callsign(), function (p) { return p.word; })) : null;
+      slots = [C.slot(rng, { label: 'What did ' + nameOf(target) + ' say?', answer: tw, spoken: spoken, pool: dv ? dv.support : nouns, draw: dv && dv.draw, neighbours: X.neighbours })];
       prompt = 'Find ' + nameOf(target) + ' in the crowd.';
       fb = nameOf(target) + ' said “' + tw + '”.';
     }
@@ -110,5 +118,5 @@
         cast: [target].concat(task === 'who' ? others : []), newVoice: task === 'meet' ? target : null, offsetDb: 0 }
     };
   }
-  I.voices = { make: make, cast: castVoices, nameOf: nameOf };
+  I.voices = { make: make, cast: castVoices, nameOf: nameOf, ready: function () { return I.adapt.ready('voices'); } };
 })(typeof window !== 'undefined' ? window : globalThis);

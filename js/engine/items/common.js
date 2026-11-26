@@ -77,6 +77,7 @@
       var cand = shuffle(rng, P.filter(function (w) { return ok(w) && !nbTset[norm(w)]; }));
       return cand[0];
     }
+    (o.prefer || []).forEach(function (w) { add(w); });
     var spoken = uniq((o.spoken || []).filter(function (w) { return norm(w) !== norm(T); }));
     var ctx = uniq(o.context || []);
     if (spoken.length >= n - 1) {

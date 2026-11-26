@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 export const ENGINE_FILES = [
-  'js/engine/dials.js', 'js/engine/learner.js', 'js/engine/items/common.js', 'js/engine/items/data.js',
+  'js/engine/dials.js', 'js/engine/learner.js', 'js/engine/items/common.js', 'js/engine/items/data.js', 'js/engine/items/adapt.js',
   'js/engine/items/crowd.js', 'js/engine/items/far.js', 'js/engine/items/strange.js', 'js/engine/items/repair.js',
   'js/engine/items/echo.js', 'js/engine/items/seek.js', 'js/engine/items/voices.js',
   'js/engine/score.js', 'js/engine/controller.js', 'js/engine/path.js', 'js/engine/plateau.js',

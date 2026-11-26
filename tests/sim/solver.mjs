@@ -68,6 +68,7 @@ export function checkSpec(ES, X, spec) {
     const opts = sl.options.map(norm);
     if (new Set(opts).size !== opts.length) E('slot ' + i + ' duplicate options');
     if (opts.filter((o) => o === norm(sl.answer)).length !== 1) E('slot ' + i + ' answer not exactly once among options');
+    if (opts.length < 2) E('slot ' + i + ' has fewer than two options');
     sl.options.forEach((o) => { if (norm(o) !== norm(sl.answer) && homophone(o, sl.answer)) E('slot ' + i + ' homophone foil ' + o); });
     sl.options.forEach((o) => { if (X.probeWords.has(norm(o))) E('probe word as option ' + o); });
     const foilKeys = Object.keys(sl.foils || {}).map(norm).sort(), others = opts.filter((o) => o !== norm(sl.answer)).sort();
@@ -76,7 +77,7 @@ export function checkSpec(ES, X, spec) {
   const parts = spec.audio.parts || [];
   const textOf = (p) => (C[p.clip] || {}).text || '';
   const target = parts.filter((p) => p.role === 'target'), maskers = parts.filter((p) => p.role === 'masker');
-  const spoken = new Set(maskers.map((p) => norm(textOf(p))));
+  const spoken = new Set(maskers.flatMap((p) => (C[p.clip] && C[p.clip].kind === 'phrase' ? (C[p.clip].words || []) : [textOf(p)]).map(norm)));
   const labelCheck = (sl, i, extra = {}) => {
     for (const [f, type] of Object.entries(sl.foils || {})) {
       const k = norm(f), isMask = spoken.has(k) || (extra.decoys && extra.decoys.has(k));
@@ -91,22 +92,27 @@ export function checkSpec(ES, X, spec) {
   };
   if (ex === 'crowd') {
     const kindT = (k) => target.filter((p) => C[p.clip].kind === k).map(textOf);
-    const [tName] = kindT('name'), [tWord] = kindT('word'), [tNum] = kindT('number');
+    let [tName] = kindT('name'), [tWord] = kindT('word'), [tNum] = kindT('number');
+    const ph = target.find((p) => C[p.clip].kind === 'phrase' && (C[p.clip].words || []).length === 3);
+    if (ph) [tName, tWord, tNum] = C[ph.clip].words;
+    const said = (p) => C[p.clip].kind === 'phrase' ? (C[p.clip].words || []).map(norm) : [norm(textOf(p))];
     if (norm(slots[0].answer) !== norm(tWord)) E('word answer is not the target word');
-    if (norm(slots[1].answer) !== norm(tNum)) E('number answer is not the target number');
+    if (slots[1] && norm(slots[1].answer) !== norm(tNum)) E('number answer is not the target number');
     const tv = C[target[0].clip].voice;
     if (target.some((p) => C[p.clip].voice !== tv)) E('target parts from several voices');
     const mv = {};
     maskers.forEach((p) => { const key = C[p.clip].voice + '|' + JSON.stringify(p.fx || null) + '|' + p.az; (mv[key] = mv[key] || []).push(p); });
     const groups = Object.values(mv);
+    const askedNum = !!slots[1];
     groups.forEach((g) => {
-      g.forEach((p) => { const t = norm(textOf(p)); if (t === norm(tWord) || t === norm(tNum) || t === norm(tName)) E('masker says a target word ' + t); });
+      g.forEach((p) => said(p).forEach((t) => { if (t === norm(tWord) || (askedNum && t === norm(tNum)) || t === norm(tName)) E('masker says a target word ' + t); }));
       if (Math.abs(g[0].db + dset.tmr) > 1e-9) E('masker level ' + g[0].db + ' does not match tmr ' + dset.tmr);
     });
     const wantMaskers = val(ES, 'crowd', 'talkers', dset.talkers);
     if (groups.length !== wantMaskers) E('masker count ' + groups.length + ' vs talkers ' + wantMaskers);
-    if (spec.meta.cue === 'callsign' && !spec.question.prompt.includes(tName)) E('prompt lacks the call sign');
-    const allW = maskers.map(textOf).map(norm); if (new Set(allW).size !== allW.length) E('two maskers say the same word');
+    if (spec.meta.cue === 'callsign' && !norm(spec.question.prompt).includes(norm(tName))) E('prompt lacks the call sign');
+    const nums = new Set(ES.data.vocab.numbers.map(norm)), allW = maskers.flatMap(said).filter((w) => askedNum || !nums.has(w));
+    if (new Set(allW).size !== allW.length) E('two maskers say the same word');
     if (dset.similar === 3 && !maskers.some((p) => C[p.clip].voice === tv && p.fx)) E('near-twin level without a shifted copy of the target voice');
     if (dset.similar === 0 && groups.some((g) => X.voices[C[g[0].clip].voice].sex === X.voices[tv].sex)) E('other-sex level with a same-sex masker');
     if (dset.space !== undefined && dset.space !== null && groups.length) {
@@ -120,7 +126,7 @@ export function checkSpec(ES, X, spec) {
     const t = target[0], text = textOf(t);
     const a = slots.map((s) => s.answer);
     if (!a.every((w) => has(text, w))) E('answer not in the target phrase');
-    if (norm(a[0]) === norm(a[1])) E('both slots have the same answer');
+    if (a.length > 1 && norm(a[0]) === norm(a[1])) E('both slots have the same answer');
     slots.forEach((sl, i) => sl.options.forEach((o) => { if (norm(o) !== norm(sl.answer) && has(text, o)) E('foil ' + o + ' is also in the phrase'); }));
     const cue = parts.find((p) => p.role === 'cue');
     if (cue) slots.forEach((sl) => sl.options.forEach((o) => { if (norm(o) !== norm(sl.answer) && has(textOf(cue), o)) E('foil ' + o + ' is in the room cue'); }));
@@ -135,7 +141,7 @@ export function checkSpec(ES, X, spec) {
       const f = fam[0], v = val(ES, 'strange', f, dset[f]), fx = t.fx || [];
       const want = { fast: ['wsola', 'rate', v], whisper: ['whisper'], phone: ['band', 'lo', v && v.lo], muffled: ['lowpass', 'f', v], vocoded: ['vocode', 'bands', v] }[f];
       if (want && !fx.some((x) => x.type === want[0] && (want.length < 3 || x[want[1]] === want[2]))) E('family ' + f + ' fx mismatch');
-      if (f === 'accent') { const vo = X.voices[C[t.clip].voice]; if (['us', 'gb', 'au', 'ca', 'ie', 'nz'].includes(vo.accent)) E('accent trial with a native voice'); }
+      if (f === 'accent') { const vo = X.voices[C[t.clip].voice], a = String(vo.accent || '').toLowerCase(); if (['us', 'gb', 'au', 'ca', 'ie', 'nz'].includes(a) || (/english/.test(a) && !/accent|l1|non-?native/.test(a))) E('accent trial with a native voice'); }
       if (f === 'accent' && v.snr !== null && Math.abs(spec.audio.beds[0].db + v.snr) > 1e-9) E('accent babble level mismatch');
     }
     slots.forEach((sl, i) => labelCheck(sl, i));
@@ -167,13 +173,13 @@ export function checkSpec(ES, X, spec) {
     });
   }
   if (ex === 'seek') {
-    const L = spec.audio.live, tw = norm(C[L.target.clip].text);
+    const L = spec.audio.live, wOf = (id) => C[id].kind === 'phrase' && (C[id].words || []).length === 3 ? norm(C[id].words[1]) : norm(C[id].text), tw = wOf(L.target.clip);
     const loc = slots[0], ws = slots[1];
     if (loc.kind !== 'locate' || Math.abs(loc.answer.x - L.target.x) > 1e-9 || Math.abs(loc.answer.y - L.target.y) > 1e-9) E('locate answer is not the target position');
     if (Math.abs(loc.answer.r - val(ES, 'seek', 'size', dset.size)) > 1e-9) E('radius vs size dial');
     if (norm(ws.answer) !== tw) E('word answer is not the target word');
     if (L.decoys.length !== val(ES, 'seek', 'decoys', dset.decoys)) E('decoy count vs dial');
-    const dw = new Set(L.decoys.map((d) => norm(C[d.clip].text)));
+    const dw = new Set(L.decoys.map((d) => wOf(d.clip)));
     if (dw.has(tw)) E('a decoy calls the target word');
     L.decoys.forEach((d) => { if (Math.hypot(d.x - L.target.x, d.y - L.target.y) < 2 * loc.answer.r) E('decoy inside the target zone'); });
     [L.target, ...L.decoys].forEach((p) => { if (Math.abs(p.x) > 1 || Math.abs(p.y) > 1) E('position outside the field'); });
@@ -200,8 +206,9 @@ export function checkSpec(ES, X, spec) {
       if (norm(sl.answer) !== norm(nameOf(tv))) E('meet: answer is not the new voice');
       if (!spec.setting.noUpdate) E('meet trial would move thresholds');
     } else if (task === 'find') {
-      if (norm(sl.answer) !== norm(textOf(target[0]))) E('find: answer is not the friend\'s word');
-      maskers.forEach((p) => { if (norm(textOf(p)) === norm(sl.answer)) E('find: masker says the answer'); if (Math.abs(p.db + dset.snr) > 1e-9) E('find: masker level vs snr'); });
+      const fw = (p) => C[p.clip].kind === 'phrase' && (C[p.clip].words || []).length === 3 ? norm(C[p.clip].words[1]) : norm(textOf(p));
+      if (norm(sl.answer) !== fw(target[0])) E('find: answer is not the friend\'s word');
+      maskers.forEach((p) => { if (fw(p) === norm(sl.answer)) E('find: masker says the answer'); if (Math.abs(p.db + dset.snr) > 1e-9) E('find: masker level vs snr'); });
       labelCheck(sl, 0);
     } else E('unknown voices task ' + task);
   }

@@ -4,6 +4,7 @@ import { buildIndex, checkSpec, randomSetting } from './solver.mjs';
 import { makeShortcutState, scoreSpec, summarise, binsOf } from './shortcuts.mjs';
 
 export function runChecks(ES, { seeds = 10000, gens = ES.engine.exercises } = {}) {
+  gens = gens.filter((ex) => !ES.engine.items[ex].ready || ES.engine.items[ex].ready());
   const X = buildIndex(ES), solver = {}, st = makeShortcutState(), cast = ES.engine.items.voices.cast();
   const rr = ES.core.rng('shortcut-responders');
   for (const ex of gens) {

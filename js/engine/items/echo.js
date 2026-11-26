@@ -12,7 +12,7 @@
     var idx = X.idx(); idx.poolCache = idx.poolCache || {};
     if (idx.poolCache['echo:cats']) return idx.poolCache['echo:cats'];
     var out = {}, seen = {};
-    (V.echo || []).forEach(function (it) {
+    I.adapt.echoItems().forEach(function (it) {
       (it.facts || []).forEach(function (f) {
         var k = f.cat + '|' + C.norm(f.value);
         if (seen[k] || X.isProbeWord(f.value)) return;
@@ -34,11 +34,12 @@
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var snr = dials.snr !== undefined ? dials.snr : 10, nDet = val('details', dials.details || 0), rate = val('rate', dials.rate || 0), delay = val('delay', dials.delay || 0);
     var cats = catPools(V);
-    var all = (V.echo || []).filter(function (it) { return it.facts && it.facts.length >= 2; });
+    var A = I.adapt, all = A.echoItems(), withMat = {};
+    A.voicesWith(all).forEach(function (v) { withMat[v] = 1; });
     var cand = [];
     for (var off = 0; off < 4 && !cand.length; off++) cand = all.filter(function (it) { return Math.abs(it.facts.length - nDet) === off; });
-    var pool = X.voicePool({ kinds: ['sentence'], breadth: breadth, order: ctx.playerSeed || 'p', minN: 4, avoid: ctx.avoidVoices });
-    var hit = X.itemVoice(rng, cand, 'sentence', pool, C.recentOf(ctx));
+    var pool = X.voicePool({ filter: function (vo, v) { return withMat[v]; }, breadth: breadth, order: ctx.playerSeed || 'p', minN: 4, avoid: ctx.avoidVoices });
+    var hit = X.itemVoice(rng, cand, 'any', pool, C.recentOf(ctx));
     if (!hit) throw new Error('echo: no message');
     var it = hit.item, actual = it.facts.length;
     dials.details = Math.max(0, Math.min(3, actual - 2));
@@ -72,5 +73,5 @@
         offsetDb: c.diff || 0, text: it.text, facts: it.facts }
     };
   }
-  I.echo = { make: make };
+  I.echo = { make: make, ready: function () { return I.adapt.ready('echo'); } };
 })(typeof window !== 'undefined' ? window : globalThis);

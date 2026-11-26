@@ -14,8 +14,9 @@ function choose(rng, arr) { return arr[Math.floor(rng.next() * arr.length)]; }
 // Spoken words in the mix, for the heard-word responder (target and maskers alike).
 function heardWords(ES, spec) {
   const C = ES.data.manifest.clips, out = new Set();
-  (spec.audio.parts || []).forEach((p) => { if (p.role === 'target' || p.role === 'masker') { const c = C[p.clip]; if (c && (c.kind === 'word' || c.kind === 'number' || c.kind === 'name')) out.add(norm(c.text)); } });
-  if (spec.audio.live) { [spec.audio.live.target, ...spec.audio.live.decoys].forEach((d) => { const c = C[d.clip]; if (c) out.add(norm(c.text)); }); }
+  const add = (c) => { if (!c) return; if (c.kind === 'phrase') (c.words || []).forEach((w) => out.add(norm(w))); else if (c.kind === 'word' || c.kind === 'number' || c.kind === 'name') out.add(norm(c.text)); };
+  (spec.audio.parts || []).forEach((p) => { if (p.role === 'target' || p.role === 'masker') add(C[p.clip]); });
+  if (spec.audio.live) { [spec.audio.live.target, ...spec.audio.live.decoys].forEach((d) => add(C[d.clip])); }
   return out;
 }
 

@@ -25,25 +25,32 @@
     var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var snr = dials.snr !== undefined ? dials.snr : 10, nDec = val('decoys', dials.decoys || 0), r = val('size', dials.size || 0), gap = val('gap', dials.gap || 0);
-    var nouns = X.pool('word', V.nouns || [], 2);
-    var pool = X.voicePool({ kinds: ['word'], breadth: breadth, order: ctx.playerSeed || 'p', minN: 5, avoid: ctx.avoidVoices });
+    var A = I.adapt, phrase = A.phraseMode();
+    var nouns = phrase ? A.callsign().map(function (p) { return p.word; }).filter(function (w, i, a) { return a.indexOf(w) === i; }) : X.pool('word', V.nouns || [], 2);
+    var pool = X.voicePool({ filter: function (vo, v) { return phrase ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }, breadth: breadth, order: ctx.playerSeed || 'p', minN: 5, avoid: ctx.avoidVoices });
     var recent = C.recentOf(ctx) || [], tp = pool.filter(function (v) { return recent.indexOf(v) < 0; });
     var tv = C.pick(rng, tp.length ? tp : pool);
     var used = [], start = { x: 0, y: -0.9 };
+    var clipOf = {};
     function wordOf(v) {
-      for (var k = 0; k < 40; k++) { var w = nouns[C.ri(rng, nouns.length)]; if (used.indexOf(C.norm(w)) < 0 && X.has(v, 'word', w)) { used.push(C.norm(w)); return w; } }
+      if (phrase) {
+        var ps = A.callsignBy(v).filter(function (p) { return used.indexOf(p.word) < 0; }), p = C.pick(rng, ps);
+        if (!p) return null;
+        used.push(p.word); clipOf[v + '|' + p.word] = p.clip; return p.word;
+      }
+      for (var k = 0; k < 40; k++) { var w = nouns[C.ri(rng, nouns.length)]; if (used.indexOf(C.norm(w)) < 0 && X.has(v, 'word', w)) { used.push(C.norm(w)); clipOf[v + '|' + C.norm(w)] = X.clipFor(v, 'word', w); return w; } }
       return null;
     }
     var tw = wordOf(tv);
     var tpos = place(rng, [], 0, start);
-    var target = { clip: X.clipFor(tv, 'word', tw), x: tpos.x, y: tpos.y, db: snr, gapMs: Math.round(gap * 1000) };
-    var others = X.voicePool({ kinds: ['word'], avoid: [tv].concat(ctx.avoidVoices || []) });
+    var target = { clip: clipOf[tv + '|' + C.norm(tw)], x: tpos.x, y: tpos.y, db: snr, gapMs: Math.round(gap * 1000) };
+    var others = X.voicePool({ filter: function (vo, v) { return phrase ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }, avoid: [tv].concat(ctx.avoidVoices || []) });
     var decoys = [], spots = [tpos], dvs = C.sample(rng, others, nDec);
     dvs.forEach(function (v) {
       var w = wordOf(v), p = place(rng, spots, Math.max(3 * r, 0.45), start);
       if (!w || !p) return;
       spots.push(p);
-      decoys.push({ clip: X.clipFor(v, 'word', w), x: p.x, y: p.y, db: snr - 1, gapMs: Math.round(gap * 1000 * (0.8 + 0.4 * rng.next())), word: w, voice: v });
+      decoys.push({ clip: clipOf[v + '|' + C.norm(w)], x: p.x, y: p.y, db: snr - 1, gapMs: Math.round(gap * 1000 * (0.8 + 0.4 * rng.next())), word: w, voice: v });
     });
     if (decoys.length < nDec) dials.decoys = decoys.length;
     C.remember(ctx, tv, null);
@@ -53,7 +60,8 @@
       target: target, decoys: decoys.map(function (d) { return { clip: d.clip, x: d.x, y: d.y, db: d.db, gapMs: d.gapMs }; }),
       radius: r, start: start, headTurn: hp && breadth >= 0.5 };
     var audio = { out: { db: -20 }, spatial: hp ? 'hrtf' : 'ild', parts: [], beds: [], room: null, live: live };
-    var w2 = C.slot(rng, { label: 'Which word was it calling?', answer: tw, spoken: decoys.map(function (d) { return d.word; }), pool: nouns, neighbours: X.neighbours });
+    var pc = X.idx().poolCache = X.idx().poolCache || {}, dist = phrase ? pc['seek:dist'] || (pc['seek:dist'] = C.answerDist(A.callsign(), function (p) { return p.word; })) : null;
+    var w2 = C.slot(rng, { label: 'Which word was it calling?', answer: tw, spoken: decoys.map(function (d) { return d.word; }), pool: dist ? dist.support : nouns, draw: dist && dist.draw, neighbours: X.neighbours });
     var loc = { label: 'Find the voice', kind: 'locate', answer: { x: tpos.x, y: tpos.y, r: r }, gamma: Math.round(Math.PI * r * r / 4 * 1000) / 1000, options: [], foils: {} };
     return {
       id: 'seek-' + C.seedOf(rng).toString(36), ex: 'seek', seed: setting.seed || null,
@@ -66,5 +74,5 @@
         decoyWords: decoys.map(function (d) { return d.word; }), offsetDb: (X.clip(target.clip) || {}).diff || 0 }
     };
   }
-  I.seek = { make: make };
+  I.seek = { make: make, ready: function () { return I.adapt.ready('seek'); } };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -170,7 +170,7 @@
     (avoidVoices || []).forEach(function (v) { avoid[v] = 1; });
     var order = C.shuffle(rng, items), fallback = null;
     for (var i = 0; i < order.length && i < 80; i++) {
-      var it = order[i], ids = X.byKT[kind + '|' + C.norm(it.text)] || [];
+      var it = order[i], ids = kind === 'any' && I.adapt ? I.adapt.clipsOf(it) : (X.byKT[kind + '|' + C.norm(it.text)] || []);
       var vs = ids.filter(function (id) { return inPool[X.man[id].voice]; });
       if (!vs.length) continue;
       var fresh = vs.filter(function (id) { return !avoid[X.man[id].voice]; });
