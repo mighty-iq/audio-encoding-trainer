@@ -96,6 +96,40 @@ def build_page(name='page.html', head_extra='', real=False, config=None):
     return path.as_uri()
 
 
+def srcdoc_page(name, inner='srcdoc-inner.html', **kw):
+    """A host page that runs the test page, every script and style inlined, inside <iframe sandbox="allow-scripts"
+    srcdoc> (an opaque origin: storage, microphone, downloads and clipboard are blocked, as in a sandboxed preview).
+    Returns its file:// URL."""
+    import html as H
+    url = build_page(inner, **kw)
+    path = pathlib.Path(url[len('file://'):])
+    page = path.read_text(encoding='utf-8')
+
+    def inline_script(m):
+        f = (path.parent / m.group(1)).resolve()
+        code = f.read_text(encoding='utf-8').replace('</script', '<\\/script')
+        return '<script>' + code + '</script>'
+
+    def inline_css(m):
+        import base64
+        f = (path.parent / m.group(1)).resolve()
+
+        def font(u):
+            q = u.group(2)
+            if q.startswith('data:'):
+                return u.group(0)
+            ff = (f.parent / q).resolve()
+            return 'url(data:font/woff2;base64,' + base64.b64encode(ff.read_bytes()).decode() + ')' if ff.exists() else u.group(0)
+        return '<style>' + re.sub(r"url\((['\"]?)([^)'\"]+)\1\)", font, f.read_text(encoding='utf-8')) + '</style>'
+    page = re.sub(r'<script src="([^"]+)"></script>', inline_script, page)
+    page = re.sub(r'<link rel="stylesheet" href="([^"]+)"\s*/?>', inline_css, page)
+    host = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>srcdoc host</title><style>html,body,iframe{margin:0;border:0;width:100%;height:100%}</style></head>' \
+        '<body><iframe sandbox="allow-scripts" srcdoc="' + H.escape(page, quote=True) + '"></iframe></body></html>'
+    out = OUT / name
+    out.write_text(host, encoding='utf-8')
+    return out.as_uri()
+
+
 def launch(p, extra_args=None):
     return p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'] + (extra_args or []))
 
@@ -201,11 +235,27 @@ def seek_walk(page, to=None, steps=24, pause=0.02, hold_s=0.0):
 
 
 def fits(page):
-    """True when the page needs no scrolling (vertical or horizontal)."""
+    """ok when the page needs no scrolling (vertical or horizontal) AND the trial's parts (field, words, answer
+    panel, buttons) sit inside the window without overlapping one another (a clipped grid can overflow without
+    scrolling, so both are checked)."""
     return page.evaluate("""() => {
-      var d = document.documentElement, s = document.scrollingElement || d;
-      return { ok: s.scrollHeight <= innerHeight + 1 && s.scrollWidth <= innerWidth + 1, h: s.scrollHeight, vh: innerHeight,
-               w: s.scrollWidth, vw: innerWidth };
+      var d = document.documentElement, s = document.scrollingElement || d, bad = [];
+      var parts = ['.trial-field', '.trial-text', '.trial-answer', '.trial-actions'].map(function (q) {
+        var e = document.querySelector('.trial-body ' + q); if (!e) return null;
+        var r = e.getBoundingClientRect(); return r.height > 1 && r.width > 1 ? { q: q, r: r } : null; }).filter(Boolean);
+      parts.forEach(function (a, i) {
+        if (a.r.bottom > innerHeight + 1 || a.r.right > innerWidth + 1 || a.r.top < -1) bad.push(a.q + ' outside');
+        var el = document.querySelector('.trial-body ' + a.q);
+        if (el.scrollHeight > el.clientHeight + 2) bad.push(a.q + ' content overflows by ' + (el.scrollHeight - el.clientHeight) + ' px');
+        parts.slice(i + 1).forEach(function (b) {
+          var ov = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top), oh = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
+          if (ov > 1 && oh > 1) bad.push(a.q + ' overlaps ' + b.q + ' by ' + Math.round(ov) + ' px');
+        });
+      });
+      var f = document.querySelector('.trial-body .trial-field');
+      if (f && f.getBoundingClientRect().height > 1 && f.getBoundingClientRect().height < 56) bad.push('field squeezed to ' + Math.round(f.getBoundingClientRect().height) + ' px');
+      var noScroll = s.scrollHeight <= innerHeight + 1 && s.scrollWidth <= innerWidth + 1;
+      return { ok: noScroll && !bad.length, h: s.scrollHeight, vh: innerHeight, w: s.scrollWidth, vw: innerWidth, bad: bad };
     }""")
 
 

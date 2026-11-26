@@ -45,3 +45,33 @@ are pushed into `ES.ex.strategies.cards` at load and on `app:ready` (pick() read
 Tests: tests/e2e/ex_b_common.py (page = index script list + my files + fixtures + alias, like exA),
 ex_b_tutorial.py (fresh profile per exercise within 120 s of simulated play), ex_b_layout.py (360×640 light/dark,
 390×844, 1366×768), ex_b_own.py (import on file://, sandboxed srcdoc). All runs via tools/with-browser.sh.
+
+## 2026-11-26 19:58 UTC — modules built, first test rounds
+Done (commits da2c548, ea610c8 + working tree): js/ex/echo.js, voices.js, seek.js + seek-scene.js (split to keep files
+≤ ~400 lines; lead asked to count it as exB's), missions.js, voices-own.js. Replies used: the shell (19:18) supports
+question.delayMs (Echo's own hold shim removed), adopts a custom view's handle (pause/resume/abort/state) and gives
+api.flow/record/level/progress (Seek's DOM shims removed); Settings opens voices-own and wipes it; Home appends
+ES.ex.missions.homeCard(); the game (19:16) put Play buttons on "Also here" rows; the engine sends audio.live.found,
+spatial, seed and meta.preview, and learner.noteMet (Voices uses it when present).
+Decisions (cheap to change):
+- Echo: a miss auto-replays the message in the noise with its words on screen; the feedback explains only what the
+  marked keys cannot (binding errors = 'context' foils, sound-alikes); names in name slots are capitalised; on
+  screens ≤ 720 px tall three-question trials use 44 px keys and the picture steps aside in feedback (and in the
+  tutorial, whose caption takes room) — the overlap check in ex_b_common.fits found the clipping.
+- Seek: grab your own dot (52 px radius) and drag; release after ≥ 0.8 m of movement answers; scene levels shifted
+  −8 dB with nothing louder than at 1 m (the live scene has no ceiling); the found ring around you shows the
+  scorer's radius (1.15 × target size); a preview of the target voice plays when there are decoys; head-turn view:
+  a knob on your ring, feedback = share of the search with the voice 15–70° to one side (one ear toward it);
+  first Seek ever: one guided practice scene (not counted, Try again ×3).
+- Voices: meet trials play up to three clips of the new voice with its name and role; a 'who' miss auto-plays the
+  right voice then the picked one, with a pitch line from voices.f0; the tutorial meets two voices, then 'who'.
+- Voices from your life: name + consent tick required; record (≤ 20 s) only where the permissions policy allows
+  the microphone, else a plain message; import any decodable file; stored as trimmed 16 kHz mono WAV (no file name
+  or metadata); memory-only with a message where IndexedDB is blocked; practice = 2-interval "which crowd had X",
+  2-down/1-up from +6 dB, level stored per voice in IndexedDB; never in exports (test checks the backup JSON).
+- Missions: 8 missions (R3 §3, §5, §6, §7, §10, §11), same for everyone per ISO week, swappable before check-in;
+  check-in = tried? / followed 0–10 / helped?; diary event once per week (v = 1 + round(0.4 × rating)).
+Tests (tools/with-browser.sh): ex_b_tutorial.py [--miss] [--real] (Echo 21.6 s, Voices 30.2 s, Seek 10.7 s to
+playing correctly, fixture world), ex_b_layout.py (136/136 at 360×640 light/dark, 390×844, 1366×768 dark),
+ex_b_own.py (21/21 incl. sandboxed srcdoc), ex_b_map.py (venue "Also here" sets).
+Open: index.html lacks js/ex/missions.js and voices-own.js until build-index reruns (asked); my test pages add them.

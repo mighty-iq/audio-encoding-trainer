@@ -44,6 +44,20 @@
   /** The delay before the questions, in s (the shell's trial view holds the answer panel back for question.delayMs). */
   function holdOf(t) { var ms = t && t.question && +t.question.delayMs; return ms > 0 ? Math.round(ms / 100) / 10 : 0; }
 
+  /* On short screens three questions, the verdict and the message's words need the field's height: for three-question
+     trials (and in the tutorial, whose caption takes room) the keys keep the 44 px touch minimum and the picture
+     (static, illustrative here) steps aside: in feedback for three questions, throughout in the tutorial. */
+  function css() {
+    var doc = root.document;
+    if (!doc || !doc.head || doc.getElementById('es-echo-css')) return;
+    var st = doc.createElement('style');
+    st.id = 'es-echo-css';
+    var E = '.trial-body:has(.f-voice[data-id="echo-msg"])', T = E + ':has(.answer[data-slots="3"])', TU = '.tut ' + E;
+    st.textContent = '@media (max-height: 720px) { ' + T + '[data-state="feedback"] .trial-field, ' + TU + ' .trial-field { display: none; } ' +
+      T + ' .answer, ' + TU + ' .answer { gap: 6px; } ' + T + ' .key, ' + TU + ' .key { min-height: 44px; padding-top: 4px; padding-bottom: 4px; } }';
+    doc.head.appendChild(st);
+  }
+
   /* ---- presentation hooks ---- */
   var BED_WORD = { cafe: 'a busy café', party: 'a party', babble: 'a crowd', street: 'a busy street', station: 'a station' };
   function bedWord(t) {
@@ -52,7 +66,7 @@
     return 'a busy place';
   }
   function picture(t) {
-    var vs = [{ id: 'v0', role: 'target', az: 0, dist: 1.2, label: 'message' }];
+    var vs = [{ id: 'echo-msg', role: 'target', az: 0, dist: 1.2, label: 'message' }];
     [[-118, 2.6], [64, 2.3], [152, 2.9], [-46, 3.1]].forEach(function (p, i) { vs.push({ id: 'b' + i, role: 'other', az: p[0], dist: p[1], label: '' }); });
     return { voices: vs, maxDist: 3.2, labels: false, title: 'A message from the voice ahead, in ' + bedWord(t) + '; the questions come after it' };
   }
@@ -60,8 +74,9 @@
     var k = K();
     if (!t || t._exB || t.ex !== 'echo') return t;
     t._exB = true;
+    css();
     if (t.question) {
-      t.question.prompt = 'Listen once. The questions come after a short pause: answer from memory.';
+      t.question.prompt = 'Listen once, then answer from memory.';
       (t.question.slots || []).forEach(capNames);
     }
     t.picture = picture(t);
@@ -85,33 +100,37 @@
   var CAT = { name: 'name', caller: 'name', place: 'place', time: 'time', day: 'day', number: 'number', item: 'thing', object: 'thing' };
   function norm(s) { return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
   function factOf(facts, v) { var n = norm(v); for (var i = 0; i < facts.length; i++) if (norm(facts[i].value) === n) return facts[i]; return null; }
-  /** Feedback: a line per wrong detail, "all held" when right, the message's words (static) and, after a miss,
-      the message again in the noise (auto). Returns {text, words, auto}. */
+  /** Feedback: the marked keys already show every right answer, so lines explain only what the marks cannot (a
+      word from the message given to another question; a word that sounds like the answer); "held" when all are
+      right; the message's words (static) and, after a miss, the message again in the noise (auto).
+      Returns {text, words, auto}. Kept short so three questions still fit a 360 × 640 screen. */
   M.review = function (t, result) {
     var k = K();
     if (!k || !result || !result.slots) return null;
-    var slots = k.slotsOf(t), facts = (t.meta && t.meta.facts) || [], lines = [], hold = holdOf(t);
+    var slots = k.slotsOf(t), facts = (t.meta && t.meta.facts) || [], lines = [], hold = holdOf(t), n = result.slots.length;
+    var max = n >= 3 ? 1 : 2;
     result.slots.forEach(function (r, i) {
-      if (!r || r.correct) return;
-      var s = slots[i] || {}, lab = s.label ? s.label + ' ' : '';
-      if (r.picked == null) { lines.push(lab + 'It was ' + k.q(r.answer) + '.'); return; }
+      if (!r || r.correct || r.picked == null || lines.length >= max) return;
+      var s = slots[i] || {};
       if (r.foil === 'context') {
         var f = factOf(facts, r.picked), other = f && f.q && f.q !== s.label;
-        lines.push(lab + k.q(r.picked) + ' was in the message' + (other ? ', as the answer to “' + f.q + '”' : ', but not as this detail') + '; here it was ' + k.q(r.answer) + '.');
-        return;
-      }
-      if (r.foil === 'neighbour') { lines.push(lab + k.q(r.picked) + ' sounds like ' + k.q(r.answer) + ', the ' + (CAT[s.cat] || 'word') + ' in the message.'); return; }
-      lines.push(lab + 'It was ' + k.q(r.answer) + ', not ' + k.q(r.picked) + '.');
+        lines.push(k.q(r.picked) + ' was in the message' + (other ? ', as the answer to “' + f.q + '”.' : ', but not as this detail.'));
+      } else if (r.foil === 'neighbour') lines.push(k.q(r.picked) + ' sounds like ' + k.q(r.answer) + ', the ' + (CAT[s.cat] || 'word') + ' in the message.');
     });
-    var n = result.slots.length;
     if (result.correct) lines.push((n === 2 ? 'Both details' : n === 1 ? 'The detail' : 'All ' + n + ' details') + ' held' + (hold ? ' through a ' + hold + ' s wait.' : '.'));
-    else if (result.slots.some(function (r) { return r && r.foil === 'context'; })) lines.push('Heard right, filed in the wrong slot: tag each detail as it comes.');
+    else if (!lines.length) lines.push('The right answers are marked.');
     var words = (t.meta && t.meta.text) || null;
     return { text: lines.join(' '), words: words, auto: result.correct ? [] : [0] };
   };
   M.helpBody = function (el) { addCards(); return K().helpBody(M, el); };
   M.openHelp = function (opts) { addCards(); return K().openHelp(M, opts); };
-  M.tutorialTrial = function (step, i, rng) { return K().tutorialTrial(M, step, i, rng); };
+  /** Tutorial trials ask at most two questions: the format is the lesson, and two questions with the caption above
+      them fit a 360 × 640 screen even with the example's notes under every key. */
+  M.tutorialTrial = function (step, i, rng) {
+    var t = K().tutorialTrial(M, step, i, rng);
+    if (t && t.question && t.question.slots && t.question.slots.length > 2) t.question.slots = t.question.slots.slice(0, 2);
+    return t;
+  };
 
   /* ---- two-minute tutorial: an example, then two practice messages. Dials are forced in dial units (ordinal =
      level index): details 0 = 2 details, rate 0 = normal, delay 0 = 1 s, delay 1 = 3 s (texts read the ladder). ---- */
@@ -121,7 +140,7 @@
       { kind: 'caption', minMs: 3000, then: 'tap',
         text: 'A voice gives you a message in a busy place, once. After a short pause, questions ask for its details. Answer from memory.' },
       { kind: 'demo', force: { dials: { snr: 16, details: 0, rate: 0, delay: 0 } },
-        notes: { context: 'in the message, other question', neighbour: 'sounds alike', random: 'not in the message' },
+        notes: { context: 'in the message, other question', neighbour: 'sounds alike', number: 'another number', random: 'not in the message' },
         text: 'An example first: the message, then the answers marked.' },
       { kind: 'practice', force: { dials: { snr: 16, details: 0, rate: 0, delay: 0 }, answerAt: [1, 3, 0] },
         text: 'Your turn. Listen to the whole message, wait for the questions, then answer.' },

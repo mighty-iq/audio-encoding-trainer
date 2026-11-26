@@ -71,7 +71,7 @@
     if (knob) rot.appendChild(knob);
     you.appendChild(rot);
     you.appendChild(u.svg('circle', { class: 'sk-dot', cx: 0, cy: 0, r: 4.8 }));
-    you.appendChild(u.svg('text', { class: 'sk-small sk-you-lab', x: 0, y: 15, 'text-anchor': 'middle' }, 'you'));
+    you.appendChild(u.svg('text', { class: 'sk-small sk-you-lab', x: 9, y: 11, 'text-anchor': 'start' }, 'you'));
     svg.appendChild(you);
     return { svg: svg, reveal: reveal, you: you,
       place: function (p, h) { var q = sv(p.x, p.y); you.setAttribute('transform', 'translate(' + q.x + ' ' + q.y + ')'); rot.setAttribute('transform', 'rotate(' + Math.round(h || 0) + ')'); } };
