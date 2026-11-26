@@ -21,7 +21,7 @@
     var box = el('figure', { class: 'g-chart', 'data-chart': o.ex + '.' + o.dial }, [
       el('h3', null, o.title || (d ? d.label : o.dial)), o.sub ? el('p', { class: 'g-chart-sub' }, o.sub) : null]);
     if (!d || !pts.length) { box.appendChild(el('p', { class: 'g-note' }, 'No points yet.')); return box; }
-    var W = 320, H = 132, L = 46, R = 62, T = 10, B = 22, pw = W - L - R, ph = H - T - B, dir = d.dir;
+    var W = 320, H = 140, L = 46, R = 62, T = 20, B = 22, pw = W - L - R, ph = H - T - B, dir = d.dir;
     var t0 = pts[0].t, t1 = pts[pts.length - 1].t;
     if (t1 - t0 < 864e5) { t0 -= 432e5; t1 += 432e5; }
     var vs = []; pts.forEach(function (p) { vs.push(p.y * dir); if (p.s) { vs.push((p.y - p.s) * dir, (p.y + p.s) * dir); } });
@@ -42,7 +42,7 @@
     s.appendChild(svg('line', { class: 'gc-axis', x1: L, x2: L + pw, y1: T + ph, y2: T + ph }));
     s.appendChild(svg('text', { class: 'gc-tick', x: L, y: H - 4 }, dateText(pts[0].t)));
     if (pts.length > 1) s.appendChild(svg('text', { class: 'gc-tick', x: L + pw, y: H - 4, 'text-anchor': 'end' }, dateText(pts[pts.length - 1].t)));
-    s.appendChild(svg('text', { class: 'gc-tick', x: 4, y: T + 2 }, 'harder'));
+    s.appendChild(svg('text', { class: 'gc-tick', x: 2, y: 10 }, '\u2191 harder'));
     if (pts.some(function (p) { return p.s; })) {
       var up = pts.map(function (p) { return X(p.t) + ',' + Y((p.y + (p.s || 0) * (dir > 0 ? 1 : -1)) * dir); });
       var dn = pts.slice().reverse().map(function (p) { return X(p.t) + ',' + Y((p.y - (p.s || 0) * (dir > 0 ? 1 : -1)) * dir); });
@@ -53,7 +53,7 @@
     s.appendChild(cross);
     pts.forEach(function (p, i) { if (i === pts.length - 1 || pts.length <= 24) s.appendChild(svg('circle', { class: 'gc-dot', cx: X(p.t), cy: Y(p.y * dir), r: 4 })); });
     var last = pts[pts.length - 1];
-    s.appendChild(svg('text', { class: 'gc-end', x: X(last.t) + 8, y: Y(last.y * dir) + 4 }, label(last.y)));
+    if (label(last.y).length <= 9) s.appendChild(svg('text', { class: 'gc-end', x: X(last.t) + 8, y: Y(last.y * dir) + 4 }, label(last.y)));
     var hot = svg('rect', { class: 'gc-hot', x: L - 8, y: 0, width: pw + 16, height: H });
     s.appendChild(hot);
     box.appendChild(s);

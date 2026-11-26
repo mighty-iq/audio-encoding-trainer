@@ -45,8 +45,8 @@
     var pins = pinsFor(cond, ck), easy = d.kind === 'ord' ? d.min : (d.dir > 0 ? d.min : d.max), hard = d.kind === 'ord' ? d.max : (d.dir > 0 ? d.max : d.min);
     var pe = pAt(cond, ck, pins, easy), ph = pAt(cond, ck, pins, hard);
     if (pe === null) return out;
-    if (pe < target) { out.status = 'below'; out.x = easy; out.text = 'below ' + K().levelText(cond.ex, d, easy); return out; }
-    if (ph >= target) { out.status = 'beyond'; out.x = hard; out.text = K().levelText(cond.ex, d, hard) + '+'; return out; }
+    if (pe < target) { out.status = 'below'; out.x = easy; out.text = outOfReach(cond.ex, d, easy); return out; }
+    if (ph >= target) { out.status = 'beyond'; out.x = hard; out.text = topOfScale(cond.ex, d, hard); return out; }
     var x;
     if (d.kind === 'ord') {
       var prev = pe;
@@ -65,6 +65,17 @@
     out.x = Math.round(x * 100) / 100;
     out.text = K().levelText(cond.ex, d, out.x);
     return out;
+  }
+  // Compact texts for the ends of a scale: "> +12 dB" (not even at the easiest level), "30 m+" (even the hardest).
+  function outOfReach(ex, d, easy) {
+    var t = K().levelText(ex, d, easy);
+    if (d.unit === 'm') return '< ' + t;
+    return d.kind === 'cont' ? (d.dir < 0 ? '> ' : '< ') + t : 'not yet';
+  }
+  function topOfScale(ex, d, hard) {
+    var t = K().levelText(ex, d, hard);
+    if (d.unit === 'm') return t + '+';
+    return d.kind === 'cont' ? (d.dir < 0 ? '≤ ' : '≥ ') + t : t + ' (top)';
   }
   function earshot(v, opts) { v = venueOf(v); return v ? condEarshot(v.head, opts) : null; }
 
@@ -160,6 +171,7 @@
     if (!e || e.status === 'none') return 'Not measured yet: play a set here and your number appears.';
     if (e.status === 'below') return 'Even the easiest level here is beyond your edge for now; the anchors and easy trials build toward it.';
     var d = K().dialDef(cond.ex, cond.dial), x = e.x;
+    if (e.status === 'beyond') return 'Even the hardest level here (' + K().levelText(cond.ex, d, x) + ') goes right more than 7 times in 10.';
     if (cond.ex === 'crowd' && cond.dial === 'tmr') {
       return x < 0 ? 'You follow the voice when each other voice is up to ' + K().num(-Math.round(x * 2) / 2, 1) + ' dB louder than it, about 7 times in 10.'
         : x > 0 ? 'You follow the voice when it is ' + K().num(Math.round(x * 2) / 2, 1) + ' dB louder than each other voice, about 7 times in 10.'

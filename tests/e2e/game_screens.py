@@ -145,13 +145,17 @@ def longterm_suite(c, browser, base):
         tab.page.context.close()
 
 
+def run(c, browser, base):
+    fresh_suite(c, browser, base)
+    longterm_suite(c, browser, base)
+
+
 def main():
     c = Checks('game_screens')
     with browser_lock(timeout=3600), sync_playwright() as pw, http_server() as base:
         browser = launch(pw)
         try:
-            fresh_suite(c, browser, base)
-            longterm_suite(c, browser, base)
+            run(c, browser, base)
         finally:
             browser.close()
     for ok, name, detail in c.items:

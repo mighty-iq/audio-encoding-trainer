@@ -32,11 +32,17 @@
     if (!got.length && !next.length) return null;
     var kids = [el('h2', { class: 'g-sec' }, 'Milestones')];
     if (got.length) {
-      kids.push(el('ul', { class: 'g-also', 'data-milestones': '' }, got.slice(0, 8).map(function (m) {
+      var row = function (m) {
         return el('li', null, [el('span', null, [el('span', { class: 'g-vname' }, m.name), m.text ? el('span', { class: 'g-vdesc' }, m.text) : null]),
           el('span', { class: 'g-vval' }, G.ui.dateText(m.at))]);
-      })));
-      if (got.length > 8) kids.push(el('p', { class: 'g-note' }, 'And ' + (got.length - 8) + ' more.'));
+      };
+      var list = el('ul', { class: 'g-also', 'data-milestones': '' }, got.slice(0, 8).map(row));
+      kids.push(list);
+      if (got.length > 8) {
+        var more = el('button', { type: 'button', class: 'g-link', 'data-more-milestones': '' }, 'Show all ' + got.length);
+        more.addEventListener('click', function () { got.slice(8).forEach(function (m) { list.appendChild(row(m)); }); more.parentNode.removeChild(more); });
+        kids.push(el('p', { class: 'g-note' }, more));
+      }
     }
     if (next.length) {
       kids.push(el('p', { class: 'eyebrow mono', style: 'margin-top:14px' }, 'Next up'));

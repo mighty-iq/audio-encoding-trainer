@@ -33,7 +33,7 @@
     ['repair', 'gate', [2, 4], {}],
     ['repair', 'fill', [3], { 3: 'Silent gaps' }],
     ['echo', 'snr', [10, 5, 0, -5], {}],
-    ['echo', 'details', [2, 3], { 3: 'Five details held' }],
+    ['echo', 'details', [2, 3], {}],
     ['echo', 'rate', [2, 4], {}],
     ['echo', 'delay', [2, 3], {}],
     ['seek', 'snr', [6, 0, -6], {}],
@@ -60,12 +60,66 @@
       row[2].forEach(function (at) {
         if (d.kind === 'ord' && (at < d.min || at > d.max)) return;
         if (d.kind === 'cont' && (at < d.min || at > d.max)) return;
-        var val = K().levelText(row[0], d, at), name = row[3][String(at)] || (d.label + ': ' + val);
+        var val = K().levelText(row[0], d, at), nf = NAME[row[0] + '.' + row[1]];
+        var name = row[3][String(at)] || (nf ? nf(val, at) : d.label + ': ' + val);
         out.push({ id: idOf(row[0], row[1], at), ex: row[0], dial: row[1], at: at, name: name, text: lineFor(row[0], d, at, val), value: val });
       });
     });
     return out;
   }
+  // One sentence per dial: what the player can now do at that level (val = the level in words, from the engine).
+  var SAY = {
+    'crowd.talkers': function (v) { return 'You follow one voice while ' + v + (/^1 /.test(v) ? ' talks' : ' talk') + ' over it'; },
+    'crowd.similar': function (v) { return 'You follow a voice against ' + simWords(v); },
+    'crowd.space': function (v) { return v === 'same place' ? 'You follow a voice with the others in the same place' : 'You follow a voice with the others only ' + v + ' away'; },
+    'far.rt60': function (v) { return 'You catch the words through ' + v + ' of echo'; },
+    'far.noise': function (v, at) { return 'You catch the words with ' + ES.game.venues.speechVsNoise(at); },
+    'strange.accent': function (v, at, d) { var x = d.values[at] || {}; return 'You catch a ' + String(v).split(',')[0] + (x.snr === null || x.snr === undefined ? ' in quiet' : ' with ' + babble(x.snr)); },
+    'strange.fast': function (v) { return 'You catch speech played ' + v + ' as fast'; },
+    'strange.whisper': function (v, at, d) { var x = d.values[at]; return 'You catch a whisper' + (x === null || x === undefined ? ' in quiet' : ' with ' + babble(x)); },
+    'strange.phone': function (v) { return 'You catch the words over a ' + v; },
+    'strange.muffled': function (v) { return 'You catch speech muffled down to ' + v; },
+    'strange.vocoded': function (v) { return 'You catch robot-voiced speech with only ' + v; },
+    'repair.gap': function (v) { return 'You repair a word when ' + v + ' of it is lost'; },
+    'repair.context': function (v) { return 'You repair lost words with ' + v; },
+    'repair.gate': function (v) { return 'You repair broken-up sentences with ' + v; },
+    'repair.fill': function (v) { return 'You repair words lost to ' + v; },
+    'echo.snr': function (v, at) { return 'You hold a message heard with ' + ES.game.venues.speechVsNoise(at); },
+    'echo.details': function (v) { return 'You hold ' + v + ' from one message'; },
+    'echo.rate': function (v) { return 'You hold a message spoken at ' + (v === 'normal' ? 'normal speed' : v + ' speed'); },
+    'echo.delay': function (v) { return 'You hold a message for ' + v + ' before the questions'; },
+    'seek.snr': function (v) { return 'You find and name a faint voice at ' + v + ' up close'; },
+    'seek.decoys': function (v) { return 'You find the right voice among ' + v; },
+    'seek.size': function (v) { return 'You find a voice with a ' + v + ' target'; },
+    'seek.gap': function (v) { return 'You find a voice that calls every ' + v; },
+    'voices.cast': function (v) { return 'You tell who is talking among ' + v; },
+    'voices.similar': function (v) { return 'You tell ' + (v === 'mixed' ? 'mixed voices' : simWords(v)) + ' apart'; },
+    'voices.snr': function (v, at) { return 'You tell who is talking with ' + ES.game.venues.speechVsNoise(at); },
+    'voices.length': function (v) { return 'You tell who is talking from ' + v; }
+  };
+  function simWords(v) {
+    return v === 'other sex' ? 'voices of the other sex' : v === 'near-twin voice' ? 'near-twin voices' : v === 'same sex' ? 'same-sex voices'
+      : v === 'same sex, similar pitch' ? 'same-sex voices of similar pitch' : v + ' voices';
+  }
+  function babble(snr) { return snr > 0 ? 'speech ' + K().num(snr, 1) + ' dB above the babble' : snr < 0 ? 'babble ' + K().num(-snr, 1) + ' dB above the speech' : 'speech as loud as the babble'; }
+  function cap(t) { t = String(t); return t.charAt(0).toUpperCase() + t.slice(1); }
+  // Short names where a ladder row gives none (the row's own names win).
+  var NAME = {
+    'crowd.space': function (v) { return v === 'same place' ? 'Same place' : 'Only ' + v + ' apart'; },
+    'far.rt60': function (v) { return v + ' of echo'; },
+    'far.noise': function (v, at) { return at > 0 ? 'Room noise ' + K().num(at, 1) + ' dB below speech' : at === 0 ? 'Noise as loud as speech' : 'Noise above speech'; },
+    'strange.accent': function (v) { return cap(v); }, 'strange.whisper': function (v) { return cap(v); }, 'strange.phone': function (v) { return cap(v); },
+    'strange.fast': function (v) { return 'Speech at ' + v; }, 'strange.muffled': function (v) { return 'Muffled to ' + v; },
+    'strange.vocoded': function (v) { return 'Robot voice, ' + v; },
+    'repair.gap': function (v) { return v + ' of a word lost'; }, 'repair.context': function (v) { return cap(v); },
+    'repair.gate': function (v) { return 'Broken up, ' + v; },
+    'echo.snr': function (v) { return 'A message at ' + v; }, 'echo.details': function (v) { return cap(v) + ' held'; },
+    'echo.rate': function (v) { return 'A message at ' + v + ' speed'; }, 'echo.delay': function (v) { return 'Held for ' + v; },
+    'seek.snr': function (v) { return 'Found at ' + v; }, 'seek.decoys': function (v) { return 'Among ' + v; },
+    'seek.size': function (v) { return cap(v) + ' target'; }, 'seek.gap': function (v) { return 'Calls every ' + v; },
+    'voices.cast': function (v) { return 'Among ' + v; }, 'voices.similar': function () { return 'Close voices'; },
+    'voices.snr': function (v) { return 'Who is talking at ' + v; }
+  };
   function lineFor(ex, d, at, val) {
     if (ex === 'crowd' && d.id === 'tmr') {
       return at < 0 ? 'You follow a voice when each other voice is ' + K().num(-at, 1) + ' dB louder than it, about 7 times in 10.'
@@ -73,7 +127,8 @@
           : 'You follow a voice as loud as each voice around it, about 7 times in 10.';
     }
     if (ex === 'far' && d.id === 'dist') return 'You catch the words from ' + val + ' away, about 7 times in 10.';
-    return exName(ex) + ' · ' + d.label + ': ' + val + ', about 7 times in 10.';
+    var f = SAY[ex + '.' + d.id];
+    return (f ? f(val, at, d) : exName(ex) + ' · ' + d.label + ': ' + val) + ', about 7 times in 10.';
   }
   /** Is the dial's estimate at least as hard as `at` (from enough of the player's own trials)? Both Crowd contexts
       (with and without headphones) count. */
