@@ -1,7 +1,8 @@
 """Matrix probe words: cut every word of the rendered matrix sentences (held-out voices) at the synthesiser's
 word boundaries, refined to the quietest 5 ms within 30 ms, and keep for each voice and word the take that the
-recogniser hears correctly with the quietest edges. A word with no good take is synthesised on its own (two
-forms, two speeds) and kept only if recognised. Output: kind 'word', set and pack 'probe' (db 'words').
+recogniser identifies with the quietest edges. The check is closed-set, like the probe: the recognition must be
+closer (in phonemes) to the right word than to any other word of its slot. A word with no good take is
+synthesised on its own (two forms, two speeds). Output: kind 'word', set and pack 'probe' (db 'words').
 Usage: python3 -I tools/audio/cut_matrix.py
 """
 import sys
@@ -17,6 +18,29 @@ from common import (SR, Log, Results, active_level_db, env_db, fade, load_audio,
 from natural import shipped  # noqa: E402
 
 SLOT_OF = {w: s for s in CP.SLOTS for w in CP.MATRIX[s]}
+
+
+def ipa_dist(a, b):
+    """Edit distance between espeak-ng pronunciations of two (possibly unknown) spellings."""
+    import lexicon
+    pa, pb = lexicon.espeak_ipa(a), lexicon.espeak_ipa(b)
+    return lexicon.edit_distance(pa, pb)
+
+
+def closed_ok(word, heard):
+    """Closed-set check (the probe offers the 10 words of the slot): exact recognition, or a recognition that is
+    closer to the right word than to every other word of its slot and at most two phonemes from it."""
+    from common import norm_words
+    h = norm_words(heard)
+    if not h:
+        return False
+    if asr.score(word, heard)['ok']:
+        return True
+    said = ''.join(h)
+    opts = CP.MATRIX[SLOT_OF[word]]
+    d = {w: ipa_dist(said, w) for w in opts}
+    best = min(d.values())
+    return d[word] == best and d[word] <= 2 and sum(1 for v in d.values() if v == best) == 1
 
 
 def refine(x, t, reach=0.03):
@@ -50,10 +74,14 @@ def candidates(row):
 
 def main():
     log = Log('cut-matrix')
+    import render_phrases
+    render_phrases.run(['matrix'])          # the current matrix version's sentences (resumable)
     sents = Results('sentences')
     res = Results('words')
     rec = asr.recogniser('parakeet')
-    rows = [r for r in sents.values() if r.get('ok') and 'matrix' in (r.get('tags') or [])]
+    prefix = f'mxv{CP.MATRIX_VERSION}-'
+    rows = [r for r in sents.values() if r.get('ok') and 'matrix' in (r.get('tags') or [])
+            and str(r.get('item', '')).startswith(prefix)]
     by_voice = {}
     for r in rows:
         by_voice.setdefault(r['voice'], []).append(r)
@@ -65,7 +93,7 @@ def main():
                 if res.get(cid, {}).get('ok') and wav_path(cid).exists():
                     continue
                 heard, _ = rec.run(shipped(y))
-                if not asr.score(w, heard)['ok']:
+                if not closed_ok(w, heard):
                     continue
                 q = edges(y)
                 if w not in best or q < best[w][0]:
@@ -82,7 +110,7 @@ def main():
                     for sp in (1.0, 0.92):
                         y = trim(eng.synth(form.format(w.capitalize()), v, speed=sp))
                         heard, _ = rec.run(shipped(y))
-                        if asr.score(w, heard)['ok']:
+                        if closed_ok(w, heard):
                             best[w] = (edges(y), y, 'isolated', heard)
                             break
                     if w in best:

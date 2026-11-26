@@ -1,0 +1,82 @@
+{
+ "audiomnist.s03": {
+  "accent": "English with a German accent",
+  "ageBand": "30s",
+  "sex": "m"
+ },
+ "audiomnist.s05": {
+  "accent": "English with a German accent",
+  "ageBand": "20s",
+  "sex": "m"
+ },
+ "audiomnist.s10": {
+  "accent": "English with a German accent",
+  "ageBand": "30s",
+  "sex": "m"
+ },
+ "audiomnist.s37": {
+  "accent": "English with a Italian accent",
+  "ageBand": "20s",
+  "sex": "m"
+ },
+ "audiomnist.s38": {
+  "accent": "English with a Spanish accent",
+  "ageBand": "30s",
+  "sex": "m"
+ },
+ "audiomnist.s43": {
+  "accent": "English with a German accent",
+  "ageBand": "30s",
+  "sex": "f"
+ },
+ "audiomnist.s52": {
+  "accent": "English with a French accent",
+  "ageBand": "30s",
+  "sex": "f"
+ },
+ "audiomnist.s56": {
+  "accent": "English with a German accent",
+  "ageBand": "20s",
+  "sex": "f"
+ },
+ "cremad.a1002": {
+  "accent": "US English (actor)",
+  "ageBand": "20s",
+  "sex": "f"
+ },
+ "cremad.a1009": {
+  "accent": "US English (actor)",
+  "ageBand": "20s",
+  "sex": "f"
+ },
+ "cremad.a1010": {
+  "accent": "US English (actor)",
+  "ageBand": "20s",
+  "sex": "f"
+ },
+ "cremad.a1017": {
+  "accent": "US English (actor)",
+  "ageBand": "40s",
+  "sex": "m"
+ },
+ "cremad.a1023": {
+  "accent": "US English (actor)",
+  "ageBand": "20s",
+  "sex": "m"
+ },
+ "cremad.a1028": {
+  "accent": "US English (actor)",
+  "ageBand": "50s",
+  "sex": "f"
+ },
+ "cremad.a1068": {
+  "accent": "US English (actor)",
+  "ageBand": "30s",
+  "sex": "m"
+ },
+ "cremad.a1070": {
+  "accent": "US English (actor)",
+  "ageBand": "20s",
+  "sex": "m"
+ }
+}

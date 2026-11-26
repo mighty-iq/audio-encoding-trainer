@@ -26,7 +26,8 @@ BEDS = {'babble', 'cafe', 'party', 'street', 'station', 'hall', 'hum'}
 def js_obj(path):
     """Parse a generated classic script `<prefix> = <json>;` (the JSON starts after the last ' = ' of line 2)."""
     line = path.read_text().split('\n', 2)[1]
-    i = line.index('= {', line.rindex('||', 0, 200))
+    j = line.rindex('||', 0, 200)
+    i = min(k for k in (line.find('= {', j), line.find('= [', j)) if k >= 0)
     return json.loads(line[i + 2:].rstrip().rstrip(';'))
 
 
@@ -118,6 +119,14 @@ def main(argv=()):
             clash = sorted(set(mx.get(slot, [])) & train_words)
             if clash:
                 errs.append(f'matrix {slot} words also used in training: {clash}')
+    import content_probe
+    if content_probe.overlap_with_published():
+        errs.append(f'matrix shares words with the published British English matrix: {content_probe.overlap_with_published()}')
+    import registry
+    creds = {c['key'] for c in js_obj(root / 'data' / 'credits.js')} if (root / 'data' / 'credits.js').exists() else set()
+    for vid in voices:
+        if registry.credit_key(vid) not in creds:
+            errs.append(f'no credit for the source of voice {vid}')
     # ASR pass rate of kept speech clips
     speech = [e for e in clips.values() if e['kind'] not in ('bed', 'rir')]
     ok = sum(1 for e in speech if e['asr']['ok'])

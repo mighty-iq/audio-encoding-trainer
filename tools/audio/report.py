@@ -80,7 +80,35 @@ def main():
     else:
         t = t.rstrip() + '\n\n## Numbers (last build)\n' + block + '\n'
     p.write_text(t)
+    ships(man)
     print('report written')
+
+
+def ships(man):
+    """'What ships' table in LICENSES-ASSETS.md: clips and seconds per source, from the manifest."""
+    import registry
+    rows = collections.OrderedDict()
+    for e in man.values():
+        k = registry.credit_key(e['voice'])
+        r = rows.setdefault(k, {'clips': 0, 'dur': 0.0, 'packs': set(), 'sets': set()})
+        r['clips'] += 1
+        r['dur'] += e['dur']
+        r['packs'].add(e['pack'])
+        r['sets'].add(e['set'])
+    out = ['<!-- ships:start -->', f'_What ships in this build (generated {utc_now()})._', '',
+           '| Source | Licence | Clips | Seconds | Packs | Use |', '|---|---|---|---|---|---|']
+    for k in registry.CREDITS:
+        if k in rows:
+            r, c = rows[k], registry.CREDITS[k]
+            use = ' and '.join(sorted({'training' if x == 'train' else 'Lab probes' for x in r['sets']}))
+            out.append(f"| {c['source']} | {c['licence']} | {r['clips']} | {r['dur']:.0f} | "
+                       f"{', '.join(sorted(r['packs']))} | {use} |")
+    out += ['', 'Also shipped: `data/vocab.js` (rhymes and sound-alike lists computed with the CMU Pronouncing '
+            'Dictionary) and the fonts Archivo and JetBrains Mono (SIL OFL 1.1).', '<!-- ships:end -->']
+    p = REPO / 'LICENSES-ASSETS.md'
+    t = p.read_text()
+    t = re.sub(r'<!-- ships:start -->.*?<!-- ships:end -->', lambda m: '\n'.join(out), t, flags=re.S)
+    p.write_text(t)
 
 
 if __name__ == '__main__':

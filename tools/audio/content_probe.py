@@ -2,15 +2,28 @@
 story passages with five multiple-choice questions each. Words and names here appear in no training list
 (validate.py checks the matrix against the training vocabulary)."""
 
-# slot keys follow the Lab's reader (js/lab): name, verb, num, adj, obj; every word <= 7 letters and disjoint from
-# the training answer words (numbers here start at ten; training numbers are one to nine)
+# Slot keys follow the Lab's reader (js/lab): name, verb, num, adj, obj. Words were chosen by us: common,
+# picturable, <= 7 letters, disjoint from every training answer word (training numbers are one to nine), and
+# checked against the published British English matrix test (Hall 2006, University of Southampton MSc
+# dissertation, Table 2.1): no word and no verb lemma in common (a first draft shared 7 adjectives, 3 verbs and
+# 2 numbers with it and was changed). The American English matrix list could not be opened (bot check).
+MATRIX_VERSION = 2
 MATRIX = {
     'name': ['alma', 'boris', 'clara', 'dennis', 'elsa', 'frank', 'greta', 'hugo', 'irene', 'oscar'],
-    'verb': ['buys', 'finds', 'gets', 'has', 'holds', 'keeps', 'needs', 'sees', 'sells', 'wants'],
-    'num': ['ten', 'eleven', 'twelve', 'fifteen', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'eighty'],
-    'adj': ['big', 'cheap', 'dark', 'green', 'heavy', 'new', 'old', 'red', 'small', 'white'],
+    'verb': ['brings', 'counts', 'finds', 'holds', 'moves', 'needs', 'picks', 'sorts', 'takes', 'wraps'],
+    'num': ['eleven', 'fifteen', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'],
+    'adj': ['bright', 'brown', 'heavy', 'new', 'plain', 'round', 'soft', 'warm', 'wet', 'white'],
     'obj': ['bowls', 'bricks', 'buttons', 'coins', 'cups', 'gloves', 'knives', 'shirts', 'sticks', 'towels'],
 }
+# the published British English base matrix, kept only to test for overlap (validate.py and __main__)
+HALL_2006 = {
+    'name': ['peter', 'kathy', 'lucy', 'alan', 'rachel', 'barry', 'steven', 'thomas', 'hannah', 'nina'],
+    'verb': ['got', 'sees', 'bought', 'gives', 'sold', 'likes', 'has', 'kept', 'wins', 'wants'],
+    'num': ['three', 'nine', 'five', 'eight', 'four', 'six', 'two', 'ten', 'twelve', 'some'],
+    'adj': ['large', 'small', 'old', 'dark', 'thin', 'green', 'cheap', 'pink', 'red', 'big'],
+    'obj': ['desks', 'chairs', 'shoes', 'toys', 'spoons', 'mugs', 'ships', 'rings', 'tins', 'beds'],
+}
+HALL_LEMMAS = {'get', 'see', 'buy', 'give', 'sell', 'like', 'have', 'keep', 'win', 'want'}
 SLOTS = ['name', 'verb', 'num', 'adj', 'obj']
 # slot permutations (multipliers coprime with 10) so that every word appears equally often per voice
 _STEP = {'name': 1, 'verb': 3, 'num': 7, 'adj': 9, 'obj': 1}
@@ -26,7 +39,7 @@ def matrix_sentences(n, form=0):
             k = (i * _STEP[s] + _OFF[s] + form * (2 if s == 'obj' else 1) + (i // 10) * (s == 'obj')) % 10
             words.append(MATRIX[s][k])
         text = f'{words[0].capitalize()} {" ".join(words[1:])}.'
-        out.append({'id': f'mx{form}-{i + 1:02d}', 'text': text, 'words': words})
+        out.append({'id': f'mxv{MATRIX_VERSION}-{form}-{i + 1:02d}', 'text': text, 'words': words})
     return out
 
 
@@ -248,7 +261,16 @@ def vocab(key):
     raise KeyError(key)
 
 
+def overlap_with_published():
+    """Words (and verb lemmas) the matrix shares with the published British English matrix (should be none)."""
+    ours = {w for k in SLOTS for w in MATRIX[k]}
+    theirs = {w for k in SLOTS for w in HALL_2006[k]}
+    lemma = {w[:-1] if w.endswith('s') else w for w in MATRIX['verb']}
+    return sorted(ours & theirs) + sorted(lemma & HALL_LEMMAS)
+
+
 if __name__ == '__main__':
+    print('overlap with the British English matrix:', overlap_with_published() or 'none')
     for s in STORIES:
         print(s['id'], len(s['text'].split()), 'words')
     print(matrix_sentences(3), matrix_sentences(2, form=1))

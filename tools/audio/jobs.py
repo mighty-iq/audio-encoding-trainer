@@ -93,8 +93,17 @@ def job_babble2():
     return babble_items('piper-libritts', P.PIPER_TRAIN, per_voice=1, offset=16)
 
 
+def cast_callsign_items():
+    """Call-sign phrases for cast voices that no other job covers (the accented Kokoro voices), so every cast
+    voice can appear in Crowd and in the Voices 'find your friend' trials."""
+    covered = set(P.STARTER) | set(P.WAVE2_KOKORO)
+    vs = [vid.split('.', 1)[1] for vid, _, _ in P.cast_voices()
+          if vid.startswith('kokoro.') and vid.split('.', 1)[1] not in covered]
+    return callsign_items('kokoro', vs, n_per_voice=4, n_names=3, pack='words2', seed='earshot-cast-cs')
+
+
 def job_intros():
-    out = []
+    out = cast_callsign_items()
     for vid, c in P.cast().items():
         src, v = vid.split('.', 1)
         out.append({'id': f'{vid}.intro.{c["name"].lower()}', 'src': src, 'voice': v, 'kind': 'intro',
@@ -105,7 +114,7 @@ def job_intros():
 def job_sus():
     its = CS.items()
     acc = kokoro(P.ACCENT_KEPT)
-    std = kokoro(P.WAVE2_KOKORO + P.STARTER) + piper(P.PIPER_TRAIN)
+    std = piper(P.PIPER_TRAIN)                  # bulk renders on the fast Piper voices; Kokoro for accents
     n_acc = 90 if acc else 0
     a = [(it['id'], it['text'], {'keywords': it['keywords']}) for it in its[:n_acc]]
     b = [(it['id'], it['text'], {'keywords': it['keywords']}) for it in its[n_acc:]]
@@ -114,7 +123,7 @@ def job_sus():
 
 
 def job_repair():
-    vs = kokoro(P.STARTER + P.WAVE2_KOKORO)
+    vs = piper(P.PIPER_TRAIN)
     out = []
     for i, it in enumerate(CR.sentences()):
         j = i // 2                     # both versions of a pair by the same voice (alternatives follow on)
@@ -125,13 +134,13 @@ def job_repair():
 
 
 def job_far():
-    vs = kokoro(P.STARTER + P.WAVE2_KOKORO) + piper(P.PIPER_TRAIN[1::2])
+    vs = piper(P.PIPER_TRAIN)
     pairs = [(it['id'], it['text'], {'words': it['words']}) for it in CF.items()]
     return text_items('sentence', pairs, vs, 'far', tags=['far'], stride=3)
 
 
 def job_echo():
-    vs = kokoro(P.STARTER + P.WAVE2_KOKORO) + piper(P.PIPER_TRAIN[::3])
+    vs = piper(P.PIPER_TRAIN) + kokoro(P.STARTER[::3])     # mostly Piper, a few featured Kokoro voices
     pairs = [(m['id'], m['text'], {'words': m['words']}) for m in CE.items()]
     return text_items('sentence', pairs, vs, 'echo', tags=['echo'], stride=5)
 
