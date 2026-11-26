@@ -1,6 +1,6 @@
 """Shared helpers for Earshot's browser tests (Python Playwright, Chromium).
 
-Every browser run holds an exclusive lock on /tmp/earshot-browser.lock (at most two browsers machine-wide).
+Every browser run holds one of two machine-wide slots (/tmp/earshot-browser.lock or …lock2; at most two browsers).
 Page errors are attributed to the file in their stack: errors from shell-owned files fail the shell tests,
 errors from other owners' files are reported as warnings (pass --strict to fail on them too).
 Outputs (screenshots, reports) go to tests/out/, which git ignores.
@@ -12,13 +12,13 @@ import http.server
 import json
 import pathlib
 import re
-import signal
 import threading
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 OUT = ROOT / 'tests' / 'out'
 LOCK = '/tmp/earshot-browser.lock'
+LOCKS = (LOCK, LOCK + '2')     # two slots: at most two browsers machine-wide
 SHELL = ('index.html', 'js/core/', 'js/ui/', 'js/app.js', 'css/', 'earshot.html', 'earshot.srcdoc.html')
 
 
@@ -44,24 +44,27 @@ class Checks:
 
 @contextlib.contextmanager
 def browser_lock(timeout=1800):
-    """Wait in the kernel's queue for the shared browser lock (a blocking flock, like the `flock` command), so
-    polling never loses the race to other waiters; give up after `timeout` seconds."""
-    f = open(LOCK, 'a+')
-
-    def expired(signum, frame):
-        raise TimeoutError('the browser lock stayed busy for %d s' % timeout)
-    old = signal.signal(signal.SIGALRM, expired)
-    signal.alarm(timeout)
-    try:
-        fcntl.flock(f, fcntl.LOCK_EX)
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, old)
+    """Hold one of the two machine-wide browser slots (the protocol of tools/with-browser.sh: slot 1 is the
+    classic lock file, slot 2 its sibling), so at most two browsers run at once. Gives up after `timeout` s."""
+    t0, held = time.time(), None
+    while held is None:
+        for path in LOCKS:
+            f = open(path, 'a+')
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                held = f
+                break
+            except BlockingIOError:
+                f.close()
+        if held is None:
+            if time.time() - t0 > timeout:
+                raise TimeoutError('both browser slots stayed busy for %d s' % timeout)
+            time.sleep(1)
     try:
         yield
     finally:
-        fcntl.flock(f, fcntl.LOCK_UN)
-        f.close()
+        fcntl.flock(held, fcntl.LOCK_UN)
+        held.close()
 
 
 class _Quiet(http.server.SimpleHTTPRequestHandler):
