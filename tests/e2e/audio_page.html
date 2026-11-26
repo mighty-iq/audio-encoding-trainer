@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Earshot audio test page</title>
+<!-- Test page for the audio module only: loads the synthetic fixture pack and js/audio/* (in index.html order).
+     Driven by tests/e2e/audio_render.py; also opened inside a sandboxed srcdoc iframe by that test. -->
+</head>
+<body>
+<p id="status">loading</p>
+<script src="../fixtures/audio-fixture.js"></script>
+<script src="../../js/audio/ctx.js"></script>
+<script src="../../js/audio/dsp/core.js"></script>
+<script src="../../js/audio/dsp/fft.js"></script>
+<script src="../../js/audio/dsp/filter.js"></script>
+<script src="../../js/audio/dsp/tsm.js"></script>
+<script src="../../js/audio/dsp/vocode.js"></script>
+<script src="../../js/audio/dsp/whisper.js"></script>
+<script src="../../js/audio/dsp/noise.js"></script>
+<script src="../../js/audio/dsp/room.js"></script>
+<script src="../../js/audio/dsp/mix.js"></script>
+<script src="../../js/audio/assets.js"></script>
+<script src="../../js/audio/render-prep.js"></script>
+<script src="../../js/audio/render-native.js"></script>
+<script src="../../js/audio/render.js"></script>
+<script src="../../js/audio/live.js"></script>
+<script>
+/* Harness: window.T.* returns JSON-safe results; sample arrays travel as base64 little-endian float32. */
+(function () {
+  'use strict';
+  var A = window.ES.audio;
+  function b64(f32) {
+    var u = new Uint8Array(f32.buffer, f32.byteOffset, f32.byteLength), s = '', CH = 0x8000;
+    for (var i = 0; i < u.length; i += CH) s += String.fromCharCode.apply(null, u.subarray(i, i + CH));
+    return btoa(s);
+  }
+  function hash(chs) { // FNV-1a over the float32 bytes
+    var h = 2166136261 >>> 0;
+    chs.forEach(function (x) { var u = new Uint8Array(x.buffer, x.byteOffset, x.byteLength); for (var i = 0; i < u.length; i++) { h ^= u[i]; h = Math.imul(h, 16777619) >>> 0; } });
+    return h.toString(16);
+  }
+  function chans(buf) { var o = []; for (var c = 0; c < buf.numberOfChannels; c++) o.push(buf.getChannelData(c)); return o; }
+  window.T = {
+    ready: function () { return A.assets.preload(Object.keys(window.ES.packs.fixture)).then(function (r) { return { failed: r.failed, sr: A.assets.sampleRate() }; }); },
+    run: function (spec, opts) {
+      opts = opts || {};
+      var o = Object.assign({}, opts, { stems: opts.stems || true });
+      return A.render(spec, o).then(function (res) {
+        var out = { report: res.report, mix: chans(res.buffer).map(b64), sr: res.buffer.sampleRate, stems: {} };
+        Object.keys(res.stems || {}).forEach(function (k) { out.stems[k] = res.stems[k].map(b64); });
+        if (res.stemList) out.stemList = res.stemList.map(function (s) { return { kind: s.kind, role: s.role, clip: s.clip, ch: s.ch.map(b64) }; });
+        return out;
+      });
+    },
+    report: function (spec, opts) { return A.render(spec, opts || {}).then(function (res) { return res.report; }); },
+    hash: function (spec, opts) { return A.render(spec, opts || {}).then(function (res) { return { hash: hash(chans(res.buffer)), report: res.report }; }); },
+    time: function (spec, opts, n, vary) {
+      var times = [], i = 0;
+      function one() {
+        if (i >= n) return Promise.resolve(times);
+        var s = JSON.parse(JSON.stringify(spec));
+        if (vary && s.audio.room) s.audio.room.seed = 1000 + i; // a new room each time: no response cache
+        var t0 = performance.now();
+        return A.render(s, Object.assign({ seed: 7 + i }, opts || {})).then(function () { times.push(performance.now() - t0); i++; return one(); });
+      }
+      return one();
+    },
+    dsp: function (name, args) { return A.dsp[name].apply(null, args); }
+  };
+  document.getElementById('status').textContent = 'ready';
+})();
+</script>
+</body>
+</html>
