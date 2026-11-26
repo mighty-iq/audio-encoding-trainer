@@ -1,0 +1,19 @@
+# js/lab load order (tools/build-index.mjs): pure logic first, then the UI pieces, then the screens.
+stats.js
+materials.js
+procedures.js
+probes.js
+probes-more.js
+schedule.js
+records.js
+export.js
+hpcheck.js
+style.js
+widgets.js
+charts.js
+runner.js
+export-ui.js
+screen-lab.js
+screen-report.js
+screen-diary.js
+*
