@@ -65,6 +65,7 @@
     opts = opts || {};
     var u = U(), rng = ES.core.rng('hp:' + Date.now()), trials = [], answers = [], k = 0, silent = false;
     for (var i = 0; i < H.N; i++) trials.push(H.trial(rng, i));
+    H.last = { trials: trials };   // read by the browser tests (the answers are not shown on screen)
     var body = u.el('div', { class: 'lab-hp', 'data-hpcheck': '' });
     var h = ES.ui.sheet({ title: 'Headphone check', cls: 'sheet-lab-hp', body: body, onClose: function () { if (ES.audio && ES.audio.stop) ES.audio.stop(); if (opts.onClose) opts.onClose(); } });
     function intro() {
@@ -111,7 +112,7 @@
       else body.appendChild(u.el('p', null, [u.el('strong', null, 'That sounded like a speaker (' + rec.score + '). '),
         'Direction dials stay off; everything else works the same. If you are wearing headphones, try again somewhere quiet, or switch them on by hand.']));
       body.appendChild(u.el('div', { class: 'row-buttons' }, [
-        sc.pass && !silent ? null : ES.ui.button('Try again', { small: true, attrs: { 'data-hp-again': '' }, onClick: function () { k = 0; answers = []; silent = false; trials = trials.map(function (t, i) { return H.trial(ES.core.rng('hp:' + Date.now() + ':' + i), i); }); round(); } }),
+        sc.pass && !silent ? null : ES.ui.button('Try again', { small: true, attrs: { 'data-hp-again': '' }, onClick: function () { k = 0; answers = []; silent = false; trials = trials.map(function (t, i) { return H.trial(ES.core.rng('hp:' + Date.now() + ':' + i), i); }); H.last = { trials: trials }; round(); } }),
         ES.ui.button('Done', { small: true, kind: 'primary', attrs: { 'data-hp-done': '' }, onClick: function () { h.close('done'); } })
       ]));
       if (!sc.pass) manualRow(rec);

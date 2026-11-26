@@ -76,11 +76,14 @@ export function simulatePlayer(ES, probeId, cfg) {
 }
 
 /** Rates over n players: share with "clear" at check-in k, ever "clear" by check-in k, and the interval's coverage. */
-export function runSim(ES, probeId, { n = 200, gain = 1.5, seed = 1, ...rest } = {}) {
+export const DOUBLE_DAYS = [0, 1, 2, 9, 9.02, 16, 16.02, 23, 23.02, 30, 30.02];   // with the optional second Matrix run
+export function runSim(ES, probeId, { n = 200, gain = 1.5, seed = 1, double = false, ...rest } = {}) {
   const weeks = 4, clearAt = Array(weeks).fill(0), everBy = Array(weeks).fill(0), likelyOrClear = Array(weeks).fill(0), lowerBy = Array(weeks).fill(0);
   let cover = 0, gains = [], runErr = [], runSd = [];
+  if (double) rest.days = DOUBLE_DAYS;
   for (let p = 0; p < n; p++) {
     const sim = simulatePlayer(ES, probeId, { ...rest, gain, seed, player: p });
+    if (double) sim.verdicts = sim.verdicts.filter((v, k) => k % 2 === 1);   // after the second run of each check-in
     let ever = false, low = false;
     sim.verdicts.forEach((v, k) => {
       if (v.verdict === 'clear') clearAt[k]++;
@@ -99,7 +102,7 @@ export function runSim(ES, probeId, { n = 200, gain = 1.5, seed = 1, ...rest } =
     sim.runs.forEach((r) => runSd.push(r.s));
   }
   const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
-  const k = SCHEDULE_DAYS.length;
+  const k = (double ? DOUBLE_DAYS : SCHEDULE_DAYS).length;
   const pooledSd = Math.sqrt(runErr.reduce((x, y) => x + y * y, 0) / (runErr.length * (k - 1) / k));
   return { probe: probeId, n, gain, clearAt: clearAt.map((c) => c / n), everClearBy: everBy.map((c) => c / n),
     likelyOrClear: likelyOrClear.map((c) => c / n), everLowerBy: lowerBy.map((c) => c / n), coverage90: cover / n,

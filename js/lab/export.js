@@ -33,6 +33,17 @@
     return (Math.round(m * 10) / 10) + ' of 5';
   };
 
+  /** A change in the probe's "better" direction, in words with units (Rooms: as a distance factor). */
+  X.showGain = function (id, g) {
+    var p = L.probes[id];
+    if (g == null || !isFinite(g) || !p) return '';
+    var a = Math.abs(g);
+    if (id === 'rooms') { var f = Math.pow(2, a / 6.02); return '×' + (Math.round(f * 100) / 100) + ' the distance'; }
+    if (p.unit === 'dB') return (Math.round(a * 10) / 10) + ' dB';
+    if (p.unit === '%') return Math.round(a) + ' points';
+    return (Math.round(a * 10) / 10) + ' points';
+  };
+
   // ---- JSON backup
   X.json = function () {
     var obj = st().exportAll(), text = JSON.stringify(obj, null, 1);
