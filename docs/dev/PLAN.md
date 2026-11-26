@@ -90,14 +90,22 @@ played once) → closed-set answer (taps) → feedback (right/wrong per slot, in
    Dials: target-to-masker ratio; talker count; voice similarity (other sex → same sex → near-twin voice); spatial
    separation (headphones only: 90° → 15° → 0°); cue type (call sign, voice preview, location); onset jitter.
    Bet: attention control and voice/spatial cue use against informational masking; masker variety for generality.
-2. **Far** — a room cue (≥1 s of the room) then a phrase at distance in a simulated room with room noise.
+2. **Far** — a room cue (≥1 s of the room; room adaptation acts within 1–3 s and is binaural, worth ~2.7 dB:
+   Brandewie & Zahorik 2010 [full]) then a phrase at distance in a simulated room with room noise; room switching
+   costs 1–7 points (Vlahou 2021 [full]), so switching is a dial that widens.
    Dials: distance (direct-to-reverberant ratio and level), reverberation time, room noise, room switching, talker set.
    Bet: room adaptation, trained across many rooms (multi-room generalisation).
-3. **Strange voices** — accented voices (synthetic VCTK-style accents, natural non-native talkers), fast
-   (time-compressed), whisper-like, phone-band, muffled, noise-vocoded, emotional. Keyword answers; pop-out feedback
-   (text, then the same audio again); text-first trials as an aid level. Dials: severity per family; number of
-   families in rotation; interleaving pattern. One family is held out for probes. Bet: variety that trains adapting to
-   new voices (learning to learn). Details to be refined from R2.
+3. **Strange voices** — accented voices (synthetic voices with several accents, at least two talkers per accent;
+   natural non-native talkers), fast (time-compressed 1.3–3×), whisper-like, phone-band, muffled, noise-vocoded
+   (16 → 4 bands), emotional; phrases are matrix-style or semantically unpredictable so context cannot replace
+   listening (Loebach 2010 [full]); accent trials run in babble because accent costs grow as SNR falls (Stringer &
+   Iverson 2019 [full]). Feedback: degraded → text → degraded again (Davis 2005 [full]); text-first trials as an aid
+   level (text before word onset helps; Sohoglu 2014 [full]). Dials: severity per family (easy-to-hard ramp;
+   Guediche 2016 [full]); families in rotation; interleaving (a new family or accent starts blocked, then interleaves
+   once accuracy holds: Tzeng 2016, Fuhrmeister & Myers 2020, Luthra 2021 [full]). The first 3–6 items of a new
+   condition do not move its threshold (log-shaped rapid adaptation; Cooke 2022 [full]). One family is held out for
+   the New-voice probe (rapid learning predicts babble recognition; Banai 2022 [full]). Bet: variety that trains
+   adapting to new voices; we say the variability benefit is smaller than once thought (Brekelmans 2022 [full]).
 4. **Repair** — sentences with words lost under bursts or gates; choose the lost word; context before or after the gap.
    Dials: gap fraction and rate; filler noise level; context strength; position of the gap. Bet: a general strategy —
    hold the sentence, then repair it — plus dip listening.
@@ -120,6 +128,10 @@ played once) → closed-set answer (taps) → feedback (right/wrong per slot, in
   threshold with a material-specific slope prior). A trial pushes one focus dial to its edge while the others sit a
   margin below their thresholds; the focus dial is chosen by recent learning progress (bandit). Item and voice
   difficulty offsets (from build-time objective intelligibility, later from pooled data) correct the prediction.
+- Adaptation floor: no condition is trained below ~65–70 % predicted accuracy, because exposure around 50 % produced
+  no learning (Bradlow 2023; McLaughlin 2024 [full]).
+- Sleep: transfer to new talkers appeared only after overnight sleep (Xie, Earle & Myers 2018 [full]); the first set
+  of a day tests yesterday's hardest condition with a new talker, so the overnight gain is visible (no penalty for gaps).
 - Edge trials target ~72 % correct; every 4th–5th trial is an anchor at ~90 %; after two consecutive errors the next
   trial is an anchor. Variety (talker pool, rooms, families) is a dial that widens when accuracy holds.
 - Exposure interludes: between some sets, 20–30 s of listen-only examples of the condition just trained (with text),

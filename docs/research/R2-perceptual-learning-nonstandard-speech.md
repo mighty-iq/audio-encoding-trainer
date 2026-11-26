@@ -1,6 +1,12 @@
 # R2 — Perceptual learning of degraded and non-standard speech: what generalizes, and what training structure helps
 
-Status: in progress. Started 2026-11-26 15:20 UTC.
+Status: complete for this run. Written 2026-11-26 15:20-16:25 UTC.
+
+Run limits:
+- About 24 web searches before the shared search budget for the session ran out.
+- About 60 page fetches.
+- PubMed Central intermittently showed a reCAPTCHA browser check, which was not bypassed; some papers were read there when the check did not appear.
+- Topics not searched at all: whispered, emotional and casual/reduced speech; voice familiarity; the passive-plus-active practice primaries; speech-in-noise training reviews. They are listed in Section 7.
 
 Reading-depth tags used for every source:
 - [full text] = the full article was retrieved (open-access page, PMC, repository or author copy) and its methods and results were read through targeted extraction.
@@ -11,7 +17,21 @@ All wording below is paraphrase. Numbers are as reported by the source; where a 
 
 ## Summary
 
-(to be written last)
+1. **Speed.** Adaptation to a new degradation is fast and log-shaped: without feedback, half the within-session gain comes in the first 2-15 sentences (Cooke 2022, 8 distortions), followed by a slow layer over hours and days (Stacey & Summerfield 2008; Nogaki 2007; Brekelmans 2022).
+2. **Teaching signal.** Knowing the words while re-hearing the degraded item drives learning: distorted-clear-distorted equals distorted-text-distorted, and both beat bare repetition (Davis 2005); degraded audio plus text beats clear-audio feedback (Loebach 2010).
+3. **Text timing.** Text shown during listening gave the only gains left after 7 days (Borrie 2012); text that arrives before, or within about 120 ms of, word onset maximizes clarity (Sohoglu 2014), in older listeners too (Tamati 2022).
+4. **Ramps.** An easy-to-hard distortion ramp without feedback matched severe training with feedback; feedback mattered only at about 18% training accuracy (Guediche 2016). Low training intelligibility (about 50% or less where reported) stalls learning (Bradlow 2023; McLaughlin 2024).
+5. **Consistent transformations generalize.** Vocoder learning transfers to new words, talkers and frequency regions (Davis 2005; Huyck 2017; Hervais-Adelman 2011), only partly across carriers, and shifted-speech learning does not carry to unshifted speech (Fu 2005; Nogaki 2007).
+6. **Accents.** Accent learning takes about 12 sentences to a few minutes and is partly talker-specific; transfer depends on talker similarity and on which talkers were trained more than on talker count (Bradlow 2023; Xie & Myers 2017 via Aoki & Zellou 2025).
+7. **Variability.** The benefit is smaller than the classic HVPT story: in a 166-person, 15-session replication, generalization was +8.5 points with five talkers vs +7.6 with one, an ambiguous difference, and the aptitude interaction did not replicate (Brekelmans 2022).
+8. **Structure.** Block to acquire, interleave to generalize: interleaving accented talkers beat blocking for new talkers at high training accuracy (Tzeng 2016), while blocking won for a hard new contrast (Fuhrmeister & Myers 2020) and for two talkers' idiosyncrasies (Luthra 2021).
+9. **Schedule.** Total practice mattered more than sessions per week (Nogaki 2007); spreading helped transfer to new sentences and small repeated sets helped new voices (Banai & Lavner 2019); successful protocols run about 20-30 minutes a day for 2-4 weeks.
+10. **Sleep.** Evening training plus sleep protects gains, and cross-talker accent generalization appeared only after sleep (Xie, Earle & Myers 2018); a 2026 systematic review of 30 studies confirms the stabilizing effect.
+11. **Rooms.** Room adaptation acts within 1-3 s, is mainly binaural and is worth about 2.7 dB in noise (Brandewie & Zahorik 2010); switching rooms costs, and no multi-session reverberation training study was found.
+12. **Noise.** Individual rapid learning predicts recognition in babble (odds ratio about 1.4; Banai 2022); digit-in-babble training transferred to sentences in noise for cochlear-implant users (Oba 2011, no controls); accent costs grow as SNR falls (Stringer & Iverson 2019).
+13. **Passive exposure.** It helps when the content is resolvable or when it is mixed with active practice (Davis 2005; Bradlow lab; Witteman 2014); unintelligible exposure without content does little (Loebach 2010; Banai 2022).
+14. **Materials.** Lexical tasks transfer while unlabeled phoneme discrimination did not (Stacey & Summerfield 2008); anomalous sentences block context guessing and still transfer (Loebach 2010); environmental-sound training transferred to vocoded speech (Loebach & Pisoni 2008).
+15. **Gaps.** No sources were read on whispered, emotional or casual-speech learning, voice-familiarity training, the passive-plus-practice primaries (Wright et al.) or speech-in-noise training reviews (Section 7).
 
 ## 1. Per speech type
 
@@ -103,11 +123,14 @@ Generalization across talkers and accents:
 - **Xie, Liu & Jaeger (2021)** [could not open; described via Bradlow et al. 2023]. Large web replication of Bradlow & Bent with round-robin talker rotation and 8 participants per training-test talker pair; single-talker training produced cross-talker generalization, varying by talker pair, sometimes as large as multi-talker training; acoustic similarity did not straightforwardly explain the pattern.
 - **Tzeng, Alexander, Sidaras & Nygaard (2016)** [full text, PMC]. See Section 3: interleaving talkers beat blocking for generalization to new accented talkers.
 
-Trainer relevance: accent adaptation is fast (12 sentences to minutes) and partly talker-specific. Generalization to new talkers is real but uneven and depends on which talkers are trained. Keeping training items intelligible enough (roughly two-thirds of words or more) seems to matter. Since a free web tool cannot record dozens of accented talkers, the realistic analogue is variation of synthetic "accent-like" transformations or recorded volunteer voices; there is no evidence yet that synthetic accent transformations transfer to real accents (gap).
+Trainer relevance: accent adaptation is fast (12 sentences to minutes) and partly talker-specific. Generalization to new talkers is real but uneven and depends on which talkers are trained. Keeping training items intelligible enough seems to matter. Our inference from Bradlow et al. 2023 is roughly two-thirds of words or more; this threshold is untested. Since a free web tool cannot record dozens of accented talkers, the realistic analogue is variation of synthetic "accent-like" transformations or recorded volunteer voices; there is no evidence yet that synthetic accent transformations transfer to real accents (gap).
 
 ### 1.4 Regional accents
 
-- **Smith, Holmes-Elliott, Pettinato & Knight (2013/2014)** [abstract only: SPIN 2014 conference abstract; the City University full text was blocked by a bot-protection page]. Glasgow vs Southern British English talkers and listeners, in cafeteria noise (+2 to +3 dB SNR in related experiments). Long-term familiarity with an accent improved its intelligibility in noise; a 40-minute familiarization in quiet with a meaning-based task produced gains of about 12-21 points on post-tests, and all groups showed a talker-familiarity benefit.
+- **Smith, Holmes-Elliott, Pettinato & Knight (2013/2014)** [abstract only: SPIN 2014 conference abstract; the City University full text was blocked by a bot-protection page]. Glasgow vs Southern British English talkers and listeners (39 per group), with word-intelligibility tests in noise. Related experiments in the same project used cafeteria noise at +2 to +3 dB SNR and 40 minutes of meaning-based training in quiet; the regional-accent experiment's SNR and training length are not given in the abstract.
+- Long-term familiarity with an accent improved its intelligibility in noise.
+- After same-dialect training, Glasgow listeners hearing the southern talker improved by 19-21 points and the other groups by 12-15 points.
+- All groups showed a talker-familiarity benefit.
 - **Maye, Aslin & Tanenhaus (2008)** [not opened; known from general literature]: about 20 minutes of a story read in an artificial accent (front vowels lowered) shifted lexical decisions so that accented forms were accepted as words, generalizing to new words with the same vowel shift. Treat as unverified.
 
 ### 1.5 Dysarthric (disordered) speech
@@ -288,6 +311,8 @@ Trainer relevance: accent adaptation is fast (12 sentences to minutes) and partl
 | Text on screen while the degraded speech plays | Borrie 2012; Lansford 2018 | Largest gains; only condition still above control after 7 days |
 | Text shown before the degraded item | Sohoglu 2014; Sohoglu & Davis 2016; Tamati 2022 | Strongest immediate clarity boost ("pop-out"); learning link correlational |
 | Correct sentence shown after typed response | McLaughlin 2024; Tzeng 2016 | No measurable extra benefit in McLaughlin 2024; motivation higher |
+
+Common active ingredient across these studies: hearing the degraded version again while knowing, or just after learning, what it says. Clear speech alone (Loebach 2010) or a correct/incorrect mark alone does less. Text is as good as clear audio for supplying the content (Davis 2005), and is cheaper to build.
 
 Details:
 - **Loebach, Pisoni & Svirsky (2010)** [full text, PMC].
