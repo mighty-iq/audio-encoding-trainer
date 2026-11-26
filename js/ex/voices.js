@@ -18,8 +18,7 @@
   var M = {
     id: 'voices', name: 'Voices',
     short: 'Get to know a cast of voices, then pick one out by ear.',
-    card: { trains: 'Get to know a cast of voices, then pick your friend out of a crowd. Option: record people you know (stays on your phone).',
-      bet: 'fast voice familiarity, trained on voices from your own life' },
+    card: { trains: 'Get to know a cast of voices, then pick your friend out of a crowd.', bet: 'fast voice familiarity, trained on voices from your own life' },
     bet: 'Fast voice familiarity: getting to know new voices quickly, and getting quicker at it, practised on a cast and on voices from your own life.',
     betNew: true,
     view: 'keyword', feedback: 'standard',
@@ -27,7 +26,7 @@
     tips: [
       'Each new voice introduces itself first. Listen to how it sounds, not only to what it says: pitch, pace, the size of the voice.',
       'After a miss you hear the right voice, then the one you picked. Side by side is how two voices come apart.',
-      'A voice you know is easier to follow in a crowd. In one study about ten minutes of practice telling voices apart already made a new voice easier to follow.'
+      'A voice you know is easier to follow in a crowd. In one study a voice heard for only about ten minutes of a who-is-talking task was already easier to follow against another talker.'
     ],
     helpData: function () {
       return {
@@ -38,10 +37,15 @@
           snr: 'How loud the voice is against the noise around it. 30 dB is close to quiet.',
           length: 'How much of the voice you hear: a sentence, a few words or one word.'
         },
-        why: 'Familiar voices are easier to follow: in one study a familiar voice raised scores by about 10 points against a competing talker, and about ten minutes of practice telling voices apart already gave a measurable benefit. Voices bets that meeting many new voices also makes you quicker at learning the next one. Nobody has tested that yet; your check-ins help find out.'
+        why: 'Familiar voices are easier to follow: in one study a familiar voice raised scores by about 10 points against a competing talker, and in another a voice heard for about ten minutes of a who-is-talking task was already easier to follow. Voices bets that meeting many new voices also makes you quicker at learning the next one. That bet is untested as far as we found.'
       };
     }
   };
+
+  // RV-claims C37: the card offers recording only when the own-voices screen is in this build (js/ex/voices-own.js)
+  Object.defineProperty(M.card, 'trains', { enumerable: true, get: function () {
+    return 'Get to know a cast of voices, then pick your friend out of a crowd.' + (ES.ui && ES.ui.screens && ES.ui.screens['voices-own'] ? ' Option: record people you know (stays on your device).' : '');
+  } });
 
   /* ---- voices and names ---- */
   function vdat(v) { var D = ES.data && ES.data.voices; return (D && D[v]) || null; }
@@ -197,16 +201,13 @@
     if (f.answerAt) k.placeAnswers(t, f.answerAt);
     return M.prepare(t);
   };
-  // After the tutorial, its two voices count as met (SHIM until the engine has learner.noteMet: requests.md).
+  // After the tutorial, its two voices count as met (the engine's learner.noteMet; the game hears of it via cast:met).
   if (ES.hooks && typeof ES.hooks.on === 'function') ES.hooks.on('tutorial:done', function (p) {
     if (!p || p.exId !== 'voices' || p.skipped) return;
     var L = ES.engine && ES.engine.learner, vs = Object.keys(tut.byStep).map(function (s) { return tut.byStep[s]; });
-    vs.forEach(function (v) {
-      if (L && typeof L.noteMet === 'function') L.noteMet(v);
-      else if (L && L.state) { L.state.cast = L.state.cast || {}; L.state.cast[v] = (L.state.cast[v] || 0) + 1; }
-      ES.hooks.emit('cast:met', { voice: v });
-    });
-    if (vs.length && L && typeof L.save === 'function' && !L.noteMet) { try { L.save(); } catch (e) { /* the shell saves later */ } }
+    if (!vs.length) return;
+    if (L && typeof L.noteMet === 'function') { try { L.noteMet(vs); } catch (e) { if (K()) K().report('voices noteMet', e); } }
+    vs.forEach(function (v) { ES.hooks.emit('cast:met', { voice: v }); });
   });
   function steps() {
     return [
@@ -230,10 +231,10 @@
      benefit, Holmes 2021; a familiar target +9.5 points, no release from a familiar masker, Domingo 2020). ---- */
   var CARDS = [
     { id: 'voices.cues', ex: 'voices', dial: 'similar', title: 'Pitch and size together',
-      text: 'Voices differ in pitch and in the size of the voice. In lab studies the two together separated voices more than the sum of each alone, so listen for both: high or low, big or small.',
+      text: 'Voices differ in pitch and in the size of the voice. In one study, reported in a review, pitch and size differences together separated two talkers more than either alone, so listen for both: high or low, big or small.',
       tryIt: 'Next set: for each voice, decide first whether it sits high or low, then whether it sounds big or small.' },
     { id: 'voices.ten', ex: 'voices', dial: 'cast', title: 'Ten minutes makes a voice familiar',
-      text: 'In one study about ten minutes of practice telling three voices apart already made them easier to follow against another talker, and twenty minutes did no better than ten. Familiarity builds fast.',
+      text: 'In one study a voice heard for only about ten minutes of a who-is-talking task was already easier to follow against another talker, and twenty minutes did no better than ten. Familiarity builds fast.',
       tryIt: 'Next set: after every miss, replay both voices once. Each listen adds to what you know of them.' },
     { id: 'voices.follow', ex: 'voices', dial: 'snr', bridge: true, title: 'Know the voice you need to follow',
       text: 'A familiar voice helps when it is the one you follow: in one study it raised scores by about 10 points. A familiar voice in the background did not get easier to ignore.',

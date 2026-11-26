@@ -21,7 +21,7 @@
   var M = {
     id: 'seek', name: 'Seek',
     short: 'Find a faint voice in a noisy room by ear, then name its word.',
-    card: { trains: 'Move your finger through a noisy room to find a faint voice; it gets clearer as you close in. Later: turn your head to hear better.',
+    card: { trains: 'Move your finger through a noisy room to find a faint voice; it gets clearer as you close in. Later: turn the listener on screen to hear better.',
       bet: 'sound-guided movement and head-turn practice' },
     bet: 'Sound-guided movement: closing in on a voice by ear, and turning so one ear faces it. Both are under-tested; Seek is our test.',
     betNew: true, view: 'custom', feedback: 'standard',
@@ -42,7 +42,7 @@
           size: 'How close you must stop for it to count, shown as the ring around you' + (v ? ': from within ' + fmtM(Math.round(v[0] * 1.15 * mpu() * 10) / 10) + ' down to within ' + fmtM(Math.round(v[v.length - 1] * 1.15 * mpu() * 10) / 10) + '.' : '.'),
           gap: 'The pause between calls. Longer pauses give you less to steer by.'
         },
-        why: 'Seek turns listening into movement: you steer by the sound and hear the result of each step. A closed-loop listening game of this kind came with gains in speech in noise in one placebo-controlled study of older adults; it has not been replicated, and the gains faded without practice. Turning one ear toward a talker was worth 1 to 3 dB in a virtual restaurant in another study. Seek tests both bets.'
+        why: 'Seek turns listening into movement: you steer by the sound and hear the result of each step. In one placebo-controlled study, older adults who steered a fingertip through a sound scene gained in speech in noise; we found no replication, and the gains faded without practice. Seek is our own take on that idea, plus turning one ear to the talker, worth 1 to 3 dB in a virtual restaurant in another study.'
       };
     }
   };
@@ -123,7 +123,7 @@
       text: 'With decoys every voice in the room calls a word. The one you want is the voice from the preview: lock on to its pitch and pace before you move, and pass the others by.',
       tryIt: 'Next set: during the preview, name one thing about the voice: high or low, quick or slow.' },
     { id: 'seek.ear', ex: 'seek', dial: 'size', requires: 'headphones', title: 'Point one ear at the voice',
-      text: 'Facing a talker squarely is not the best way to hear them in noise. In lab studies a head turn of about 30°, so one ear points toward the talker, helped: after instruction everyone turned and scores rose by about 3 dB, and the turn still kept the face in view.',
+      text: 'Facing a talker squarely is not the best way to hear them in noise. In lab studies a head turn of about 30°, so one ear points toward the talker, helped: after instruction everyone turned and their self-set thresholds improved by about 3 dB, and the turn still kept the face in view.',
       tryIt: 'Next set: with the knob, turn until the voice sits a little to one side, then let go.' }
   ];
   function addCards() {

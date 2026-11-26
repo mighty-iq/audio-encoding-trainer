@@ -100,7 +100,7 @@
     if (L.bed) L.bed.db = (+L.bed.db || 0) - HEAD;
     if (L.target) L.target.db = (+L.target.db || 0) - HEAD;
     (L.decoys || []).forEach(function (d) { d.db = (+d.db || 0) - HEAD; });
-    L.radius = M_PER_UNIT; L.minDist = MIN_D; L.spatial = spec.audio.spatial || 'ild'; L.seed = String(spec.seed);
+    L.radius = M_PER_UNIT; L.minDist = MIN_D; L.spatial = L.spatial || spec.audio.spatial || 'ild'; L.seed = L.seed != null ? String(L.seed) : String(spec.seed);
     var sc = ES.audio.live.scene(L);
     sc.listener(pos.x, pos.y, h || 0);
     return sc;
@@ -111,23 +111,17 @@
     for (var i = 0; i < times; i++) parts.push({ clip: clip, at: Math.round((0.25 + i * (d + gap)) * 1000) / 1000, db: 0, role: 'target' });
     return { out: { db: -20 }, dur: Math.round((0.5 + times * (d + gap)) * 100) / 100, spatial: 'mono', parts: parts, beds: bed ? [{ kind: bed.kind, bed: bed.bed, db: db }] : [], room: null };
   }
-  /** Another clip by the target voice whose words are none of the scene's words (SHIM until meta.preview). */
-  function previewClip(spec) {
-    if (spec.meta && spec.meta.preview) return spec.meta.preview;
-    var X = E().items && E().items.data, tv = spec.meta && spec.meta.voices && spec.meta.voices[0], live = spec.audio.live;
-    if (!X || !tv) return null;
-    var avoid = [live.target.clip].concat((live.decoys || []).map(function (d) { return d.clip; }));
-    var bad = {};
-    avoid.forEach(function (c) { (clipMeta(c).words || []).forEach(function (w) { bad[String(w).toLowerCase()] = 1; }); });
-    var kinds = ['phrase', 'sentence', 'word'];
-    for (var i = 0; i < kinds.length; i++) {
-      var ok = (X.kindsOf(tv, kinds[i]) || []).filter(function (c) { return avoid.indexOf(c) < 0 && !(clipMeta(c).words || []).some(function (w) { return bad[String(w).toLowerCase()]; }); });
-      if (ok.length) return ok[ES.core.hash(String(spec.seed)) % ok.length];
-    }
-    return null;
-  }
+  /** The engine's preview: another clip by the target voice whose words are none of the scene's (meta.preview). */
+  function previewClip(spec) { return (spec.meta && spec.meta.preview) || null; }
   function playSpec(spec, audio) {
     return Promise.resolve(ES.audio.render(audio, { seed: String(spec.seed) })).then(function (r) { return ES.audio.play(r && r.buffer ? r.buffer : r); });
+  }
+
+  var watching = false;
+  function watchCtx() {   // one listener for the app's audio context; it forwards state changes to the running scene
+    if (watching || !ES.audio || !ES.audio.ctx || typeof ES.audio.ctx.onState !== 'function') return;
+    watching = true;
+    ES.audio.ctx.onState(function (state) { var h = ES.ex._seekScene && ES.ex._seekScene.current; if (h && h._ctx) h._ctx(state); });
   }
 
   /* ---- one scene: [preview] → search → word → feedback. cfg = {score(spec, response), onResult?, practice?,
@@ -150,44 +144,62 @@
     function phase(p, text) { st.phase = p; body.setAttribute('data-state', p); if (text != null) status.textContent = text; }
     function quiet(on) { if (st.held !== on) { st.held = on; hold(on); } }
     function decoys() { return (live.decoys || []).length; }
-    function stopScene() { if (st.scene) { try { st.scene.stop(); } catch (e) { /* ignore */ } st.scene = null; } quiet(false); }
+    function stopScene() { if (st.scene) { try { st.scene.stop(); } catch (e) { /* ignore */ } st.scene = null; } st.heard = false; quiet(false); }
     function stopPlayer() { st.tok++; if (st.player) { try { st.player.stop(); } catch (e) { /* ignore */ } st.player = null; } }
     function setReplays(on) { Array.prototype.forEach.call(actions.querySelectorAll('.replay'), function (b) { b.disabled = !on; }); }
+    /** Play an offline-rendered sound; then(r) gets how it ended ({ok:false} when it did not play: RV-code H2). */
     function play(audio, then) {
       var tok = ++st.tok;
       quiet(true);
       playSpec(spec, audio).then(function (h) { if (tok !== st.tok) { h.stop(); return null; } st.player = h; return h.ended; })
-        .catch(function (e) { report('play', e); if (ES.ui.toast) ES.ui.toast('That sound could not be prepared.'); })
-        .then(function () { if (tok !== st.tok) return; st.player = null; quiet(false); then(); });
+        .then(null, function (e) { report('play', e); return { ok: false, reason: 'error' }; })
+        .then(function (r) { if (tok !== st.tok) return; st.player = null; quiet(false); then(r || { ok: false }); });
     }
+    function ctxState() { var A = ES.audio && ES.audio.ctx; try { return A && typeof A.state === 'function' ? A.state() : 'none'; } catch (e) { return 'none'; } }
+    function buttons(on) { Array.prototype.forEach.call(actions.querySelectorAll('button'), function (b) { b.disabled = !on; }); }
     function preview() {
       var clip = previewClip(spec);
       if (!clip) { search(); return; }
       phase('preview', 'The voice to find…');
       prompt.textContent = 'This is the voice to find. The other voices call other words.';
       u.clear(actions);
-      play(oneClip(spec, clip, 1, null, 0), function () { if (!st.done && !st.paused) search(); });
+      play(oneClip(spec, clip, 1, null, 0), function (r) {
+        if (!st.done && !st.paused) search(r && r.ok === false && !r.stopped ? 'The preview didn’t play. Tap “Hear the voice to find” to try again.' : null);
+      });
     }
-    function search() {
-      phase('search', 'Grab your dot (or press an arrow key) to start listening.');
+    function search(note) {
+      phase('search', note || 'Grab your dot (or press an arrow key) to start listening.');
       prompt.textContent = cfg.practice ? 'Practice: put your finger on your dot (marked “you”) and drag. The voice gets louder as you get closer. Let go where it is loudest.'
-        : (decoys() ? 'Find the voice from the preview. ' : 'Find the voice calling one word. ') + 'Drag yourself toward it and let go where it is loudest.' + (turn ? ' The knob on your ring turns your head.' : '');
+        : (decoys() ? (previewClip(spec) ? 'Find the voice from the preview. ' : 'Find the voice that keeps calling one word; other voices call other words. ') : 'Find the voice calling one word. ') +
+          'Drag yourself toward it and let go where it is loudest.' + (turn ? ' The knob on your ring turns your head.' : '');
       u.clear(actions);
       if (decoys() && previewClip(spec)) actions.appendChild(ES.ui.button('Hear the voice to find', { kind: 'secondary', cls: 'sk-again', onClick: function () { if (!st.scene && st.phase === 'search') preview(); } }));
       if (ES.core.util.focus) ES.core.util.focus(svg);
     }
+    /** Start the live scene. Called from the grab or a key press, so the audio context is unlocked inside that
+        gesture; the scene starts only once the context runs (RV-code H2: a search without sound is never scored). */
     function begin() {
-      if (st.scene || st.phase !== 'search' || st.paused) return;
-      Array.prototype.forEach.call(actions.querySelectorAll('button'), function (b) { b.disabled = true; });
-      status.textContent = 'Listening… let go where it is loudest.';
-      quiet(true);
-      if (!st.t0) st.t0 = Date.now();
-      st.lastT = Date.now();
-      try {
-        st.scene = sceneCfg(spec, st.pos, st.h);
-        st.scene.start().catch(function (e) { report('scene', e); status.textContent = 'Sound is unavailable here: answer anyway to walk through.'; });
-      } catch (e) { report('scene', e); st.scene = { listener: function () {}, stop: function () {} }; status.textContent = 'Sound is unavailable here: answer anyway to walk through.'; }
+      if (st.scene || st.starting || st.phase !== 'search' || st.paused) return;
+      st.starting = true;
+      buttons(false);
+      status.textContent = 'Starting the sound…';
+      var A = ES.audio && ES.audio.ctx, un;
+      try { un = A && typeof A.unlock === 'function' ? A.unlock(1500) : ctxState(); } catch (e) { un = 'none'; }
+      Promise.resolve(un).then(function (state) {
+        st.starting = false;
+        if (st.done || st.paused || st.phase !== 'search' || st.scene) return;
+        if (state !== 'running') { noSound('The sound didn’t play. Grab your dot to try again.'); return; }
+        quiet(true);
+        if (!st.t0) st.t0 = Date.now();
+        st.lastT = Date.now(); st.cut = false;
+        status.textContent = 'Listening… let go where it is loudest.';
+        try {
+          var sc = st.scene = sceneCfg(spec, st.pos, st.h);
+          sc.start().then(function () { if (st.scene === sc) st.heard = true; }, function (e) { report('scene', e); if (st.scene === sc) noSound('The sound didn’t play. Grab your dot to try again.'); });
+        } catch (e) { report('scene', e); noSound('The sound didn’t play. Grab your dot to try again.'); }
+      });
     }
+    function noSound(text) { stopScene(); st.heard = false; status.textContent = text; buttons(true); }
     /** Head-turn practice: time with the voice 15–70° to one side of your nose (one ear toward it), counted while
         the scene plays and you are more than 1.5 × MIN_D from the voice (right next to it the direction means little). */
     function track() {
@@ -253,9 +265,18 @@
     });
     function commit() {
       if (st.phase !== 'search') return;
+      var heard = !!(st.scene && st.heard && !st.cut && ctxState() === 'running');
       st.grab = null;
       track();
       stopScene();
+      if (!heard) {   // RV-code H2: a search without sound never reaches the answer; the same scene starts over
+        st.voided = (st.voided || 0) + 1;
+        st.pos = { x: start.x, y: start.y }; st.h = 0; st.moved = 0; st.path = [[start.x, start.y]]; st.t0 = 0; st.lastT = 0; st.earMs = 0; st.allMs = 0;
+        fv.place(st.pos, 0);
+        status.textContent = 'The sound didn’t play, so that search does not count. Grab your dot to try again.';
+        buttons(true);
+        return;
+      }
       st.searchMs = st.t0 ? Date.now() - st.t0 : 0;
       st.release = { x: Math.round(st.pos.x * 1000) / 1000, y: Math.round(st.pos.y * 1000) / 1000, h: Math.round(st.h) };
       phase('word', 'Your answer:');
@@ -311,7 +332,7 @@
       [['The voice alone', oneClip(spec, live.target.clip, 2, null, 0)], ['Up close, in the noise', oneClip(spec, live.target.clip, 2, live.bed, bedDb)]].forEach(function (r, i) {
         actions.appendChild(ES.ui.button(r[0], { kind: 'secondary', cls: 'replay', attrs: { 'data-replay': String(i) }, onClick: function () {
           if (st.phase !== 'feedback' || st.player) return;
-          setReplays(false); play(r[1], function () { setReplays(true); });
+          setReplays(false); play(r[1], function (res) { setReplays(true); if (res && res.ok === false && !res.stopped && ES.ui.toast) ES.ui.toast('That sound didn’t play. Tap to try again.'); });
         } }));
       });
       var nx = ES.ui.button(cfg.nextLabelFor ? cfg.nextLabelFor(res) : 'Next', { kind: 'primary', cls: 'next', attrs: { 'data-next': '' }, onClick: function () { finish({ result: res, response: response, trial: spec }); } });
@@ -319,12 +340,19 @@
       if (ES.core.util.focus) ES.core.util.focus(nx);
     }
     function finish(out) { if (st.done) return; st.done = true; stopPlayer(); stopScene(); if (st.panel && out.aborted) st.panel.destroy(); resolveDone(out); }
+    watchCtx();
     if (decoys() && !cfg.practice) preview(); else search();
     function targetGain() {   // the voice's level change from distance now (dB re 1 m), from the live scene
       try { var v = st.scene && st.scene.state ? st.scene.state().voices.filter(function (x) { return x.role === 'target'; })[0] : null; return v ? Math.round(v.gainDb * 10) / 10 : null; }
       catch (e) { return null; }
     }
     var handle = {
+      _ctx: function (state) {
+        if (state === 'running' || !st.scene || st.phase !== 'search') return;
+        stopScene(); st.cut = true;
+        status.textContent = 'The sound stopped. Grab your dot to listen again.';
+        buttons(true);
+      },
       done: done, spec: spec,
       state: function () { return st.paused ? 'paused' : st.phase; },
       pause: function () {
@@ -337,10 +365,10 @@
         if (!st.paused || st.done) return;
         st.paused = false;
         if (st.phase === 'preview') preview();
-        else if (st.phase === 'search') { status.textContent = st.t0 ? 'Paused. Grab your dot to listen again.' : 'Grab your dot (or press an arrow key) to start listening.'; Array.prototype.forEach.call(actions.querySelectorAll('button'), function (b) { b.disabled = false; }); }
+        else if (st.phase === 'search') { status.textContent = st.t0 ? 'Paused. Grab your dot to listen again.' : 'Grab your dot (or press an arrow key) to start listening.'; buttons(true); }
       },
       abort: function () { finish({ aborted: true }); },
-      peek: function () { return { phase: st.phase, pos: { x: st.pos.x, y: st.pos.y }, h: st.h, answer: ans, word: wordSlot.answer, turn: turn, listening: !!st.scene, paused: st.paused,
+      peek: function () { return { phase: st.phase, voided: st.voided || 0, heard: !!st.heard, pos: { x: st.pos.x, y: st.pos.y }, h: st.h, answer: ans, word: wordSlot.answer, turn: turn, listening: !!st.scene, paused: st.paused,
         options: (wordSlot.options || []).map(String), decoys: (live.decoys || []).length, practice: !!cfg.practice, gainDb: targetGain() }; }
     };
     if (ES.ex._seekScene) ES.ex._seekScene.current = handle;   // the running scene (tests and playtest reports read it)

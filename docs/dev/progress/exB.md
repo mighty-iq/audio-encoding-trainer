@@ -75,3 +75,22 @@ Tests (tools/with-browser.sh): ex_b_tutorial.py [--miss] [--real] (Echo 21.6 s, 
 playing correctly, fixture world), ex_b_layout.py (136/136 at 360×640 light/dark, 390×844, 1366×768 dark),
 ex_b_own.py (21/21 incl. sandboxed srcdoc), ex_b_map.py (venue "Also here" sets).
 Open: index.html lacks js/ex/missions.js and voices-own.js until build-index reruns (asked); my test pages add them.
+
+## 2026-11-26 20:18 UTC — fix round 1 (docs/dev/reviews/FIX-ROUND-1.md)
+- H2 (Seek) · fixed: begin() unlocks the audio context inside the grab or key gesture and starts the live scene only
+  once the context runs; a release when no sound was playing (never started, stopped mid-search by a context change,
+  or the context not running at release) is not scored: the same scene starts over with "The sound didn't play, so
+  that search does not count"; ES.audio.ctx.onState stops a running scene when the context leaves 'running'; the
+  preview and the replays say when they did not play. Test: tests/e2e/ex_b_sound.py 12/12 (4 fail on the previous code).
+- C08 · fixed: "That bet is untested as far as we found." (no check-in claim). A measure would need hearings-until-
+  known per cast voice (game.cast; suggested to the game in requests.md).
+- C09 · fixed: Echo's why, tip and cards: context restores words in everyday sentences; names and numbers get no help.
+- C17 · fixed: Seek's why uses the review's rewrite. C32 · fixed: card "turn the listener on screen"; "self-set
+  thresholds improved by about 3 dB" (also in the turn30 mission). C23 · fixed: the ~10-minute voice and the
+  pitch-and-size result reworded in Voices (tip, why, cards) and the newvoice mission. C37 · fixed: the card offers
+  recording only when the voices-own screen is in the build ("stays on your device").
+- SHIMs removed: Seek uses meta.preview only and the engine's spatial/seed; the Voices tutorial uses
+  learner.noteMet; Echo's hold and Seek's DOM shims were already gone.
+- M7 (pause replays) · not applicable to Seek: the voice repeats by design and a pause only stops the scene.
+- index.html regenerated locally with node tools/build-index.mjs before the browser runs (left for the shell to commit).
+- Runs after the fixes: ex_b_tutorial 58/58, ex_b_layout --quick 62/62, ex_b_own 21/21, ex_b_map 15/15, ex_b_sound 12/12.

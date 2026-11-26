@@ -22,7 +22,7 @@
   var MISSIONS = [
     { id: 'turn30', title: 'Turn about 30°', sit: 'loud', helped: 'turned',
       what: 'In a noisy place, do not face your talker squarely. Turn your head about 30° so one ear points toward them, and keep your eyes on their face.',
-      why: 'In lab studies a turn of about 30° improved understanding in noise: after instruction everyone turned and scores rose by about 3 dB, and in a virtual restaurant the turn was worth 1 to 3 dB. Only about half of people turn on their own.' },
+      why: 'In lab studies a turn of about 30° improved understanding in noise: after instruction everyone turned and their self-set thresholds improved by about 3 dB, and in a virtual restaurant the turn was worth 1 to 3 dB. Only about half of people turn on their own.' },
     { id: 'noiseback', title: 'Put the noise behind you', sit: 'loud', helped: 'away',
       what: 'When you choose where to sit or stand, put the loudest noise (speakers, the kitchen, the bar) behind you or to one side, with your talker in front.',
       why: 'In the studies behind the 30° turn, the turn helped most when the noise came from behind. Choosing your spot sets that up before anyone speaks.' },
@@ -43,7 +43,7 @@
       why: 'In a lab study a 30° head turn did not get in the way of lip-reading, and for cochlear-implant users turning and lip-reading together were reported to improve scores by up to 9 dB.' },
     { id: 'newvoice', title: 'Get to know a voice', sit: 'unusual', helped: null,
       what: 'Before a noisy evening, spend ten quiet minutes talking with the person you will most want to hear there.',
-      why: 'In one study about ten minutes of practice with a voice already made it easier to follow against another talker, and a familiar voice raised scores by about 10 points.' }
+      why: 'In one study a voice heard for only about ten minutes of a who-is-talking task was already easier to follow against another talker, and in another a familiar voice raised scores by about 10 points.' }
   ];
   var HELPED = [['yes', 'It helped'], ['unsure', 'Not sure'], ['no', 'It did not']];
 

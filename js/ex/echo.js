@@ -24,7 +24,7 @@
     strategies: ['echo.shape', 'echo.after', 'echo.slot'],
     tips: [
       'The questions appear only after the pause, so hold the whole message: who, where, when and what.',
-      'A detail lost in the noise often comes back from the rest of the message. Keep listening to the end before you decide.',
+      'Names, numbers and times get no help from the rest of the message, so catch each one as it comes and give it its slot.',
       'A pick that was in the message but answers another question means you heard it and filed it in the wrong slot.'
     ],
     helpData: function () {
@@ -36,7 +36,7 @@
           rate: 'How fast the message is spoken, as a multiple of normal speed.',
           delay: 'How long you wait, with nothing new on screen, before the questions appear.'
         },
-        why: 'Real messages come once, in noise, and you need them a moment later. Echo trains hearing and holding together on everyday content. Context is a strong repair tool: listeners restored 70 to 90 % of missing sounds in short everyday sentences, against about 50 % in meaningless ones, so the rest of a message helps you rebuild a detail the noise covered.'
+        why: 'Real messages come once, in noise, and you need them a moment later. Echo trains hearing and holding together on everyday content. The rest of a message can repair a blurred word when only one word fits: in studies reported in a review, listeners restored most missing sounds in everyday sentences. Names and numbers get no help from context, so tag each one as it comes.'
       };
     }
   };
@@ -153,17 +153,17 @@
   M.tutorial = {};
   Object.defineProperty(M.tutorial, 'steps', { get: steps, enumerable: true });
 
-  /* ---- strategy cards (plateau breaker), from the notes: R3 §6 (context restores 70–90 % of missing sounds in
-     everyday sentences vs ~50 % in meaningless ones, [secondary] via Bronkhorst 2015; context after an unclear word
-     helped more than before it, most at the hardest SNRs: Tinnemore 2025). echo.slot names our own feedback
-     category (a 'context' foil = a word from the message given to another question). ---- */
+  /* ---- strategy cards (plateau breaker), from the notes: R3 §6 (most missing sounds restored in everyday sentences,
+     [secondary] via Bronkhorst 2015 — sentence context, which names and numbers do not get; context after an unclear
+     word helped more than before it, most at the hardest SNRs: Tinnemore 2025). echo.slot names our own feedback
+     category (a 'context' foil = a word from the message given to another question). RV-claims C09. ---- */
   var CARDS = [
     { id: 'echo.shape', ex: 'echo', dial: 'details', title: 'Give each detail a slot',
-      text: 'A message has a shape: who, where, when, what to bring. Expecting that shape gives each detail a place to land. Context is a strong repair tool: listeners restored 70 to 90 % of missing sounds in short everyday sentences, against about 50 % in meaningless ones.',
+      text: 'A message has a shape: who, where, when, what to bring. Expecting that shape gives each detail a place to land. Names and numbers get no help from context, so the slot is what holds them.',
       tryIt: 'Next set: listen for the shape first, then drop each detail into its slot as it arrives.' },
     { id: 'echo.after', ex: 'echo', dial: 'snr', title: 'Let the end repair the start',
-      text: 'The words after an unclear one can repair it. In one study context helped even more when it came after the unclear word than before it, and most at the hardest noise levels.',
-      tryIt: 'Next set: when a detail goes under, keep listening; decide only once the message is over.' },
+      text: 'The words after an unclear one can repair it when only one word fits: in one study context helped even more when it came after the unclear word than before it, most at the hardest noise levels. It works for places and things; names and numbers you have to catch as they come.',
+      tryIt: 'Next set: when a place or a thing goes under, keep listening; decide only once the message is over.' },
     { id: 'echo.slot', ex: 'echo', dial: 'delay', title: 'Right word, wrong question',
       text: 'A pick that was in the message but answers another question is a filing slip: you heard it and put it in the wrong place. Tagging each detail with its role as you hear it keeps it in place through the wait.',
       tryIt: 'Next set: tag each detail as it comes: who, where, when or what.' }
