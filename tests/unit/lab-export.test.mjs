@@ -1,7 +1,6 @@
 // Lab exports and import: backup round trip, every older shape, damaged files, CSV, the pooled community format.
-export const scripts = ['js/core/ns.js', 'js/core/util.js', 'js/core/rng.js', 'js/core/store-schema.js', 'js/core/store.js', 'tests/fixtures/lab-data.js',
-  'js/lab/stats.js', 'js/lab/materials.js', 'js/lab/procedures.js', 'js/lab/probes.js', 'js/lab/probes-more.js',
-  'js/lab/schedule.js', 'js/lab/records.js', 'js/lab/export.js'];
+import { labScripts } from './lab-scripts.mjs';
+export const scripts = labScripts(['js/lab/schedule.js', 'js/lab/records.js', 'js/lab/export.js']);
 
 const DAY = 864e5, T0 = Date.UTC(2026, 10, 2, 18, 0);
 function seed(ES) {
@@ -68,17 +67,51 @@ export const tests = {
       assert.equal(X.importJson(JSON.stringify({ format: 'earshot-backup', fv: 9, records: {} })).kind, 'newer');
       assert.equal(X.importJson(JSON.stringify({ hello: 'world' })).kind, 'unknown');
       assert.equal(ES.core.store.get('lab').runs.length, n0, 'nothing changed');
-      // one damaged record inside a backup: the rest still imports and the report says so
+      // one damaged record inside a backup: the whole file is refused and nothing changes (fix round 1, M9)
       const obj = JSON.parse(good); obj.records.diary = '{broken'; obj.records.lab.runs.push({ id: 'new1', probe: 'matrix', at: T0 + 9 * DAY, est: { m: -7, s: 0.5 } });
       const rep = X.importJson(JSON.stringify(obj));
-      assert.ok(rep.ok, rep.message);
-      assert.ok(rep.skipped.some((s) => s.key === 'diary'), JSON.stringify(rep.skipped));
-      assert.equal(ES.core.store.get('lab').runs.length, n0 + 1);
+      assert.equal(rep.ok, false); assert.equal(rep.kind, 'damaged');
+      assert.ok(/nothing was changed/.test(rep.message) && /diary cannot be read/.test(rep.message), rep.message);
+      assert.equal(ES.core.store.get('lab').runs.length, n0, 'nothing imported');
       // prototype pollution attempts change nothing
       X.importJson('{"records":{"lab":{"runs":[],"__proto__":{"polluted":1}},"__proto__":{"polluted":2}}}');
       assert.equal(({}).polluted, undefined);
       // BOM and surrounding text are tolerated
       assert.ok(X.importJson('﻿  ' + good + '\n').ok);
+    });
+  },
+  'M9: wrong nested types in any key are refused whole; a genuine backup with every key passes'(ES, assert) {
+    return ES.core.store.init({ force: true }).then(() => {
+      seed(ES);
+      ES.core.store.update('learner', (l) => { l.recent = { crowd: [1, 0.5, 0] }; l.edge = { crowd: [0.5, 1] }; l.cond = { 'crowd:base': { n: 3, acc: 0.7, at: T0 } };
+        l.path = { crowd: { i: 1, hist: [], run: 2, n: 5, best: 1 } }; l.plat = { crowd: { rest: 0 } }; l.cast = { v1: 2 }; l.dials = { 'crowd.tmr': { m: -2, s: 1, n: 4, at: T0 } }; });
+      const good = ES.lab.exporter.json().text, X = ES.lab.exporter;
+      const before = JSON.stringify([ES.core.store.get('learner'), ES.core.store.get('lab'), ES.core.store.get('diary')]);
+      const bad = [
+        ['learner', (r) => { r.recent.crowd = 'x'; }, /learner\.recent\.crowd/],
+        ['learner', (r) => { r.edge.crowd = {}; }, /learner\.edge\.crowd/],
+        ['learner', (r) => { r.cond['crowd:base'] = 5; }, /learner\.cond\.crowd:base/],
+        ['learner', (r) => { r.path.crowd = 'x'; }, /learner\.path\.crowd/],
+        ['learner', (r) => { r.recent.crowd = [0.5, 7]; }, /learner\.recent\.crowd/],
+        ['learner', (r) => { r.dials['crowd.tmr'].m = 'loud'; }, /learner: 1 value has the wrong type/],
+        ['lab', (r) => { r.runs[1].est = { m: 'x', s: 0.5 }; }, /lab run 2 has a wrong result/],
+        ['lab', (r) => { r.runs[0].trials = [[0, 'a']]; }, /lab run 1 has wrong trial data/],
+        ['lab', (r) => { r.runs = {}; }, /lab/],
+        ['diary', (r) => { r.entries[0].items[0].v = 9; }, /diary week 1/],
+        ['profile', (r) => { r.settings = 'x'; }, /profile/]
+      ];
+      bad.forEach(([key, mutate, re]) => {
+        const o = JSON.parse(good); mutate(o.records[key]);
+        const rep = X.importJson(JSON.stringify(o));
+        assert.equal(rep.ok, false, key + ' damage refused');
+        assert.equal(rep.kind, 'damaged');
+        assert.ok(re.test(rep.message), rep.message);
+      });
+      assert.equal(JSON.stringify([ES.core.store.get('learner'), ES.core.store.get('lab'), ES.core.store.get('diary')]), before, 'nothing changed');
+      ES.core.store.wipe();
+      const rep = X.importJson(good);
+      assert.ok(rep.ok, rep.message);
+      assert.deepEqual(ES.core.store.get('learner').recent, { crowd: [1, 0.5, 0] });
     });
   },
   'CSV: one row per run and per session; quotes, commas and formula-like text are safe'(ES, assert) {

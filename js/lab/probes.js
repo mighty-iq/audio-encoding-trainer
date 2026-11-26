@@ -60,9 +60,16 @@
   K.bedDb = function (snr, parts) { return K.r2(-snr - ((parts[0] && parts[0].db) || 0)); };
   K.edge = function (e) { return e && e.atEdge ? e.atEdge : null; };
 
+  /** Run state shared by every probe. redraw(): the current trial was voided (a sound that did not play, or a second
+      pause while it played): the next trial keeps the procedure's level but draws new items (never charged). */
   function base(def, form, rng, n) {
-    return { probe: def.id, form: form, proc: def.proc, seed: rng.seed, n: n, i: 0, log: [] };
+    var run = { probe: def.id, form: form, proc: def.proc, seed: rng.seed, n: n, i: 0, log: [], redraws: 0 };
+    run.redraw = function () { run.redraws++; return run.redraws; };
+    return run;
   }
+  K.base = base;
+  /** The fork label of trial i, new after every redraw. */
+  K.tag = function (run, prefix) { return prefix + run.i + (run.redraws ? 'r' + run.redraws : ''); };
 
   // ---- Matrix (near–mid): 5-word closed-set sentences in steady speech-shaped noise, word scoring, Bayesian track
   PROBES.matrix = {
@@ -84,7 +91,7 @@
       var prev = null, vOrder = K.shuffle(rng.fork('voices'), voices);
       run.next = function () {
         if (T.done()) return null;
-        var i = run.i, r = rng.fork('s' + i), v = vOrder[i % vOrder.length], snr = T.next();
+        var i = run.i, r = rng.fork(K.tag(run, 's')), v = vOrder[i % vOrder.length], snr = T.next();
         var s = K.matrixSentence(r, v, prev);
         prev = s.words;
         return { id: 'matrix-' + form + '-' + i, probe: 'matrix', i: i, seed: rng.seed + ':' + i, level: snr,
@@ -126,7 +133,7 @@
       var vOrder = K.shuffle(rng.fork('voices'), voices);
       run.next = function () {
         if (T.done()) return null;
-        var i = run.i, r = rng.fork('t' + i), v = vOrder[i % vOrder.length], snr = T.next();
+        var i = run.i, r = rng.fork(K.tag(run, 't')), v = vOrder[i % vOrder.length], snr = T.next();
         var pool = K.shuffle(r, X.digits.words[v]).slice(0, 3), t = 0.5, parts = [];
         pool.forEach(function (d) {
           var id = M.clip(v, 'digit', d);
@@ -188,7 +195,7 @@
         audio: { out: OUT, spatial: 'mono', parts: [{ clip: M.clip(target, 'sentence', textOf[pv]), at: 0.2, db: 0, role: 'target' }], beds: [], room: null } };
       run.next = function () {
         if (T.done()) return null;
-        var i = run.i, r = rng.fork('t' + i), tmr = T.next();
+        var i = run.i, r = rng.fork(K.tag(run, 't')), tmr = T.next();
         var a; do { a = K.pick(r, mine); } while (a === prevA && mine.length > 1);
         prevA = a;
         var ms = K.shuffle(r, maskPool).slice(0, 2), used = [a], parts = [], end = 0;

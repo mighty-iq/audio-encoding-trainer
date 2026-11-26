@@ -1,7 +1,6 @@
 // Lab: schedule (baseline + weekly, never blocking), run records, the weakest probe, the headphone check maths.
-export const scripts = ['js/core/ns.js', 'js/core/util.js', 'js/core/rng.js', 'js/core/store-schema.js', 'js/core/store.js', 'tests/fixtures/lab-data.js',
-  'js/lab/stats.js', 'js/lab/materials.js', 'js/lab/procedures.js', 'js/lab/probes.js', 'js/lab/probes-more.js',
-  'js/lab/schedule.js', 'js/lab/records.js', 'js/lab/hpcheck.js'];
+import { labScripts } from './lab-scripts.mjs';
+export const scripts = labScripts(['js/lab/schedule.js', 'js/lab/records.js', 'js/lab/hpcheck.js']);
 
 const DAY = 864e5, T0 = Date.UTC(2026, 10, 2, 18, 0);   // a Monday evening (UTC keys in these tests)
 let nid = 0;
@@ -37,8 +36,8 @@ export const tests = {
       assert.ok(again.todayDone);
     }
     assert.deepEqual(kinds, ['matrix:practice digits:practice', 'matrix:measured digits:measured twovoices:practice',
-      'matrix:measured digits:measured twovoices:measured', 'twovoices:measured rooms:practice newvoice:practice',
-      'rooms:measured newvoice:measured story:practice diary:measured']);
+      'matrix:measured digits:measured twovoices:measured', 'twovoices:measured rooms:practice newvoice:practice story:practice',
+      'rooms:measured newvoice:measured story:measured diary:measured']);   // C13: Story gets practice + 1 like the others
     const done = ES.lab.schedule(Object.assign({}, st, { now: T0 + 5 * DAY }));
     assert.ok(done.baseline.complete);
     assert.equal(done.phase, 'weekly');
@@ -59,6 +58,8 @@ export const tests = {
       assert.deepEqual(ids.slice(0, 3), ['matrix', 'twovoices', 'matrix']);
       assert.ok(items[2].second && items[2].role === 'measured' && !items[0].second, 'the third item is the second Matrix run');
       assert.ok(sch.due.twice && /twice until its trend reads clear/.test(sch.due.note));
+      assert.ok(/in new combinations every time/.test(sch.due.note) && !/new sentences every time/.test(sch.due.note), 'C14 wording');
+      assert.ok(/about 8 in 10 times by the fourth check-in, against 6 in 10 with one run/.test(sch.due.note) && !/weeks sooner/.test(sch.due.note), 'C38 wording');
       assert.ok(ids.indexOf('diary') >= 0);
       rot.push(ids.find((id) => ['matrix', 'twovoices', 'diary'].indexOf(id) < 0));
       assert.ok(sch.due.minutes >= 11 && sch.due.minutes <= 12.5, 'about 11–12 minutes while the Matrix runs twice: ' + sch.due.minutes);
@@ -134,6 +135,18 @@ export const tests = {
       assert.equal(R.pid(), p);
       assert.notEqual(R.pid(true), p);
       assert.equal(ES.lab.context().weakest, 'matrix');
+    });
+  },
+  'copy matches the evidence: New voice (C07), headphone check (C15), working noise estimates (C20)'(ES, assert) {
+    const nv = ES.lab.probes.newvoice;
+    assert.equal(nv.distance, 'mid');
+    assert.ok(/very strange at first and clears over the 16 sentences/.test(nv.answerHow) && !/within a few sentences/.test(nv.answerHow));
+    assert.equal(nv.n, 16, 'the copy names the real sentence count');
+    ['rooms', 'newvoice', 'story', 'diary'].forEach((id) => assert.equal(ES.lab.probes[id].sigmaSource, 'working', id));
+    ['matrix', 'digits', 'twovoices'].forEach((id) => assert.ok(!ES.lab.probes[id].sigmaSource, id + ' uses published retest SDs'));
+    return ES.core.store.init({ force: true }).then(() => {
+      ES.core.store.update('profile', (p) => { p.settings.hpCheck = { at: T0, result: 'pass', score: '5/6' }; p.settings.headphones = true; });
+      assert.equal(ES.lab.hpcheck.status(), 'Checked: sounds like headphones (5/6).');
     });
   },
   'headphone check: anti-phase tone cancels when summed, the quiet tone is 6 dB down, pass at 5 of 6'(ES, assert) {

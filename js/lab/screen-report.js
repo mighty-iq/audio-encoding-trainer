@@ -11,11 +11,22 @@
   var HEAD = { clear: 'A clear gain', likely: 'Likely a gain', unclear: 'Not yet clear', lower: 'Below your baseline',
     early: 'Baseline set: the trend starts with your next check-in', baseline: 'Baseline in progress', none: 'No runs yet' };
 
+  /** The run-to-run noise sentence. Matrix, Digits and Two voices use published retest SDs (R4 §1, facts table A);
+      the other four use our working estimate (RV-claims C20). Rooms speaks in distance (C34): 6.02 dB of direct sound
+      per doubling of distance. */
   function sigmaText(p) {
     var u = U(), one = L.stats.sdcSimple(p.sigmaW, 1), two = L.stats.sdcSimple(p.sigmaW, 2);
-    var unit = p.unit === 'dB' ? ' dB' : p.id === 'rooms' ? ' dB*' : ' points';
-    return 'Run-to-run noise of tests like this one is about ' + u.round(p.sigmaW, 1) + unit + ' (one SD), so two single runs must differ by 2.77 × ' +
-      u.round(p.sigmaW, 1) + ' = ' + u.round(one, 1) + unit + ' before the difference stands out; averaging two runs on each side brings that to ' + u.round(two, 1) + unit + '.';
+    var working = p.sigmaSource === 'working';
+    var lead = working ? 'Our working estimate of run-to-run noise for this check-in is about ' : 'Run-to-run noise of tests like this one is about ';
+    var tail = working ? ' Your own runs refine it.' : '';
+    if (p.id === 'rooms') {
+      var f = function (db) { return u.round(Math.pow(2, db / L.DB_PER_DOUBLING), 1) + '×'; };
+      return lead + u.round(p.sigmaW, 1) + ' dB of direct sound, roughly a ' + f(p.sigmaW) + ' change in distance (one SD), so two single runs must differ by about a ' +
+        f(one) + ' change in distance before the difference stands out; averaging two runs on each side brings that to about ' + f(two) + '.' + tail;
+    }
+    var unit = p.unit === 'dB' ? ' dB' : p.unit === '%' ? ' points' : ' points on the 1–5 scale';
+    return lead + u.round(p.sigmaW, 1) + unit + ' (one SD), so two single runs must differ by 2.77 × ' + u.round(p.sigmaW, 1) + ' = ' + u.round(one, 1) + unit +
+      ' before the difference stands out; averaging two runs on each side brings that to ' + u.round(two, 1) + unit + '.' + tail;
   }
   function verdictText(id, tr) {
     var X = L.exporter;
@@ -49,7 +60,7 @@
         u.el('p', null, p.measures), u.el('p', null, p.short + ' ' + p.answerHow),
         u.el('p', { class: 'hint' }, sigmaText(p)),
         id === 'matrix' ? u.el('p', { class: 'hint', 'data-lab-twice': '' }, 'Until this trend reads clear, each weekly check-in runs the Matrix twice, for at most your first ' + L.schedule.DOUBLE_WEEKS +
-          ' check-ins (about 3 extra minutes): two runs make each check-in steadier, so a real gain shows weeks sooner. After that the second run is optional.') : null]),
+          ' check-ins (about 3 extra minutes): two runs make each check-in steadier, so a real gain reads clear sooner (in our simulations about 8 in 10 times by the fourth check-in, against 6 in 10 with one run). After that the second run is optional.') : null]),
       notes.length ? u.el('section', { class: 'lab-sec' }, [u.el('h2', { class: 'h-small' }, 'Notes'), u.el('ul', { class: 'plain' }, notes.map(function (n) { return u.el('li', null, n); }))]) : null,
       u.el('p', { class: 'hint' }, 'Earshot’s numbers compare you with your own baseline. They are not clinical measures and are not normed; if everyday hearing worries you, an audiologist can test it properly.'),
       u.el('div', { class: 'actions' }, [

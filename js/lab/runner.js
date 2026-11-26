@@ -3,8 +3,12 @@
    (inside the tap: audio unlock) → trials: render → play once → answer → next, with no right/wrong feedback (a
    check-in measures; training teaches) → the run is saved → result with its margin, trend state and Next.
    While sound plays nothing on screen changes, toasts wait and store writes wait; ES.ui.inSet holds Chimera
-   invitations until the result panel. A hidden tab pauses; resume replays the current trial (never scored twice).
-   Fits 360×640 without scrolling. MIT licence. */
+   invitations until the result panel. Fix round 1 (lead rulings H2, M7): a sound that did not play (no audio, a
+   suspended or interrupted context, a play that timed out) is never answered, scored or saved: the trial waits behind
+   "The sound didn't play — tap to try again", whose tap re-unlocks audio. After a pause (or a hidden tab) the sound is
+   replayed at most once per trial; a second pause while it plays voids the trial (never charged) and a new trial at
+   the same level follows; after 3 voided trials the run ends unsaved. Renders time out after 15 s (retry). Fits
+   360×640 without scrolling. MIT licence. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -27,7 +31,12 @@
     return u.svg('svg', { viewBox: '0 0 24 24', class: 'icon', 'aria-hidden': 'true', focusable: 'false' },
       [u.svg('rect', { x: 6.5, y: 5, width: 3.6, height: 14, rx: 1 }), u.svg('rect', { x: 13.9, y: 5, width: 3.6, height: 14, rx: 1 })]);
   }
-  function report(e) { if (root.console) console.error('[lab runner]', e); if (ES._keepError) ES._keepError({ at: Date.now(), kind: 'lab', msg: String(e && e.message || e), stack: String(e && e.stack || '').slice(0, 800) }); }
+  /** Unexpected errors go to the console as errors; handled sound failures (render timeout) as warnings. Both are kept
+      for the playtest report. */
+  function report(e, handled) {
+    if (root.console) (handled ? console.warn : console.error)('[lab runner]', e);
+    if (ES._keepError) ES._keepError({ at: Date.now(), kind: handled ? 'lab-sound' : 'lab', msg: String(e && e.message || e), stack: String(e && e.stack || '').slice(0, 800) });
+  }
 
   function mount(rootEl, params) {
     L.ui.css();
@@ -45,7 +54,7 @@
     var host = u.el('div', { class: 'trial-host' });
     rootEl.appendChild(u.el('div', { class: 'trial lab-run', 'data-lab-run': def ? def.id : '' }, [bar, host]));
     cur = { host: host, dots: dots, def: def, items: items, i: i, kind: kind, done: done, run: null, player: null, widget: null, tok: 0, state: 'intro', trial: null, prevInSet: !!ES.ui.inSet };
-    cur.onVis = function () { if (root.document.hidden && cur && (cur.state === 'listen' || cur.state === 'answer')) openPause(); };
+    cur.onVis = function () { if (root.document.hidden && cur && (cur.state === 'listen' || cur.state === 'loading' || cur.state === 'answer')) openPause(); };
     root.document.addEventListener('visibilitychange', cur.onVis);
     if (!def) { summary(); return; }
     var av = def.available();
@@ -53,6 +62,8 @@
     intro();
   }
 
+  /** setTimeout bound to the current run: it does nothing if another run (or no run) is mounted by then. */
+  function later(fn, ms) { var me = cur; setTimeout(function () { if (cur && cur === me && cur.state !== 'done') fn(); }, ms); }
   function panel(children) { var u = U(); U().clear(cur.host); var p = u.el('section', { class: 'card lab-panel' }, children); cur.host.appendChild(p); return p; }
   function paintDots(n, k) {
     var u = U(); u.clear(cur.dots);
@@ -91,14 +102,30 @@
   }
 
   // ---- sound
+  var MAX_VOIDS = 3;
+  RN.renderTimeoutMs = 15000;   // L7: a render that hangs falls back to the retry state (tests shorten it)
+  function withTimeout(p, ms) {
+    return new Promise(function (res, rej) {
+      var t = setTimeout(function () { rej(new Error('the sound took too long to prepare')); }, ms);
+      p.then(function (v) { clearTimeout(t); res(v); }, function (e) { clearTimeout(t); rej(e); });
+    });
+  }
   function render(spec, seed) { return Promise.resolve(ES.audio.render(spec, { seed: seed })).then(function (r) { return r && r.buffer ? r.buffer : r; }); }
+  /** Resolves true when the audio context runs (tries to resume a suspended one first). */
+  function running() {
+    var c = ES.audio && ES.audio.ctx;
+    if (!c || typeof c.state !== 'function') return Promise.resolve(true);
+    if (c.state() === 'running') return Promise.resolve(true);
+    return Promise.resolve(c.unlock ? c.unlock(800) : null).then(function () { return c.state() === 'running'; }, function () { return false; });
+  }
   function play(buf, onEnd) {
     var tok = ++cur.tok, ended = false;
     ES.ui.quiet(true); if (ES.core.store.hold) ES.core.store.hold();
     function end(res) { if (ended) return; ended = true; ES.ui.quiet(false); if (ES.core.store.release) ES.core.store.release(); if (cur && tok === cur.tok) { cur.player = null; onEnd(res || {}); } }
-    try { cur.player = ES.audio.play(buf) || {}; } catch (e) { report(e); end({ ok: false }); return; }
+    cur.playAt = Date.now();
+    try { cur.player = ES.audio.play(buf) || {}; } catch (e) { report(e); end({ ok: false, reason: 'error' }); return; }
     cur.player._end = end;
-    Promise.resolve(cur.player.ended).then(end, function () { end({ ok: false }); });
+    Promise.resolve(cur.player.ended).then(function (r) { end(r && typeof r === 'object' ? r : { ok: true }); }, function () { end({ ok: false, reason: 'error' }); });
   }
   function stopSound() {
     if (!cur || !cur.player) return;
@@ -106,25 +133,57 @@
     try { if (p.stop) p.stop(); } catch (e) { /* ignore */ }
     if (p._end) p._end({ stopped: true });
   }
-  /** Render and play one spec; status set before playback; then(cb) once it ended (or failed). */
+  /** Render and play one spec; the status is set before playback. then() runs only when the sound played to its end. */
   function sound(spec, seed, statusEl, text, then) {
-    if (!ES.audio || typeof ES.audio.render !== 'function') { statusEl.textContent = 'Sound is unavailable here.'; then({ silent: true }); return; }
+    if (!ES.audio || typeof ES.audio.render !== 'function' || typeof ES.audio.play !== 'function') { noSound(statusEl, 'unavailable'); return; }
+    clearRetry(statusEl);
     statusEl.textContent = 'Getting the sound ready…';
     cur.state = 'loading';
     var tok = cur.tok;
-    render(spec, seed).then(function (buf) {
+    withTimeout(render(spec, seed), RN.renderTimeoutMs).then(function (buf) {
+      return running().then(function (ok) { return { buf: buf, ok: ok }; });
+    }).then(function (x) {
       if (!cur || tok !== cur.tok || cur.state !== 'loading') return;
+      if (!x.ok) { noSound(statusEl, 'suspended'); return; }
       statusEl.textContent = text;
       cur.state = 'listen';
-      play(buf, function (r) { if (cur && cur.state === 'listen') then({ silent: r && r.ok === false }); });
+      play(x.buf, function (r) {
+        if (!cur || cur.state !== 'listen') return;
+        if (r.ok === false) { noSound(statusEl, r.reason || 'failed'); return; }   // never heard: never answered (H2)
+        then({});
+      });
     }, function (e) {
-      report(e);
-      if (!cur || tok !== cur.tok) return;
+      report(e, true);
+      if (!cur || tok !== cur.tok || cur.state !== 'loading') return;
       cur.state = 'error';
       statusEl.textContent = 'This sound could not be prepared.';
-      cur.host.appendChild(U().el('div', { class: 'row-buttons' }, [ES.ui.button('Try again', { kind: 'primary', attrs: { 'data-lab-retry': '' }, onClick: function () { replay(); } }),
-        ES.ui.button('End the check-in', { attrs: { 'data-lab-abort': '' }, onClick: abort })]));
+      retryRow(statusEl, 'Try again');
     });
+  }
+  function clearRetry(statusEl) { var box = statusEl && statusEl.parentNode, old = box && box.querySelector('[data-lab-retry-row]'); if (old) old.parentNode.removeChild(old); }
+  function retryRow(statusEl, label) {
+    clearRetry(statusEl);
+    var row = U().el('div', { class: 'row-buttons', 'data-lab-retry-row': '' }, [
+      ES.ui.button(label, { kind: 'primary', attrs: { 'data-lab-retry': '' }, onClick: function () {
+        var A = ES.audio;   // inside the tap: wake the audio up again, then play the same, never-heard sound
+        if (A && A.ctx) { try { A.ctx.ensure(); if (A.ctx.unlock) A.ctx.unlock(); } catch (e) { report(e); } }
+        clearRetry(statusEl); replay();
+      } }),
+      ES.ui.button('End the check-in', { attrs: { 'data-lab-abort': '' }, onClick: abort })]);
+    statusEl.parentNode.insertBefore(row, statusEl.nextSibling);
+  }
+  /** The sound did not play: the trial waits (no answer panel, nothing recorded). */
+  function noSound(statusEl, why) {
+    cur.state = 'nosound';
+    cur.noSound = (cur.noSound || 0) + 1;
+    if (why === 'unavailable') {
+      statusEl.textContent = 'Sound is unavailable here, so this check-in cannot run. Nothing was saved.';
+      var row = U().el('div', { class: 'row-buttons', 'data-lab-retry-row': '' }, [ES.ui.button('End the check-in', { kind: 'primary', attrs: { 'data-lab-abort': '' }, onClick: abort })]);
+      statusEl.parentNode.insertBefore(row, statusEl.nextSibling);
+      return;
+    }
+    statusEl.textContent = 'The sound didn’t play. Check the volume and that no other app is using sound.';
+    retryRow(statusEl, 'Tap to try again');
   }
 
   // ---- stages
@@ -144,6 +203,7 @@
     try { t = cur.run.next(); } catch (e) { report(e); }
     if (!t) { finish(); return; }
     cur.trial = t;
+    cur.heardPauses = 0;
     var p = cur.run.progress();
     paintDots(p.n, p.i);
     if (t.ui.kind === 'story') { story(t); return; }
@@ -157,7 +217,7 @@
       cur.state = 'saving';
       try { cur.run.record(t, resp); } catch (e) { report(e); }
       status.textContent = 'Next…';
-      setTimeout(loop, 350);
+      later(loop, 350);
     };
     var w = t.ui.kind === 'matrix' ? L.ui.matrixPanel(t.ui.columns, onAnswer) : t.ui.kind === 'keypad' ? L.ui.keypad(t.ui.len || 3, onAnswer) : L.ui.choice(t.ui.options, onAnswer);
     if (cur.widget && cur.widget.destroy) cur.widget.destroy();
@@ -166,7 +226,7 @@
     var prompt = t.ui.kind === 'matrix' ? null : u.el('p', { class: 'lab-prompt' }, t.ui.prompt);
     cur.host.appendChild(u.el('div', { class: 'lab-stage', 'data-lab-trial': String(t.i), 'data-lab-kind': t.ui.kind }, [status, prompt, w.el]));
     cur.replay = function () { sound(t.audio, t.seed, status, 'Listen…', ready); };
-    function ready(r) { if (!cur) return; cur.state = 'answer'; status.textContent = (r && r.silent ? 'Sound is unavailable here. ' : '') + (t.ui.kind === 'matrix' ? 'One word per column, then Done.' : ''); w.enable(); }
+    function ready() { if (!cur) return; cur.state = 'answer'; status.textContent = t.ui.kind === 'matrix' ? 'One word per column, then Done.' : ''; w.enable(); }
     cur.replay();
   }
   function story(t) {
@@ -176,7 +236,7 @@
     cur.replay = function () { sound(t.audio, t.seed, status, 'Listen to the whole story (about a minute)…', function () { cur.state = 'answer'; question(); }); };
     function question() {
       if (qi >= t.ui.questions.length) { effort(); return; }
-      var q = t.ui.questions[qi], w = L.ui.choice(q.options, function (r) { answers[qi] = r.pick; qi++; setTimeout(question, 250); }, { list: true, label: q.q });
+      var q = t.ui.questions[qi], w = L.ui.choice(q.options, function (r) { answers[qi] = r.pick; qi++; later(question, 250); }, { list: true, label: q.q });
       if (cur.widget && cur.widget.destroy) cur.widget.destroy();
       cur.widget = w;
       paintDots(t.ui.questions.length + 1, qi);
@@ -186,7 +246,7 @@
     }
     function effort() {
       paintDots(t.ui.questions.length + 1, t.ui.questions.length);
-      var w = L.ui.scale(function (r) { cur.state = 'saving'; try { cur.run.record(t, { answers: answers, effort: r.v }); } catch (e) { report(e); } setTimeout(loop, 250); }, { lo: 'very little', hi: 'a lot' });
+      var w = L.ui.scale(function (r) { cur.state = 'saving'; try { cur.run.record(t, { answers: answers, effort: r.v }); } catch (e) { report(e); } later(loop, 250); }, { lo: 'very little', hi: 'a lot' });
       u.clear(cur.host);
       cur.host.appendChild(u.el('div', { class: 'lab-stage', 'data-lab-kind': 'effort' }, [u.el('p', { class: 'lab-q' }, 'How much effort did listening take?'), w.el]));
       w.enable();
@@ -199,7 +259,7 @@
     function step() {
       if (k >= items.length) { cur.state = 'saving'; try { cur.run.record(t, { ratings: ratings }); } catch (e) { report(e); } loop(); return; }
       paintDots(items.length, k);
-      var it = items[k], w = L.ui.scale(function (r) { ratings[it.id] = r.v; k++; setTimeout(step, 200); }, { lo: 'very hard', hi: 'very easy', none: 'Did not happen this week' });
+      var it = items[k], w = L.ui.scale(function (r) { ratings[it.id] = r.v; k++; later(step, 200); }, { lo: 'very hard', hi: 'very easy', none: 'Did not happen this week' });
       u.clear(cur.host);
       cur.host.appendChild(u.el('div', { class: 'lab-stage', 'data-lab-kind': 'diary', 'data-item': it.id }, [u.el('p', { class: 'lab-status' }, 'This past week · ' + (k + 1) + ' of ' + items.length), u.el('p', { class: 'lab-q' }, it.text), w.el]));
       w.enable();
@@ -250,18 +310,41 @@
   }
   function summary() { var u = U(); panel([u.el('h1', null, 'Check-in done'), nextButton()]); }
 
-  // ---- pause and abort
+  // ---- pause and abort (M7: one replay per trial after a pause; a second pause while it plays voids the trial)
   function openPause() {
     if (!cur || cur.state === 'done' || cur.state === 'intro' || ES.ui.sheetOpen()) return;
     var wasListening = cur.state === 'listen' || cur.state === 'loading';
+    var heard = cur.state === 'listen' && !!cur.trial && Date.now() - (cur.playAt || 0) > 500;
     if (wasListening) { stopSound(); cur.state = 'paused'; }
-    var h = ES.ui.sheet({ title: 'Paused', body: 'This run is saved only when it is complete. Resume plays the current sound again from the start.',
+    var again = heard && cur.heardPauses >= 1;
+    var h = ES.ui.sheet({ title: 'Paused', body: (heard ? (again ? 'This sound was already replayed once, so Resume sets it aside (it does not count) and brings a new one. '
+      : 'Resume plays this sound once more from the start; a second pause while it plays sets it aside and brings a new one (it does not count). ') : '') +
+      'This run is saved only when it is complete.',
       actions: [{ label: 'End without saving', value: 'end', attrs: { 'data-lab-end': '' } }, { label: 'Resume', kind: 'primary', value: 'resume', attrs: { 'data-lab-resume': '' } }] });
     h.closed.then(function (v) {
       if (!cur) return;
       if (v === 'end') { abort(); return; }
-      if (wasListening && cur.state === 'paused') replay();
+      if (!(wasListening && cur.state === 'paused')) return;
+      if (!heard) { replay(); return; }                 // nothing was heard yet: simply play it
+      if (again) { voidTrial(); return; }
+      cur.heardPauses++;
+      replay();
     });
+  }
+  /** Set the current trial aside without scoring it; the next trial keeps the level with new items. */
+  function voidTrial() {
+    cur.voids = (cur.voids || 0) + 1;
+    if (cur.voids > MAX_VOIDS) { endUnsaved('Too many interruptions in one run, so it is not saved. Try again when you have a few quiet minutes.'); return; }
+    if (cur.run && cur.run.redraw) cur.run.redraw();
+    loop();
+  }
+  function endUnsaved(text) {
+    var u = U();
+    stopSound();
+    cur.state = 'done';
+    ES.ui.inSet = cur.prevInSet;
+    root.document.documentElement.classList.remove('in-trial');
+    panel([u.el('p', { class: 'eyebrow mono' }, cur.def.name + ' · not saved'), u.el('h1', { 'data-autofocus': '' }, 'Run set aside'), u.el('p', { 'data-lab-unsaved': '' }, text), nextButton()]);
   }
   function abort() {
     stopSound();
@@ -278,6 +361,7 @@
     root.document.documentElement.classList.remove('in-trial');
     cur = null;
   }
-  RN.state = function () { return cur ? { state: cur.state, probe: cur.def && cur.def.id, trial: cur.trial } : null; };
+  RN.state = function () { return cur ? { state: cur.state, probe: cur.def && cur.def.id, trial: cur.trial, voids: cur.voids || 0, noSound: cur.noSound || 0,
+    heardPauses: cur.heardPauses || 0, answered: cur.run ? cur.run.i : 0 } : null; };
   ES.ui.screens.probe = { mount: mount, unmount: unmount, deepLink: false };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -71,7 +71,7 @@
     function intro() {
       u.clear(body);
       body.appendChild(u.el('p', null, 'Put on your headphones. Each round plays three low hums; one is quieter. Tap its number. Six rounds, about a minute.'));
-      body.appendChild(u.el('p', { class: 'hint' }, 'This tells headphones from a speaker, so the direction dials work as they should. It is not a hearing test.'));
+      body.appendChild(u.el('p', { class: 'hint' }, 'This check usually tells headphones from a speaker (some speakers pass, some headphones fail), so the direction dials work as they should. It is not a hearing test.'));
       body.appendChild(ES.ui.button('Start the check', { kind: 'primary', wide: true, attrs: { 'data-hp-start': '' }, onClick: function () {
         if (ES.audio && ES.audio.ctx && ES.audio.ctx.ensure) { try { ES.audio.ctx.ensure(); if (ES.audio.ctx.unlock) ES.audio.ctx.unlock(); } catch (e) { /* no audio */ } }
         round();
@@ -108,7 +108,7 @@
       u.clear(body);
       body.setAttribute('data-hp-result', silent ? 'silent' : rec.result);
       if (silent) body.appendChild(u.el('p', null, 'Sound did not play here, so the check could not run. Nothing was changed.'));
-      else if (sc.pass) body.appendChild(u.el('p', null, [u.el('strong', null, 'Headphones detected (' + rec.score + '). '), 'The direction dials are unlocked.']));
+      else if (sc.pass) body.appendChild(u.el('p', null, [u.el('strong', null, 'Sounds like headphones (' + rec.score + '). '), 'The direction dials are unlocked.']));
       else body.appendChild(u.el('p', null, [u.el('strong', null, 'That sounded like a speaker (' + rec.score + '). '),
         'Direction dials stay off; everything else works the same. If you are wearing headphones, try again somewhere quiet, or switch them on by hand.']));
       body.appendChild(u.el('div', { class: 'row-buttons' }, [
@@ -131,7 +131,7 @@
   };
   H.status = function () {
     var s = (ES.core.store.peek('profile').settings || {}), c = s.hpCheck;
-    if (c && c.result === 'pass') return 'Checked: headphones detected (' + c.score + ').';
+    if (c && c.result === 'pass') return 'Checked: sounds like headphones (' + c.score + ').';
     if (s.headphones && c && c.result === 'manual') return 'Switched on by hand' + (c.note ? ' (' + c.note + ')' : '') + '.';
     if (c && c.result === 'fail') return 'Last check sounded like a speaker (' + c.score + '); direction dials are off.';
     return s.headphones ? 'Headphones on (not checked).' : 'Not checked yet: direction dials are off.';

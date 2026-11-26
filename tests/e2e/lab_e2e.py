@@ -162,6 +162,7 @@ def t_hpcheck(browser, base, rel):
     p.locator('[data-lab-hpcheck]').click()
     shot(p, 'hpcheck-intro')
     checks.eq(rounds(True), 'pass', 'headphone check: right answers pass')
+    checks.ok('Sounds like headphones (6/6)' in p.inner_text('[data-hp-result]'), 'C15: the result says "sounds like headphones"')
     s = p.evaluate("() => ES.core.store.get('profile').settings")
     checks.ok(s['headphones'] is True and s['hpCheck']['result'] == 'pass' and s['hpCheck']['score'] == '6/6', 'a pass unlocks the direction dials', json.dumps(s.get('hpCheck')))
     shot(p, 'hpcheck-pass')
@@ -286,7 +287,7 @@ def t_blocked(browser, base, rel):
 def t_weekly(browser, base, rel):
     """A finished baseline 9 days ago: the weekly check-in lists the Matrix twice (not yet clear) and an honest length."""
     now = int(time.time() * 1000) - 9 * DAY
-    steps = [('matrix', 3), ('digits', 3), ('twovoices', 3), ('rooms', 2), ('newvoice', 2), ('story', 1)]
+    steps = [('matrix', 3), ('digits', 3), ('twovoices', 3), ('rooms', 2), ('newvoice', 2), ('story', 2)]   # C13: Story practice + 1
     runs, k = [], 0
     for pid, n in steps:
         for j in range(n):
@@ -311,7 +312,120 @@ def t_weekly(browser, base, rel):
     p.context.close()
 
 
-SUITES = [('overview', t_overview), ('weekly', t_weekly), ('baseline', t_baseline_block), ('probes', t_all_probes), ('fit', t_fit), ('hpcheck', t_hpcheck),
+def start_matrix(p):
+    C.go(p, 'report', {'probe': 'matrix'})
+    p.locator('[data-lab-run-now="matrix"]').click()
+    p.wait_for_selector('[data-lab-start]')
+
+
+def rstate(p):
+    return p.evaluate('() => ES.lab.runner.state()')
+
+
+def t_fixround(browser, base, rel):
+    """Fix round 1: H2 (a sound that did not play is never answered or saved; retry), M7 (one replay per trial after
+    a pause, a second pause voids it uncharged, 3 voids end the run unsaved), L3 (hidden tab while loading), L7
+    (render timeout), and the copy findings on the report, the headphone check and the Home card."""
+    t = tab(browser, base, rel, records={'log': C.session_log(1)})
+    p = t.page
+    # H2: the next play fails (a suspended context times out) → no answer panel, nothing scored; the retry plays it
+    start_matrix(p)
+    p.evaluate("""() => { const fast = ES.audio.play; let n = 0;
+      ES.audio.play = function (b) { n++; if (n === 1) return { stop() {}, ended: Promise.resolve({ ok: false, reason: 'timeout' }) }; return fast(b); }; }""")
+    p.locator('[data-lab-start]').click()
+    p.wait_for_selector('[data-lab-retry]', timeout=20000)
+    st = rstate(p)
+    enabled = p.locator('.lab-matrix .lab-key:not([disabled])').count()
+    checks.ok(st['state'] == 'nosound' and st['answered'] == 0 and enabled == 0, 'H2: a sound that did not play shows no answer panel and scores nothing', json.dumps(st)[:200])
+    checks.ok('didn’t play' in p.inner_text('.lab-stage'), 'H2: the player is told the sound did not play')
+    shot(p, 'fix-h2-nosound')
+    p.locator('[data-lab-retry]').click()
+    p.wait_for_function("() => ES.lab.runner.state().state === 'answer'", timeout=20000)
+    C.answer_trial(p, C.runner_state(p))
+    p.wait_for_function('() => ES.lab.runner.state().answered === 1', timeout=10000)
+    checks.eq(rstate(p)['answered'], 1, 'H2: after the retry the trial is answered once')
+    p.locator('[data-lab-pause]').click(); p.locator('[data-lab-end]').click()
+    checks.eq(p.evaluate("() => ES.core.store.get('lab').runs.length"), 0, 'H2: an unfinished run is not saved')
+    # a timer from an ended run never touches the next run (the race behind an earlier flaky M7 check)
+    start_matrix(p)
+    p.evaluate("() => { ES.audio.play = (b) => ({ stop() {}, ended: Promise.resolve({ ok: true }) }); }")
+    p.locator('[data-lab-start]').click()
+    p.wait_for_function("() => ES.lab.runner.state().state === 'answer'", timeout=20000)
+    C.answer_trial(p, C.runner_state(p))
+    p.evaluate("() => { ES.core.router.go('report', { probe: 'matrix' }); }")   # leave within the 350 ms gap
+    p.locator('[data-lab-run-now="matrix"]').click()
+    p.evaluate("() => { ES.audio.play = (b) => { let done; const ended = new Promise((r) => { done = r; }); setTimeout(() => done({ ok: true }), 3000); return { stop() { done({ ok: true, stopped: true }); }, ended }; }; }")
+    p.locator('[data-lab-start]').click()
+    before = rstate(p)['trial']['id'] + str(rstate(p)['trial']['answer'])
+    p.wait_for_timeout(700)
+    after = rstate(p)
+    checks.ok(after['trial']['id'] + str(after['trial']['answer']) == before and after['answered'] == 0, 'a stale timer from the previous run leaves the new run alone')
+    p.locator('[data-lab-pause]').click(); p.locator('[data-lab-end]').click()
+    # M7: slow plays so a pause lands while the sound plays
+    start_matrix(p)
+    p.evaluate("""() => { ES.audio.play = function (b) { let done; const ended = new Promise((r) => { done = r; }); const t = setTimeout(() => done({ ok: true }), 2500);
+      return { stop() { clearTimeout(t); done({ ok: true, stopped: true }); }, ended }; }; }""")
+    p.locator('[data-lab-start]').click()
+
+    def pause_while_playing():
+        p.wait_for_function("() => ES.lab.runner.state().state === 'listen'", timeout=20000)
+        p.wait_for_timeout(700)
+        p.locator('[data-lab-pause]').click()
+        p.wait_for_selector('[data-lab-resume]')
+        txt = p.inner_text('.sheet')
+        p.locator('[data-lab-resume]').click()
+        return txt
+    first = rstate(p)['trial']
+    txt1 = pause_while_playing()
+    s1 = rstate(p)
+    checks.ok('once more' in txt1 and s1['heardPauses'] == 1 and s1['voids'] == 0 and s1['trial']['answer'] == first['answer'], 'M7: the first pause replays the same sound once',
+              json.dumps({'hp': s1['heardPauses'], 'voids': s1['voids'], 'first': [first['id'], first['answer']], 'now': [s1['trial']['id'], s1['trial']['answer']], 'answered': s1['answered']}))
+    txt2 = pause_while_playing()
+    s2 = rstate(p)
+    checks.ok('sets it aside' in txt2 and s2['voids'] == 1 and s2['answered'] == 0 and s2['trial']['level'] == first['level'] and s2['trial']['answer'] != first['answer'],
+              'M7: a second pause voids the trial uncharged; a new trial follows at the same level', json.dumps(s2)[:200])
+    for k in range(3):
+        pause_while_playing(); pause_while_playing()
+    p.wait_for_selector('[data-lab-unsaved]', timeout=20000)
+    checks.ok('not saved' in p.inner_text('.lab-panel').lower(), 'M7: after 3 voided trials the run ends unsaved')
+    shot(p, 'fix-m7-unsaved')
+    checks.eq(p.evaluate("() => ES.core.store.get('lab').runs.length"), 0, 'M7: nothing saved')
+    # L3: a hidden tab while the sound is still being prepared pauses the run
+    start_matrix(p)
+    p.evaluate("""() => { const r = ES.audio.render, w = (spec, o) => new Promise((res) => setTimeout(() => res(r(spec, o)), 1500)); w.clips = r.clips; ES.audio.render = w; }""")
+    p.locator('[data-lab-start]').click()
+    p.wait_for_function("() => ES.lab.runner.state().state === 'loading'", timeout=10000)
+    p.evaluate("() => { Object.defineProperty(document, 'hidden', { value: true, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); }")
+    p.wait_for_selector('[data-lab-resume]', timeout=5000)
+    checks.eq(rstate(p)['state'], 'paused', 'L3: a hidden tab during loading pauses the run')
+    p.evaluate("() => { Object.defineProperty(document, 'hidden', { value: false, configurable: true }); }")
+    p.locator('[data-lab-end]').click()
+    # L7: a render that never ends falls back to the retry state
+    start_matrix(p)
+    p.evaluate("() => { ES.lab.runner.renderTimeoutMs = 800; const r = ES.audio.render, w = () => new Promise(() => {}); w.clips = r.clips; ES.audio.render = w; }")
+    p.locator('[data-lab-start]').click()
+    p.wait_for_selector('[data-lab-retry]', timeout=5000)
+    checks.ok('could not be prepared' in p.inner_text('.lab-stage') and rstate(p)['answered'] == 0, 'L7: a hung render times out to a retry')
+    p.context.close()
+    # copy (C20, C34, C38, C15, plural) on a fresh page
+    t = tab(browser, base, rel, records={'log': C.session_log(1)})
+    p = t.page
+    C.go(p, 'report', {'probe': 'rooms'})
+    txt = p.inner_text('[data-lab-report=rooms]')
+    checks.ok('working estimate' in txt and 'change in distance' in txt and 'dB*' not in txt, 'C20/C34: Rooms noise as a working estimate, in distance terms', txt[:300])
+    C.go(p, 'report', {'probe': 'matrix'})
+    txt = p.inner_text('[data-lab-report=matrix]')
+    checks.ok('Run-to-run noise of tests like this one' in txt and '8 in 10' in txt and 'weeks sooner' not in txt, 'C20/C38: Matrix noise sourced; doubling rate from the simulation')
+    home = p.evaluate("""() => { const s = ES.lab.schedule; ES.lab.schedule = () => ({ due: { kind: 'weekly', title: 'x', minutes: 1, items: [{ probe: 'diary', minutes: 1 }] } });
+      const t = ES.lab.homeCard().textContent; ES.lab.schedule = s; return t; }""")
+    checks.ok('About 1 minute,' in home and '1 minutes' not in home, 'plural: About 1 minute', home)
+    C.go(p, 'lab')
+    p.locator('[data-lab-hpcheck]').click()
+    checks.ok('usually tells headphones from a speaker' in p.inner_text('[data-hpcheck]'), 'C15: the check says it usually tells them apart')
+    p.context.close()
+
+
+SUITES = [('overview', t_overview), ('weekly', t_weekly), ('fixround', t_fixround), ('baseline', t_baseline_block), ('probes', t_all_probes), ('fit', t_fit), ('hpcheck', t_hpcheck),
           ('export', t_export_import), ('report', t_report), ('diary', t_diary), ('blocked', t_blocked)]
 
 

@@ -131,3 +131,35 @@ at most the first 8 check-ins (schedule.js DOUBLE_WEEKS; due card says ≈ 11–
 - 2026-11-26 Headphone check: own 200 Hz tones, anti-phase method, 6 rounds, pass ≥ 5 (chance 1.8 %), manual override with a note; owned by the Lab. Reason: lab brief; generic published method.
 - 2026-11-26 Pooled export: random pooling id, relative days and weeks, no record ids or absolute times, nickname and device facts only when ticked; trial-level arrays included for item calibration. Reason: privacy rules; pooled data must allow item-difficulty work.
 - 2026-11-26 Lab chart series colour: light #2A56CF, dark #6F8EF0 (validated; the dark token #86A6FF fails the lightness band for marks). Reason: dataviz checks.
+
+## 2026-11-26 20:25 UTC — fix round 1 (docs/dev/reviews/FIX-ROUND-1.md; rulings binding)
+- H2 fixed (js/lab/runner.js): a sound that did not play (no audio, suspended or interrupted context, play timed out,
+  play threw) never opens the answer panel, is never scored and never saved; the trial waits behind "The sound didn't
+  play" + "Tap to try again" (the tap re-unlocks audio, then plays the same never-heard sound). The context is resumed
+  before playing when possible. Test: tests/e2e/lab_e2e.py fixround (H2 checks).
+- M7 fixed (runner + probes): after a pause the sound replays at most once per trial (only pauses after > 0.5 s of
+  playback count); a second pause while it plays voids the trial uncharged, and the next trial keeps the procedure's
+  level with new items (run.redraw(); Story moves to the next passage); after 3 voided trials the run ends unsaved.
+  Tests: lab-core "M7: a redraw keeps the level…", e2e fixround (M7 checks).
+- M9 fixed (js/lab/export.js): before anything is written, every record must pass the store schema without repairs and
+  nested checks (learner recent/edge/cond/path/plat/cast, lab runs, diary weeks and moments); any damaged value refuses
+  the whole file ("That file is damaged, so nothing was changed (…)"). Tests: lab-export "M9: …" (the review's four
+  failing cases + more) and the updated damaged-file test.
+- C07 fixed: New voice copy per R2 §1.0 (tone-vocoded starts near floor, ~15 sentences to half its gain) and distance
+  'mid' (partial carrier transfer, R2 §1.1); bands stay a one-line constant (probes-more.js fx.bands) to retune if
+  playtests show a floor. C13 fixed: Story gets practice + 1 measured run in the baseline (blocks 4–5), like the other
+  non-core probes. C14 fixed ("in new combinations every time"). C15 fixed ("usually tells headphones from a speaker
+  (some speakers pass, some headphones fail)"; "Sounds like headphones (5/6)"). C20 fixed (Rooms, New voice, Story,
+  Diary say "our working estimate … your own runs refine it"; probe field sigmaSource). C34 fixed (Rooms noise in
+  direct sound and distance factors, no "dB*"). C38 fixed ("reads clear sooner (in our simulations about 8 in 10 times
+  by the fourth check-in, against 6 in 10 with one run)"). "About 1 minutes" fixed (plural). Tests: lab-plan copy test,
+  e2e fixround copy checks, hpcheck result text.
+- L3 fixed (hidden tab while the sound is prepared pauses the run); L7 fixed (renders time out after 15 s → retry).
+  Tests: e2e fixround L3, L7.
+- Also found and fixed: a timer from an ended run could advance the next run's first trial (the cause of a flaky M7
+  check). Runner timers are now bound to their run. Test: e2e fixround "a stale timer …" (fails without the guard).
+- L5 (store reports a key as unsaved when another key fails) is the shell's (js/core/store.js); the Lab's result panel
+  reads store.update's return and becomes correct with that fix.
+- Unit tests now take the core store files from tools/build-index.mjs (tests/unit/lab-scripts.mjs), so the shell's new
+  js/core/store-merge.js loads automatically. Status: 34 unit tests pass; Lab browser suite green (every suite run
+  after the fixes; weekly preset updated for C13).

@@ -8,7 +8,9 @@
      no record ids (they embed times), no absolute times except the UTC export date.
    - importJson(text): detects what was given (backup of any version, bare records, a localStorage dump, a pooled
      file, CSV, damaged JSON), upgrades older backups through BACKUP_MIGRATIONS, merges through the store (nothing
-     on this device is deleted), and reports in plain words. MIT licence. */
+     on this device is deleted), and reports in plain words. Fix round 1 (M9): before anything is written, every
+     record is checked: the store schema must accept it without repairs, and nested values are type-checked (learner
+     maps, lab runs, diary entries); a file with any damaged value is refused whole and nothing changes. MIT licence. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -176,6 +178,87 @@
     newer: 'That backup comes from a newer version of Earshot. Open it with that version.',
     unknown: 'That does not look like an Earshot backup.'
   };
+  // ---- nested type checks (M9). Each returns a problem string or null.
+  function num(x) { return typeof x === 'number' && isFinite(x); }
+  function prop01(x) { return num(x) && x >= 0 && x <= 1; }
+  function listOf(check) { return function (v) { return Array.isArray(v) && v.every(check) ? null : 'is not a list of the right values'; }; }
+  function objWith(spec) {
+    return function (v) {
+      if (!isObj(v)) return 'is not a record';
+      for (var k in spec) if (Object.prototype.hasOwnProperty.call(v, k) && v[k] !== undefined && !spec[k](v[k])) return 'has a wrong ' + k;
+      return null;
+    };
+  }
+  var intGe0 = function (x) { return num(x) && x >= 0 && Math.round(x) === x; }, ge0 = function (x) { return num(x) && x >= 0; };
+  var NESTED = {
+    learner: {
+      recent: listOf(prop01), edge: listOf(prop01),
+      cond: objWith({ n: intGe0, acc: prop01, at: ge0 }),
+      path: objWith({ i: intGe0, hist: Array.isArray, run: num, n: num, best: num }),
+      plat: function (v) { return v === null || isObj(v) ? null : 'is not a record'; },
+      cast: function (v) { return ge0(v) || isObj(v) ? null : 'is not a count'; }
+    }
+  };
+  function runProblem(r) {
+    if (!isObj(r)) return 'is not a record';
+    if (typeof r.probe !== 'string' || !r.probe) return 'has no probe';
+    if (!ge0(r.at)) return 'has no time';
+    var n = L.records.normalize(r);
+    if (!n || (n.est.m !== null && !num(n.est.m)) || (n.est.s !== null && !ge0(n.est.s))) return 'has a wrong result';
+    if (r.est && isObj(r.est) && ((r.est.m !== undefined && r.est.m !== null && !num(r.est.m)) || (r.est.s !== undefined && r.est.s !== null && !num(r.est.s)))) return 'has a wrong result';
+    if (r.trials !== undefined && !(Array.isArray(r.trials) && r.trials.every(function (t) { return Array.isArray(t) && t.every(function (x) { return x === null || num(x); }); }))) return 'has wrong trial data';
+    if (r.practice !== undefined && typeof r.practice !== 'boolean') return 'has a wrong practice flag';
+    if (r.n !== undefined && !intGe0(r.n)) return 'has a wrong trial count';
+    return null;
+  }
+  function itemsOk(items) { return Array.isArray(items) && items.every(function (it) { return isObj(it) && typeof it.id === 'string' && (it.v === null || it.v === undefined || (num(it.v) && it.v >= 1 && it.v <= 5)); }); }
+  /** Problems in one record of a backup (empty when it can be imported as it is). */
+  X.validate = function (key, rec) {
+    var out = [], SC = ES.core.storeSchema;
+    if (!isObj(rec)) return [key + ' is not a record'];
+    if (SC && SC.SCHEMAS && SC.SCHEMAS[key]) {
+      var rep = { fixed: 0, dropped: 0 };
+      SC.sanitize(SC.descOf(key), SC.migrate(key, rec).rec, rep);
+      if (rep.fixed + rep.dropped) out.push(key + ': ' + (rep.fixed + rep.dropped) + (rep.fixed + rep.dropped === 1 ? ' value has' : ' values have') + ' the wrong type');
+    }
+    var nested = NESTED[key];
+    if (nested) Object.keys(nested).forEach(function (field) {
+      var map = rec[field];
+      if (map === undefined) return;
+      if (!isObj(map)) { out.push(key + '.' + field + ' is not a map'); return; }
+      Object.keys(map).forEach(function (k) { var p = nested[field](map[k]); if (p) out.push(key + '.' + field + '.' + k + ' ' + p); });
+    });
+    if (key === 'lab' && rec.runs !== undefined) {
+      if (!Array.isArray(rec.runs)) out.push('lab.runs is not a list');
+      else rec.runs.forEach(function (r, i) { var p = runProblem(r); if (p) out.push('lab run ' + (i + 1) + ' ' + p); });
+    }
+    if (key === 'diary') {
+      if (rec.entries !== undefined) {
+        if (!Array.isArray(rec.entries)) out.push('diary.entries is not a list');
+        else rec.entries.forEach(function (e, i) { if (!isObj(e) || !ge0(e.at) || !itemsOk(e.items || [])) out.push('diary week ' + (i + 1) + ' has wrong values'); });
+      }
+      if (rec.events !== undefined) {
+        if (!Array.isArray(rec.events)) out.push('diary.events is not a list');
+        else rec.events.forEach(function (e, i) { if (!isObj(e) || !ge0(e.at) || (e.v !== null && e.v !== undefined && !(num(e.v) && e.v >= 1 && e.v <= 5)) || (e.helped !== undefined && !(Array.isArray(e.helped) && e.helped.every(function (h) { return typeof h === 'string'; })))) out.push('diary moment ' + (i + 1) + ' has wrong values'); });
+      }
+    }
+    return out;
+  };
+  /** The records a parsed backup holds, by key (envelopes and JSON strings opened); null when a record is unreadable. */
+  function recordsOf(obj, kind) {
+    var keys = (st() && st().EXPORT_KEYS) || ['profile', 'learner', 'log', 'trials', 'lab', 'game', 'diary', 'missions'], out = {};
+    var src = kind === 'storage' ? obj : isObj(obj.records) ? obj.records : obj;
+    Object.keys(src).forEach(function (k) {
+      var name = k.indexOf('earshot.v1.') === 0 ? k.slice('earshot.v1.'.length) : k;
+      if (keys.indexOf(name) < 0) return;
+      var v = src[k];
+      if (typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { v = null; } }
+      if (isObj(v) && isObj(v.rec) && Object.prototype.hasOwnProperty.call(v, 'rev')) v = v.rec;
+      out[name] = isObj(v) ? v : null;
+    });
+    return out;
+  }
+
   X.importJson = function (text) {
     var raw = typeof text === 'string' ? text : '';
     if (raw.length > MAX_CHARS) return { ok: false, kind: 'too-large', message: SAY['too-large'] };
@@ -183,6 +266,17 @@
     var kind = X.detect(obj, raw);
     if (SAY[kind]) return { ok: false, kind: kind, message: SAY[kind] };
     var input = kind === 'backup0' ? X.migrate(obj) : kind === 'backup' ? X.migrate(obj) : obj;
+    var recs = recordsOf(input, kind), problems = [], SC = ES.core.storeSchema;
+    Object.keys(recs).forEach(function (k) {
+      if (recs[k] === null) { problems.push(k + ' cannot be read'); return; }
+      if (SC && SC.migrate(k, recs[k]).newer) { problems.push('newer:' + k); return; }
+      problems = problems.concat(X.validate(k, recs[k]));
+    });
+    if (problems.some(function (p) { return p.indexOf('newer:') === 0; })) return { ok: false, kind: 'newer', message: SAY.newer };
+    if (problems.length) {
+      return { ok: false, kind: 'damaged', problems: problems, message: 'That file is damaged, so nothing was changed (' + problems.slice(0, 3).join('; ') +
+        (problems.length > 3 ? '; and ' + (problems.length - 3) + ' more' : '') + ').' };
+    }
     var rep = st().importAll(input);
     var out = { ok: !!rep.ok, kind: kind, imported: rep.imported || [], skipped: rep.skipped || [], repaired: rep.repaired || 0 };
     if (rep.ok) {

@@ -18,8 +18,8 @@
     [['matrix', 1], ['digits', 1]],
     [['matrix', 2], ['digits', 2], ['twovoices', 1]],
     [['matrix', 3], ['digits', 3], ['twovoices', 2]],
-    [['twovoices', 3], ['rooms', 1], ['newvoice', 1]],
-    [['rooms', 2], ['newvoice', 2], ['story', 1], ['diary', 1]]
+    [['twovoices', 3], ['rooms', 1], ['newvoice', 1], ['story', 1]],
+    [['rooms', 2], ['newvoice', 2], ['story', 2], ['diary', 1]]
   ];
   var ROTATION = ['digits', 'rooms', 'newvoice', 'story'];
   var EVERY_WEEK = ['matrix', 'twovoices'];
@@ -114,8 +114,8 @@
       var away = (now - lastActive) / DAY >= 14 || since >= 21;
       out.due = { kind: away ? 'retention' : 'weekly', title: away ? 'Welcome back: a retention check' : 'Weekly check-in ' + (wIndex + 1),
         items: its, minutes: its.reduce(function (a, it) { return a + it.minutes; }, 0), twice: twice,
-        note: (away ? 'A check after a break shows how much of your gain held. There is nothing to catch up on.' : 'Same voices you never train with, new sentences every time.') +
-          (twice ? ' The Matrix runs twice until its trend reads clear (at most for your first ' + DOUBLE_WEEKS + ' check-ins): two runs steady each check-in, so a real gain shows weeks sooner.' : '') };
+        note: (away ? 'A check after a break shows how much of your gain held. There is nothing to catch up on.' : 'Same voices you never train with, in new combinations every time.') +
+          (twice ? ' The Matrix runs twice until its trend reads clear (at most for your first ' + DOUBLE_WEEKS + ' check-ins): two runs steady each check-in, so a real gain reads clear sooner (in our simulations about 8 in 10 times by the fourth check-in, against 6 in 10 with one run).' : '') };
       return out;
     }
     var inDays = Math.max(1, Math.ceil(6.5 - since));

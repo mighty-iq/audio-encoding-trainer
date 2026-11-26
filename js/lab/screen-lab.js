@@ -130,7 +130,7 @@
       var sch = L.schedule(R().state()), d = sch.due, u = U();
       if (!d) return null;
       return u.el('section', { class: 'card', 'data-lab-home': d.kind }, [u.el('p', { class: 'eyebrow mono' }, 'Lab'),
-        u.el('h2', { class: 'h-small' }, d.title), u.el('p', { class: 'hint' }, 'About ' + Math.round(d.minutes) + ' minutes, any time after training. Nothing is lost by waiting.'),
+        u.el('h2', { class: 'h-small' }, d.title), u.el('p', { class: 'hint' }, 'About ' + u.plural(Math.max(1, Math.round(d.minutes)), 'minute') + ', any time after training. Nothing is lost by waiting.'),
         ES.ui.button('Open the Lab', { small: true, go: 'lab' })]);
     } catch (e) { return null; }
   };

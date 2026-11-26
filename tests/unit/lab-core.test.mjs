@@ -1,6 +1,6 @@
 // Lab: statistics, procedures, materials and probe definitions (pure; CONTRACTS §0, §11; PLAN §8).
-export const scripts = ['js/core/ns.js', 'js/core/util.js', 'js/core/rng.js', 'tests/fixtures/lab-data.js',
-  'js/lab/stats.js', 'js/lab/materials.js', 'js/lab/procedures.js', 'js/lab/probes.js', 'js/lab/probes-more.js'];
+import { labScripts } from './lab-scripts.mjs';
+export const scripts = labScripts([]);
 
 function respond(t, n, good = true) {
   if (t.ui.kind === 'matrix') return { picks: t.answer.map((w, i) => (good && (n + i) % 4 ? w : t.ui.columns[i].options[(n + i) % 10])) };
@@ -154,6 +154,20 @@ export const tests = {
       run.record(t, { answers: t.answer.slice(), effort: 2 });
       assert.equal(run.finish().est.m, 100);
     } finally { ES.data.vocab.stories = saved; ES.lab.materials.reset(); }
+  },
+  'M7: a redraw keeps the level and draws new items (a voided trial is never charged)'(ES, assert) {
+    for (const id of ['matrix', 'digits', 'twovoices', 'rooms', 'newvoice']) {
+      const run = ES.lab.probes[id].make(0, ES.core.rng('rd:' + id), {});
+      const a = run.next();
+      run.redraw();
+      const c = run.next();
+      assert.equal(c.level, a.level, id + ': same level after a redraw');
+      assert.notDeepEqual([c.answer, c.meta.items], [a.answer, a.meta.items], id + ': new items after a redraw');
+      assert.equal(run.progress().i, 0, id + ': nothing recorded');
+    }
+    const st = ES.lab.probes.story.make(0, ES.core.rng('rd:story'), {}), s1 = st.next();
+    st.redraw();
+    assert.notEqual(st.next().meta.items[0], s1.meta.items[0], 'story: a voided passage is replaced by the next one');
   },
   'story rotates passages across forms; diary averages answered items only'(ES, assert) {
     const ids = [0, 1, 2, 3].map((f) => runAll(ES, 'story', f, 's' + f, true).fin.extra.story);
