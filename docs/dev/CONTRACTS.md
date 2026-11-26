@@ -23,7 +23,7 @@
 | stimuli | `tools/audio/**`, `data/**` (generated), `audio/**` (generated packs), `docs/dev/STIMULI.md`, `LICENSES-ASSETS.md` |
 | engine | `js/engine/**`, `tests/unit/engine*`, `tests/sim/**` |
 | lead | `docs/dev/*` (except STIMULI.md), `CLAUDE.md`, `README.md`, integration fixes, `js/ex/**` until wave 2 |
-Wave 2 (later): exA `js/ex/{crowd,far,strange,repair}.js`; exB `js/ex/{echo,seek,voices,missions}.js`;
+Wave 2 (later): exA `js/ex/{crowd,far,strange,repair}.js`; exB `js/ex/{echo,seek,seek-scene,voices,voices-own,missions}.js`;
 lab `js/lab/**`; game `js/game/**`. Each will get its own brief.
 
 ## 2. Namespace skeleton (`js/core/ns.js`, shell)
