@@ -26,6 +26,16 @@ streaks and no score on screen during trials.
 - Computer-based auditory training: on-task learning is robust; transfer is small and inconsistent; randomised,
   blinded or high-quality studies show about zero effect on speech-in-noise thresholds (R1: Fallahnezhad 2023 [full],
   Henshaw & Ferguson 2013 [full]). Failure modes to design around are listed in §4.
+- Large independent trials were null against placebo (Saunders 2016, n = 279 [abstract]); small positive trials faded
+  within weeks (Whitton 2017 [news release]; Lelo de Larrea-Mancera 2022 [full]; Anderson 2013/2014 [full]). Transfer was
+  likelier when training ran in noise or competition close to the outcome, used several talkers or accents, kept
+  difficulty within reach and totalled ~12–40 h (R1). Existing apps measure no untrained outcome, use no alternate
+  forms, export nothing and mostly set difficulty by hand; the field's innovation is training on a partner's voice (R1).
+- Unusual talkers: exposure to several accents generalised to a new accent (Baese-Berk 2013 [full], n = 10/group); a
+  talker at ~55 % intelligibility produced no adaptation (Bradlow 2023 [full]); blocked practice beat interleaved for
+  a hard new contrast and weaker learners were hurt most by interleaving (Fuhrmeister & Myers 2020 [full]); practice
+  alternated with passive exposure matched continuous practice (Wright 2015 [abstract]); speaking a sound right after
+  hearing it abolished learning (Baese-Berk & Samuel 2022 [full]) (R1, R2).
 - Informational masking dominates multi-talker listening; same-sex and same-voice maskers are far harder; two-talker
   maskers are hardest for sentences (R3). Training reduces it but specifically to the trained masker language/talker
   (Van Engen 2012 [full]) → masker variety is the design response.
@@ -60,6 +70,9 @@ streaks and no score on screen during trials.
 | Low adherence | Short sets, game layer, no punishment for missed days, return bonus |
 | Too hard, too long, too monotonous | 70–75 % edge trials mixed with easy anchors; ~3-minute sets; four modes |
 | Points and lives during trials hurt learning | Results only between sets; growth in real units (dB, m) |
+| Too little dose (4 days gave nothing) | A suggested programme of ~15 min, 4–5 days a week for 8–10 weeks (~10 h), shown as a weekly ring that never punishes |
+| Exposure too degraded to adapt to | Adaptation trials kept above ~70 % intelligibility; severity rises only as accuracy holds |
+| Gains fade after training stops | Retention checks after breaks; a maintenance suggestion in the guide |
 
 ## 5. Owner's hunches
 - Kept: exercises for loud places, distance and non-standard speech; strong progression; interleaving; variability.
@@ -109,7 +122,9 @@ played once) → closed-set answer (taps) → feedback (right/wrong per slot, in
   difficulty offsets (from build-time objective intelligibility, later from pooled data) correct the prediction.
 - Edge trials target ~72 % correct; every 4th–5th trial is an anchor at ~90 %; after two consecutive errors the next
   trial is an anchor. Variety (talker pool, rooms, families) is a dial that widens when accuracy holds.
-- Sessions: sets of ~3 minutes (20–30 trials) from different exercises; default session ≈ 12 minutes; after three
+- Exposure interludes: between some sets, 20–30 s of listen-only examples of the condition just trained (with text),
+  after Wright 2015 (practice plus exposure); never a production or repeat-aloud step (Baese-Berk & Samuel 2022).
+- Sessions: sets of ~3 minutes (20–30 trials) from different exercises; default session ≈ 15 minutes; after three
   sessions in a day the app suggests coming back after sleep (no penalty).
 - Modes: **Edge** (default; no configuration) — all of the above. **Path** — venues in order, blocked conditions then
   mixed, mastery at 5 in a row or 80 % of the last 15; right for beginners and anyone who wants clear goals or finds
@@ -205,5 +220,5 @@ flames, glass cards, icon-card grids, purple gradients, amber on navy, cartoon e
 
 ## 15. Defaults where the brief is silent
 Players mixed level on phones and desktops; headphones recommended, never required (spatial dials need them);
-English only; adults (no child mode); default session ~12 minutes; synthetic voices labelled as synthetic; not a
+English only; adults (no child mode); default session ~15 minutes, suggested 4–5 days a week for 8–10 weeks; synthetic voices labelled as synthetic; not a
 hearing test or medical device — the guide says when to see an audiologist.
