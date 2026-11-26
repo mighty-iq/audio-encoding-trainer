@@ -125,6 +125,8 @@ TrialSpec (the contract between generator, renderer and views):
 - `diary`: `{v, entries:[{week, at, items:[...]}], events:[...]}`; `missions`: `{v, weeks:{wk:{id, done, rating}}}`
 - Own voices: IndexedDB `earshot-own` (blobs), never exported, deletable from Settings.
 - `playtest` (shell): ratings, notes, errors, frame stats, sets, screens; never in backups; copied via the report.
+- `session` (shell): the running session (plan, results, flow snapshot) kept for a reload; never exported.
+  `profile.settings.free` = {exId, dials} for Free mode.
 
 ## 8. Look (Audiogram) — shell implements tokens; everyone uses them
 Light: bg #FAFAF7, surface #FFFFFF, surface-2 #F1F1EC, ink #15171B, ink-2 #474C54, ink-3 #686E77, rule #DCDDD7,
