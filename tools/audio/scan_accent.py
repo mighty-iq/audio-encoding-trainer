@@ -1,5 +1,6 @@
 """Check Kokoro voices of other languages reading English: six test utterances each; a voice is kept for
-Strange voices (accent family) when the recogniser gets at least five of six exactly. Writes the result to
+Strange voices (accent family) when the recogniser gets at least four of six exactly and the mean word error
+is at most 12 % (accented but clear; strength is graded later by intel.py tiers). Writes the result to
 tools/audio/accent_voices.json (committed build input read by plan.py). Usage: python3 -I tools/audio/scan_accent.py
 """
 import json
@@ -35,7 +36,7 @@ def main():
                 res.put(r)
             exact += bool(r['ok'])
             wers.append(r['wer'])
-        keep = exact >= 5
+        keep = exact >= 4 and sum(wers) / len(wers) <= 0.12
         out[v] = {'sex': sex, 'accent': acc, 'exact': exact, 'mean_wer': round(sum(wers) / len(wers), 3),
                   'keep': keep}
         log(v, acc, f'{exact}/6 exact', 'KEEP' if keep else 'drop')

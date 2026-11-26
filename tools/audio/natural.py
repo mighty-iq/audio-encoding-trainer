@@ -11,7 +11,13 @@ import sys
 
 sys.path.insert(0, __import__('os').path.dirname(__file__))
 import asr  # noqa: E402
-from common import CORPORA, REPO, SR, Log, Results, active_level_db, load_audio, save_clip, trim, wav_path  # noqa: E402
+from common import (CORPORA, REPO, SR, Log, Results, active_level_db, load_audio, mp3_decode, mp3_encode,  # noqa: E402
+                    save_clip, trim, wav_path)
+
+
+def shipped(x):
+    """The clip as the app will decode it (MP3 round trip); every recogniser check runs on this."""
+    return mp3_decode(mp3_encode(x))
 
 META = REPO / 'tools' / 'audio' / 'natural_voices.json'
 DIGITS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
@@ -76,7 +82,7 @@ def audiomnist(log, res, rec, meta):
             kept = False
             for t in takes[:6]:
                 x = trim(load_audio(root / spk / f'{d}_{spk}_{t}.wav'))
-                heard, _ = rec.run(x)
+                heard, _ = rec.run(shipped(x))
                 if asr.score(word, heard)['ok'] and 0.2 < len(x) / SR < 1.3:
                     save_clip(cid, x)
                     res.put({'id': cid, 'src': 'audiomnist', 'voice': vid, 'kind': 'digit', 'text': word,
@@ -119,7 +125,7 @@ def cremad(log, res, rec, meta):
                     log('fetch failed', f.name)
                     continue
                 x = trim(load_audio(f))
-                heard, _ = rec.run(x)
+                heard, _ = rec.run(shipped(x))
                 sc = asr.score(text, heard)
                 r = {'id': cid, 'src': 'cremad', 'voice': f'a{a}', 'kind': 'sentence', 'text': text, 'ok': sc['ok'],
                      'heard': heard, 'dur': round(len(x) / SR, 3), 'adb': round(active_level_db(x), 2),

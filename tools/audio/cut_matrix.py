@@ -14,6 +14,7 @@ import content_probe as CP  # noqa: E402
 import tts  # noqa: E402
 from common import (SR, Log, Results, active_level_db, env_db, fade, load_audio, rms_db, save_clip, trim,  # noqa: E402
                     wav_path)
+from natural import shipped  # noqa: E402
 
 SLOT_OF = {w: s for s in CP.SLOTS for w in CP.MATRIX[s]}
 
@@ -63,7 +64,7 @@ def main():
                 cid = f'kokoro.{v}.word.{w}'
                 if res.get(cid, {}).get('ok') and wav_path(cid).exists():
                     continue
-                heard, _ = rec.run(y)
+                heard, _ = rec.run(shipped(y))
                 if not asr.score(w, heard)['ok']:
                     continue
                 q = edges(y)
@@ -80,7 +81,7 @@ def main():
                 for form in ('{}.', '{}!'):
                     for sp in (1.0, 0.92):
                         y = trim(eng.synth(form.format(w.capitalize()), v, speed=sp))
-                        heard, _ = rec.run(y)
+                        heard, _ = rec.run(shipped(y))
                         if asr.score(w, heard)['ok']:
                             best[w] = (edges(y), y, 'isolated', heard)
                             break

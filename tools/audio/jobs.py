@@ -21,7 +21,8 @@ def callsign_items(src, voices, n_per_voice, n_names, pack, seed, set_='train'):
             name, num = t['name'][i % len(t['name'])], t['number'][(i * 4 + len(v)) % 9]
             alts = []
             for k in (3, 7, 5, 2):    # same name and noun with another number, then another name too
-                nm = name if k in (3, 5) else t['name'][(i + 1 + k) % len(t['name'])]
+                # (ids must stay stable across builds: k 3 and 7 are the first two alternatives ever used)
+                nm = name if k in (3, 5) else t['name'][(i + 1 if k == 7 else i + 3) % len(t['name'])]
                 nb = t['number'][(i * 4 + len(v) + k) % 9]
                 alts.append({'id': f'{src}.{v}.phrase.{nm}-{noun}-{nb}', 'text': f'{nm.capitalize()}, {noun}, {nb}.',
                              'words': [nm, noun, nb]})

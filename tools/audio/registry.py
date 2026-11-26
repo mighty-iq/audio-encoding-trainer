@@ -122,6 +122,13 @@ def with_audio(items, texts):
     return [it for it in items if ' '.join(norm_words(it['text'])) in texts]
 
 
+def sound_alikes(word, pool):
+    def stressed(w):
+        p = lexicon.prons(w, stress=True)
+        return next((ph[:-1] for ph in p[0] if ph.endswith('1')), None) if p else None
+    return [w for w in pool if w != word and lexicon.phon_distance(word, w) <= 2 and stressed(w) == stressed(word)]
+
+
 def build_vocab(log, man=None):
     import content_cast  # noqa: F401  (cast text comes from the plan)
     from common import norm_words
@@ -134,8 +141,10 @@ def build_vocab(log, man=None):
     import content_sus as CS
     fam_of = {w: f for f, ws in cw.RHYMES.items() for w in ws}
     nb = {w: neighbours_for(w, cw.NOUNS, cw.RHYMES[fam_of[w]]) for w in cw.NOUNS}
-    nb.update({n: closest(n, cw.NUMBERS, 3) for n in cw.NUMBERS})
-    nb.update({n: closest(n, cw.NAMES, 3) for n in cw.NAMES})
+    # numbers one-nine have no true sound-alikes among themselves, so they carry no neighbour list; names keep
+    # only real near-rhymes (same stressed vowel and at most two phonemes apart, e.g. harper/parker)
+    nb.update({n: [] for n in cw.NUMBERS})
+    nb.update({n: sound_alikes(n, cw.NAMES) for n in cw.NAMES})
     voc = {'names': cw.NAMES, 'numbers': cw.NUMBERS, 'nouns': cw.NOUNS, 'rhymes': cw.RHYMES, 'family': fam_of,
            'neighbours': nb,
            'sus': with_audio(CS.items(), texts), 'susPools': CS.pools(),

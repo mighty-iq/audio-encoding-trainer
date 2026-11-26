@@ -1,0 +1,121 @@
+{
+ "ef_dora": {
+  "accent": "Spanish",
+  "exact": 5,
+  "keep": true,
+  "mean_wer": 0.056,
+  "sex": "f"
+ },
+ "em_alex": {
+  "accent": "Spanish",
+  "exact": 6,
+  "keep": true,
+  "mean_wer": 0.0,
+  "sex": "m"
+ },
+ "ff_siwis": {
+  "accent": "French",
+  "exact": 5,
+  "keep": true,
+  "mean_wer": 0.067,
+  "sex": "f"
+ },
+ "hf_alpha": {
+  "accent": "Hindi",
+  "exact": 4,
+  "keep": true,
+  "mean_wer": 0.089,
+  "sex": "f"
+ },
+ "hf_beta": {
+  "accent": "Hindi",
+  "exact": 4,
+  "keep": true,
+  "mean_wer": 0.089,
+  "sex": "f"
+ },
+ "hm_omega": {
+  "accent": "Hindi",
+  "exact": 5,
+  "keep": true,
+  "mean_wer": 0.033,
+  "sex": "m"
+ },
+ "hm_psi": {
+  "accent": "Hindi",
+  "exact": 4,
+  "keep": true,
+  "mean_wer": 0.089,
+  "sex": "m"
+ },
+ "if_sara": {
+  "accent": "Italian",
+  "exact": 6,
+  "keep": true,
+  "mean_wer": 0.0,
+  "sex": "f"
+ },
+ "im_nicola": {
+  "accent": "Italian",
+  "exact": 6,
+  "keep": true,
+  "mean_wer": 0.0,
+  "sex": "m"
+ },
+ "jf_alpha": {
+  "accent": "Japanese",
+  "exact": 5,
+  "keep": true,
+  "mean_wer": 0.056,
+  "sex": "f"
+ },
+ "jm_kumo": {
+  "accent": "Japanese",
+  "exact": 6,
+  "keep": true,
+  "mean_wer": 0.0,
+  "sex": "m"
+ },
+ "pf_dora": {
+  "accent": "Portuguese",
+  "exact": 4,
+  "keep": true,
+  "mean_wer": 0.111,
+  "sex": "f"
+ },
+ "pm_alex": {
+  "accent": "Portuguese",
+  "exact": 6,
+  "keep": true,
+  "mean_wer": 0.0,
+  "sex": "m"
+ },
+ "zf_xiaobei": {
+  "accent": "Mandarin",
+  "exact": 3,
+  "keep": false,
+  "mean_wer": 0.178,
+  "sex": "f"
+ },
+ "zf_xiaoni": {
+  "accent": "Mandarin",
+  "exact": 3,
+  "keep": false,
+  "mean_wer": 0.2,
+  "sex": "f"
+ },
+ "zm_yunjian": {
+  "accent": "Mandarin",
+  "exact": 5,
+  "keep": true,
+  "mean_wer": 0.056,
+  "sex": "m"
+ },
+ "zm_yunxi": {
+  "accent": "Mandarin",
+  "exact": 4,
+  "keep": true,
+  "mean_wer": 0.089,
+  "sex": "m"
+ }
+}

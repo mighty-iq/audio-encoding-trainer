@@ -9,7 +9,7 @@ import numpy as np
 
 import asr
 from common import CORPORA, SR, active_level_db, env_db, load_audio, norm_words, save_clip, trim, wav_path
-from natural import fetch
+from natural import fetch, shipped
 from registry import f0_median
 
 BASE = 'https://media.githubusercontent.com/media/microsoft/DNS-Challenge/interspeech2020/master/'
@@ -80,8 +80,9 @@ def run(log, res, meta):
             if not (MIN_S <= b - a <= MAX_S) or len(norm_words(text)) < 5:
                 continue
             y = trim(cut(x, a, b))
-            p_txt, _ = p_rec.run(y)
-            w_txt, _ = w_rec.run(y)
+            ys = shipped(y)
+            p_txt, _ = p_rec.run(ys)
+            w_txt, _ = w_rec.run(ys)
             d, errs = asr.align(norm_words(p_txt), norm_words(w_txt))
             if d != 0 or not norm_words(p_txt):
                 log(vid, 'disagree', errs[:4])

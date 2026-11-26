@@ -87,7 +87,16 @@ def cast_voices():
     acc = {v: (s, a) for v, s, a in KOKORO_ACCENT}
     en = {v: (s, a) for v, s, a in KOKORO_EN}
     out = [(f'kokoro.{v}', en[v][0], en[v][1]) for v in STARTER + WAVE2_KOKORO]
-    out += [(f'kokoro.{v}', acc[v][0], acc[v][1]) for v in ACCENT_KEPT[:10]]
+    groups = {}
+    for v in ACCENT_KEPT:                        # one voice per accent in turn, so every accent is in the cast
+        groups.setdefault(acc[v][1], []).append(v)
+    spread, k = [], 0
+    while len(spread) < min(10, len(ACCENT_KEPT)):
+        for g in groups.values():
+            if k < len(g) and len(spread) < 10:
+                spread.append(g[k])
+        k += 1
+    out += [(f'kokoro.{v}', acc[v][0], acc[v][1]) for v in spread]
     pf = [v for v in PIPER_TRAIN if PIPER_VOICES[v]['sex'] == 'f']
     pm = [v for v in PIPER_TRAIN if PIPER_VOICES[v]['sex'] == 'm']
     for f, m in zip(pf[::4], pm[::4]):
