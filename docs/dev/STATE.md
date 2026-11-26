@@ -1,10 +1,17 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-26 16:30 UTC
+Updated: 2026-11-26 16:58 UTC
 
 ## Phase
-1 — Research and plan: DONE. Now at the PLAN GATE: the plan message and decision board are with the owner.
-Do not start Phase 2 until the owner says go (or answers on the board). Name, look, voices and game frame are open.
+2 — Build. Owner said go at 16:44 UTC and accepted every recommendation (Earshot, Audiogram, mixed voices, Night out,
+all 8 exercises). Wave 1 builders running against docs/dev/CONTRACTS.md.
+
+## Running subagents (IDs in the lead's container notes)
+- shell → index.html, css/, fonts/, js/core/, js/ui/, js/app.js, tools/build-*.mjs, tests/unit/run.mjs, tests/e2e/
+- audio → js/audio/**, tests/unit/audio*, tests/e2e/audio_*.py
+- stimuli → tools/audio/**, data/**, audio/**, docs/dev/STIMULI.md, LICENSES-ASSETS.md (starter pack first)
+- engine → js/engine/**, tests/unit/engine*, tests/sim/**
+Each keeps docs/dev/progress/<owner>.md; cross-owner needs in docs/dev/requests.md.
 
 ## Done
 - Research R1–R6 complete (docs/research/), ACCESS.md lists sources not opened (core: Whitton 2017, Wright 2010/2015,
@@ -17,15 +24,13 @@ Do not start Phase 2 until the owner says go (or answers on the board). Name, lo
 - Spikes: Kokoro int8 RTF ≈2.2 on 2 CPUs; isolated TTS words unreliable, phrases fine; Parakeet ASR verifies clips
   (~0.2–0.9 s per clip); MP3 16 kHz 24–32 kbps ≈ 3–4 KB/s; Web Audio offline mixing, HRTF, convolver work from file://.
 
-## Next three steps (after the owner's go)
-1. Read the board answers (db_get slug 23b08504-… path answers/owner) or the pasted block; append them word for word
-   to BRIEF.md; apply name/look/voices/frame; mark PLAN.md approved; log decisions.
-2. M1 contracts: write docs/dev/CONTRACTS.md (namespace, module ownership, interfaces, file map) and start parallel
-   builders (core shell, audio engine, stimulus pipeline, engine/generators).
-3. M2 stimulus pipeline in the background early (TTS + ASR checks take hours): tools/audio/.
+## Next three steps
+1. Watch requests.md and progress notes; answer requests; integrate as modules land.
+2. Write wave-2 briefs: exercise views A (crowd, far, strange, repair), B (echo, seek, voices, missions), lab, game.
+3. First playable build (Crowd + Far + tutorial + playtest mode) as a private artifact → send to the owner.
 
 ## Open questions
-- Owner: name, look, voices policy, game frame, exercise keep/drop, priorities ranking.
+- Owner to rename the repo to Earshot (taps sent).
 - speechocean762 licence confidence medium-high (no LICENSE file in the GitHub copy).
 
 ## Last verified
