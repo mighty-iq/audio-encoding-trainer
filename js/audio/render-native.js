@@ -105,15 +105,17 @@
      Resolves {get(az) -> {az, L, R}, lat, pre}; rejects (and can be retried) when the panner gives no output. */
   N.HRIR_STEP = 5; N.HRIR_LEN = 128; N.HRIR_PRE = 16;
   var tables = {};
+  var failedAt = {};
   N.hrirTable = function (sr) {
     if (tables[sr]) return tables[sr];
+    if (failedAt[sr] && Date.now() - failedAt[sr] < 600000) return Promise.reject(new Error('HRTF panner gives no output (recent check)'));
     var p = tables[sr] = N.hrtfLatency(sr).then(function (lat) {
       if (N.hrtfOk === false) throw new Error('HRTF panner gives no output');
-      var azs = [], batches = [], at = 64, len = at + lat + N.HRIR_LEN + 64, one = new Float32Array(1), az;
+      var azs = [], batches = [], at = 64, len = at + lat + N.HRIR_LEN + 64, one = new Float32Array(1), az, i;
       one[0] = 1;
       for (az = -180; az < 180; az += N.HRIR_STEP) azs.push(az);
-      for (var i = 0; i < azs.length; i += 16) batches.push(azs.slice(i, i + 16));
-      return Promise.all(batches.map(function (b) {
+      for (i = 0; i < azs.length; i += 16) batches.push(azs.slice(i, i + 16));
+      function renderBatch(b) {
         var oc = offline(2 * b.length, len, sr), merger = oc.createChannelMerger(2 * b.length), imp = N.makeBuffer([one], sr);
         merger.connect(oc.destination);
         b.forEach(function (a, k) {
@@ -127,34 +129,60 @@
             return { az: a, L: out.getChannelData(2 * k).slice(s0, s0 + N.HRIR_LEN), R: out.getChannelData(2 * k + 1).slice(s0, s0 + N.HRIR_LEN) };
           });
         });
-      })).then(function (lists) {
-        var map = {}, ok = true;
-        [].concat.apply([], lists).forEach(function (e) { map[e.az] = e; if (!(A.dsp.energy([e.L, e.R]) > 0)) ok = false; });
-        if (!ok) throw new Error('HRTF panner gives no output');
+      }
+      function silent(list) { return list.some(function (e) { return !(A.dsp.energy([e.L, e.R]) > 0); }); }
+      // a batch that comes back silent (the database was still loading) is rendered again, up to three times
+      function attempt(left) {
+        return Promise.all(batches.map(renderBatch)).then(function (lists) {
+          var all = [].concat.apply([], lists);
+          if (!silent(all)) return all;
+          if (left <= 0) throw new Error('HRTF panner gives no output');
+          return wait(300).then(function () { return attempt(left - 1); });
+        });
+      }
+      return attempt(3).then(function (all) {
+        var map = {};
+        all.forEach(function (e) { map[e.az] = e; });
         return { lat: lat, pre: N.HRIR_PRE, step: N.HRIR_STEP, get: function (a) {
           var k = Math.round((((+a || 0) % 360 + 540) % 360 - 180) / N.HRIR_STEP) * N.HRIR_STEP;
           return map[k >= 180 ? k - 360 : k];
         } };
       });
     });
-    p.catch(function () { if (tables[sr] === p) delete tables[sr]; });
+    p.catch(function () { if (tables[sr] === p) { delete tables[sr]; failedAt[sr] = Date.now(); } });
     return p;
   };
 
   // Bulk delay of the HRTF panner at azimuth 0 (samples), measured once per sample rate with an impulse.
   var latCache = {};
-  N.hrtfLatency = function (sr) {
-    if (latCache[sr] != null) return Promise.resolve(latCache[sr]);
+  /* The browser loads its HRTF database in the background on first use. In tests with headless Chromium 158 an
+     offline render with an HRTF panner sometimes never completes (about 1 fresh browser in 4; once stuck, every
+     later HRTF render in that page is stuck too). So the probe has a short timeout and one retry, a failure is
+     remembered for the page session, and renders never wait on it for long (render.js uses the head model). */
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function probe(sr) {
     var len = 2048, at = 256, oc = offline(2, len, sr), x = new Float32Array(1);
     x[0] = 1;
     var src = oc.createBufferSource(); src.buffer = N.makeBuffer([x], sr);
     var p = panner(oc, 0); src.connect(p); p.connect(oc.destination); src.start(at / sr);
-    return startRendering(oc).then(function (out) {
+    return startRendering(oc, 2500).then(function (out) {
       var L = out.getChannelData(0), R = out.getChannelData(1), best = 0, bi = at;
       for (var i = 0; i < len; i++) { var v = Math.abs(L[i]) + Math.abs(R[i]); if (v > best) { best = v; bi = i; } }
-      latCache[sr] = best > 0 ? Math.max(0, bi - at) : 0;
-      N.hrtfOk = best > 0;
-      return latCache[sr];
-    }, function () { latCache[sr] = 0; N.hrtfOk = false; return 0; });
+      return best > 0 ? Math.max(0, bi - at) : null;
+    }, function () { return null; });
+  }
+  var latPending = {};
+  N.hrtfLatency = function (sr) {
+    if (latCache[sr] != null) return Promise.resolve(latCache[sr]);
+    if (latPending[sr]) return latPending[sr];
+    var tries = 0;
+    function attempt() {
+      return probe(sr).then(function (lat) {
+        if (lat != null) { latCache[sr] = lat; N.hrtfOk = true; delete latPending[sr]; return lat; }
+        if (++tries >= 2) { N.hrtfOk = false; delete latPending[sr]; return 0; }
+        return wait(500).then(attempt);
+      });
+    }
+    return (latPending[sr] = attempt());
   };
 })(typeof window !== 'undefined' ? window : globalThis);

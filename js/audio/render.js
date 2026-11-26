@@ -25,6 +25,7 @@
     var t0 = now();
     return Promise.resolve().then(function () { return run(spec || {}, opts || {}, t0); });
   };
+  A.render.hrirWaitMs = 1500; // longest a trial waits for the HRIR table before using the head model instead
   // Clip ids a spec needs (for ES.audio.assets.preload ahead of the trial).
   A.render.clips = function (spec) {
     var a = (spec && spec.audio) || spec || {}, ids = [];
@@ -43,7 +44,10 @@
     var parts = (a.parts || []).filter(function (p) { return p && p.clip; }), beds = (a.beds || []).filter(Boolean);
     var partIds = parts.map(function (p) { return p.clip; });
     // HRTF: the browser's panner captured once as an HRIR table (render-native.js); without it, the ILD head model
-    var hrir = spatial === 'hrtf' ? N.hrirTable(sr).then(null, function (e) { warn('HRTF unavailable (' + (e && e.message || e) + '); ITD/ILD head model used'); return null; }) : null;
+    var hrir = spatial === 'hrtf' ? Promise.race([
+      N.hrirTable(sr).then(null, function (e) { warn('HRTF unavailable (' + (e && e.message || e) + '); ITD/ILD head model used'); return null; }),
+      new Promise(function (r) { setTimeout(function () { r('late'); }, A.render.hrirWaitMs); })
+    ]).then(function (t) { if (t === 'late') { warn('HRTF not ready yet (call ES.audio.warm() at start-up); ITD/ILD head model used'); return null; } return t; }) : null;
     return Promise.all(A.render.clips(a).map(function (id) {
       return Promise.all([A.assets.samples(id), A.assets.level(id)]).then(function (r) { return { id: id, x: r[0], lev: r[1] }; },
         function (e) { if (partIds.indexOf(id) >= 0) throw e; warn(String(e && e.message || e)); return null; });

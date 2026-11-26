@@ -67,9 +67,15 @@ Dead end: native ConvolverNode per stem (too slow, see above). An FDN reverb was
   arrival; at 16 kHz Chrome's HRIR energy lies within ~70 samples) and trials apply it in JS by block FFT
   convolution (`D.convStereo`, two blocks per forward FFT). No offline render per trial any more; the native pass
   (`N.run`) stays for 'conv' jobs. `ES.audio.warm()` prebuilds the table. If the table fails (no output, no
-  OfflineAudioContext) renders use hrtfLite with a warning. Offline contexts in flight are held until they finish and
-  time out (reject → fallback) instead of hanging: one full e2e run once stalled on an HRTF render in a long-lived
-  page (not reproducible in 24 repeated renders on a fresh page); the guard makes such a stall impossible.
+  OfflineAudioContext) renders use hrtfLite with a warning.
+- Finding (headless Chromium 158): an offline render with an HRTF PannerNode sometimes never completes (state stays
+  'running'); about 1 fresh browser instance in 4, at any sample rate; once stuck, every later HRTF render in that
+  instance is stuck too. Guards: contexts in flight are held until they finish and reject after a timeout; the
+  latency probe times out at 2.5 s with one retry; a failure is remembered for 10 minutes; a trial waits at most
+  `ES.audio.render.hrirWaitMs` (1.5 s) for the table, else uses hrtfLite for that trial; the live scene uses HRTF
+  panning only after the probe succeeded (a stuck realtime HRTF panner would be silent). The e2e tests relaunch a
+  browser whose HRTF is stuck (up to 3 tries). Whether real phones show this is unknown: the playtest report should
+  carry `ES.audio.native.hrtfOk`.
 - CPU time per render in Node (3 s, room + 3 parts + babble bed in the room): ild ≈ 40 ms (same room), ≈ 60 ms (new
   room: model ≈ 4.5 ms medium, 16 ms hall, cached per room); mono ≈ 36 ms. Chromium, 4× CPU throttling, fastest
   of 10 (load average 3.1 on 2 CPUs): hrtf 205 ms, mono 175 ms (before the overlap change); medians are 250–400 ms

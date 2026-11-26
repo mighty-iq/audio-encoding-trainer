@@ -114,6 +114,23 @@ def drr_of(out, clip):
     return 10 * np.log10(d / r)
 
 
+def launch_ready(pw, args=None):
+    """Launch Chromium on the test page and warm the audio. Headless Chromium sometimes gets its HRTF panner stuck
+    for the whole browser instance (offline renders never finish); the renderer then falls back to its head model,
+    but the HRTF checks need a working instance, so such an instance is replaced (up to three tries)."""
+    for attempt in range(3):
+        b = pw.chromium.launch(args=args or [])
+        pg = b.new_page()
+        pg.goto(PAGE.as_uri())  # file://
+        ready = pg.evaluate('T.ready()')
+        warm = pg.evaluate('ES.audio.warm()')
+        if warm.get('hrtf'):
+            return b, pg, ready
+        print('INFO  this browser instance has a stuck HRTF panner (%s); relaunching' % warm.get('error'), flush=True)
+        b.close()
+    return b, pg, ready  # last instance (HRTF checks will report the fallback)
+
+
 def run_levels(pg):
     for name, (audio, want) in CASES.items():
         out = pg.evaluate('a => T.run({audio: a}, {seed: 21, stems: "all"})', audio)
@@ -208,10 +225,14 @@ def run_assets(pg):
 
 def run_hrir(pg):
     r = pg.evaluate('''async () => {
-      const w = await ES.audio.warm(), t = await ES.audio.native.hrirTable(16000), D = ES.audio.dsp, db = (x) => D.rmsDb(x);
+      const w = await ES.audio.warm(), D = ES.audio.dsp, db = (x) => D.rmsDb(x);
+      let t; try { t = await ES.audio.native.hrirTable(16000); } catch (e) { return {error: String(e && e.message || e), warm: w}; }
       const e = (az) => { const k = t.get(az); return [db(k.L), db(k.R)]; };
       const rep = (await ES.audio.render({audio: {spatial: 'hrtf', parts: [{clip: 'fx.a.phrase.one', at: 0.3, db: 0, role: 'target', az: 60}]}}, {seed: 1})).report;
       return {warm: w, a90: e(90), a0: e(0), am90: e(-90), lat: t.lat, spatial: rep.spatial, warnings: rep.warnings}; }''')
+    if 'error' in r:
+        check('HRIR table builds', False, json.dumps(r))
+        return
     ild90 = r['a90'][1] - r['a90'][0]
     check('HRIR table: +90 deg louder in the right ear, front symmetric, mirror', ild90 > 6 and abs(r['a0'][1] - r['a0'][0]) < 0.5
           and abs((r['am90'][0] - r['am90'][1]) - ild90) < 0.5 and r['warm']['hrtf'], json.dumps(r))
@@ -295,11 +316,7 @@ def run_timing(pw, quick):
     other processes inflate the rest (the load average is printed with the result); medians and the new-room times
     (a room model is built each time) are reported too."""
     import os
-    b = pw.chromium.launch()
-    pg = b.new_page()
-    pg.goto(PAGE.as_uri())
-    pg.evaluate('T.ready()')
-    pg.evaluate('ES.audio.warm()')
+    b, pg, _ = launch_ready(pw)
     cdp = pg.context.new_cdp_session(pg)
     cdp.send('Emulation.setCPUThrottlingRate', {'rate': 4})
     n = 6 if quick else 12
@@ -323,12 +340,9 @@ def main():
             run_timing(pw, quick)
         return 1 if [r for r in results if not r[1]] else 0
     with sync_playwright() as pw:
-        b = pw.chromium.launch()
-        pg = b.new_page()
         errors = []
+        b, pg, ready = launch_ready(pw)
         pg.on('pageerror', lambda e: errors.append(str(e)))
-        pg.goto(PAGE.as_uri())  # file://
-        ready = pg.evaluate('T.ready()')
         check('file:// page loads and decodes every fixture clip', not ready['failed'] and ready['sr'] == 16000, json.dumps(ready))
         run_levels(pg)
         run_source_levels(pg)

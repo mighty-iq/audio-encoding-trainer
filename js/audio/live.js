@@ -26,6 +26,7 @@
     if (cfg.target) voices.push({ spec: cfg.target, role: 'target' });
     (cfg.decoys || []).forEach(function (d) { if (d) voices.push({ spec: d, role: 'decoy' }); });
     var c = null, out = null, nodes = [], bedNode = null, started = false, stopped = false, pos = { x: 0, y: 0, h: 0 };
+    if (spatial === 'hrtf' && N.hrtfOk == null && N.supported()) { try { N.hrtfLatency(A.assets.sampleRate()); } catch (e) { /* probe later */ } }
 
     function load() {
       var ids = voices.map(function (v) { return v.spec.clip; });
@@ -63,7 +64,8 @@
         src.connect(g);
         var pan = null;
         if (spatial !== 'mono') {
-          pan = c.createPanner(); pan.panningModel = spatial === 'hrtf' ? 'HRTF' : 'equalpower';
+          // HRTF only once the probe has shown the panner works (a stuck HRTF panner would be silent here)
+          pan = c.createPanner(); pan.panningModel = spatial === 'hrtf' && N.hrtfOk === true ? 'HRTF' : 'equalpower';
           pan.distanceModel = 'inverse'; pan.refDistance = 1; pan.rolloffFactor = 0;
           g.connect(pan); pan.connect(out);
         } else g.connect(out);
