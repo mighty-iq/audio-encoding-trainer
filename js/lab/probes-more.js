@@ -123,7 +123,9 @@
       else beds.push({ kind: 'ssn', from: 'target', db: -def.snr });
       var qs = st.questions.slice(0, 5).map(function (q, j) {
         var opts2 = K.shuffle(rng.fork('q' + j), q.options.map(String));
-        return { q: q.q, options: opts2, answer: String(q.answer) };
+        // the answer is either the option's text or its index in options (stimuli's vocab.stories use the index)
+        var ans = typeof q.answer === 'number' || (/^\d+$/.test(String(q.answer)) && q.options.map(String).indexOf(String(q.answer)) < 0) ? q.options[+q.answer] : q.answer;
+        return { q: q.q, options: opts2, answer: String(ans) };
       });
       var trial = { id: 'story-' + form, probe: 'story', i: 0, seed: rng.seed + ':0', level: def.snr,
         audio: { out: OUT, spatial: 'mono', dur: K.r2(dur + 2), parts: [{ clip: id, at: 1, db: 0, role: 'target' }], beds: beds, room: null },

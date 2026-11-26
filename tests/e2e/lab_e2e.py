@@ -279,7 +279,7 @@ def t_blocked(browser, base, rel):
     C.go(p, 'report', {'probe': 'diary'})
     p.locator('[data-lab-run-now="diary"]').click()
     C.run_open_probe(p)
-    checks.ok('not saved on this device' in p.inner_text('.lab-panel'), 'blocked storage: the result says it is not saved')
+    checks.ok('not saved on this device' in p.inner_text('.lab-panel').lower(), 'blocked storage: the result says it is not saved')
     p.context.close()
 
 

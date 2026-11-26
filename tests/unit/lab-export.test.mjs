@@ -123,7 +123,7 @@ export const tests = {
     assert.equal(X.showValue('matrix', -6.14), '−6.1 dB');
     assert.equal(X.showValue('rooms', 6.02 * 3), '8 m');
     assert.equal(X.showValue('rooms', 6.02 * 4), '16 m');
-    assert.equal(X.showValue('newvoice', 61.4), '61 %');
+    assert.equal(X.showValue('newvoice', 61.4), '61\u00a0%');
     assert.equal(X.showValue('diary', 3.25), '3.3 of 5');
   }
 };

@@ -31,8 +31,10 @@
   C.trend = function (info, opts) {
     opts = opts || {};
     var u = U(), id = info.id, P = L.probes[id], runs = info.runs || [], tr = info.trend || {};
-    var compact = !!opts.compact, W = compact ? 300 : 640, H = compact ? 64 : 240;
-    var pad = compact ? { l: 4, r: 4, t: 6, b: 6 } : { l: 46, r: 64, t: 14, b: 30 };
+    // the viewBox follows the container width, so 11 px labels stay 11 px on a phone
+    var compact = !!opts.compact, W = compact ? 300 : Math.round(Math.max(300, Math.min(640, opts.width || 640)));
+    var H = compact ? 64 : Math.round(Math.max(190, Math.min(240, W * 0.42)));
+    var pad = compact ? { l: 4, r: 4, t: 6, b: 6 } : { l: 40, r: W < 420 ? 58 : 64, t: 20, b: 30 };
     var box = u.el('div', { class: 'lab-chart-box', 'data-lab-chart': id });
     if (!runs.length) { box.appendChild(u.el('p', { class: 'hint' }, 'No runs yet.')); return { el: box }; }
     var t0 = runs[0].at, days = runs.map(function (r) { return (r.at - t0) / DAY; });
@@ -61,7 +63,7 @@
         g.appendChild(svg('text', { class: 'lc-axis', x: pad.l - 6, y: Y(v) + 4, 'text-anchor': 'end' }, axisLabel(id, v)));
       }
       for (var wk = 0; wk * 7 <= xMax; wk++) g.appendChild(svg('text', { class: 'lc-axis', x: X(wk * 7), y: H - 10, 'text-anchor': 'middle' }, 'wk ' + wk));
-      g.appendChild(svg('text', { class: 'lc-axis', x: pad.l - 6, y: pad.t - 2, 'text-anchor': 'end' }, 'better ↑'));
+      g.appendChild(svg('text', { class: 'lc-axis', x: 2, y: 10, 'text-anchor': 'start' }, 'better ↑'));
     }
     var meas = runs.filter(function (r) { return !r.practice; }), nb = Math.min(P.core ? 2 : 1, meas.length);
     if (nb) {

@@ -29,7 +29,7 @@
     if (m == null || !isFinite(m) || !p) return '';
     if (id === 'rooms') { var mt = p.metres(m); return (mt < 10 ? Math.round(mt * 10) / 10 : Math.round(mt)) + ' m'; }
     if (p.unit === 'dB') return U().fmtDb(m);
-    if (p.unit === '%') return Math.round(m) + ' %';
+    if (p.unit === '%') return Math.round(m) + '\u00a0%';
     return (Math.round(m * 10) / 10) + ' of 5';
   };
 

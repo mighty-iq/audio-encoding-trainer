@@ -81,6 +81,8 @@ Simulation (real probe code and schedule; listener model in lab-simlib.mjs; n = 
 | digits | 0 dB | — | 0 · 2 · 2 · 3 % | 5 % | 12 % | 92 % | 0.77 / 0.80 dB |
 | two voices | 1.5 dB | ramp | 0 · 0 · 0 · 0 % | 0 % | 4 % | 99 % | 1.93 / 2.73 dB |
 | two voices | 0 dB | — | 0 % | 0 % | 2 % | 100 % | 1.93 / 2.73 dB |
+| matrix, optional 2nd run at each check-in (n 300) | 1.5 dB | ramp | 1 · 16 · 40 · 75 % | 79 % | 91 % | 91 % | 0.50 / 0.53 dB |
+| matrix, optional 2nd run at each check-in (n 300) | 0 dB | — | 0 · 1 · 0 · 1 % | 2 % | 8 % | 95 % | 0.51 / 0.53 dB |
 Reading: on the Matrix a true 1.5 dB gain reads "clear" by the 4th weekly check-in for 56 % of simulated players
 (ramp; 63–64 % when the gain comes earlier) and "likely or clear" for 80 %; a zero gain reads clear for 2 %. Digits
 needs larger gains or more weeks; Two voices (σ ≈ 1.9 dB, like published speech-on-speech tests) detects only gains

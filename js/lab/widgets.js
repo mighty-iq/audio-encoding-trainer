@@ -23,7 +23,7 @@
     var grid = u.el('div', { class: 'lab-matrix', role: 'group', 'aria-label': 'One word in each column' });
     var done = u.el('button', { type: 'button', class: 'btn btn-primary btn-wide lab-done', 'data-lab-done': '', disabled: true }, 'Done');
     columns.forEach(function (c, ci) {
-      var hid = u.uid('mh'), col = u.el('div', { class: 'lab-mcol', role: 'radiogroup', 'aria-labelledby': hid });
+      var hid = u.uid('mh'), col = u.el('div', { class: 'lab-mcol', role: 'radiogroup', 'aria-labelledby': hid, 'data-slot': c.id });
       col.appendChild(u.el('div', { class: 'lab-mhead', id: hid }, c.label));
       var keys = c.options.map(function (w, oi) {
         var b = key(w, { role: 'radio', 'aria-checked': 'false', 'data-col': String(ci), 'data-word': w, tabindex: oi === 0 ? '0' : '-1' });

@@ -79,6 +79,7 @@
     '.lab-key{min-height:44px;padding:0 2px;border:1px solid var(--rule);border-radius:var(--r-1);background:var(--surface);color:var(--ink);',
     'font:600 13px/1.1 var(--font);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;touch-action:manipulation}',
     '.lab-key:disabled{color:var(--ink-3);cursor:default}',
+    '.lab-mcol[data-slot="name"] .lab-key{text-transform:capitalize}',
     '.lab-key[aria-checked="true"]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}',
     '.lab-done{min-height:48px}',
     '.lab-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:340px;width:100%;margin:0 auto}',

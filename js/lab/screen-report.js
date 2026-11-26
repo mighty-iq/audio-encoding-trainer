@@ -21,9 +21,10 @@
     var X = L.exporter;
     if (!tr.ok) return '';
     var g = X.showGain(id, tr.gain), sdc = X.showGain(id, tr.sdc);
-    return 'Your trend says ' + g + (tr.gain >= 0 ? ' better' : ' worse') + ' than your baseline over ' + U().round(tr.weeks, 1) + ' weeks (90 % interval ' +
-      L.ui.gainLine(id, tr).split('90 % interval ')[1] + '). With your runs so far, a change has to reach about ' + sdc + ' to count as clear (1.96 × the margin of the gain); ' +
-      'the chance that you improved at all is ' + Math.round(100 * tr.pUp) + ' %. The model separates early practice from later change and allows for test noise.';
+    var pu = tr.pUp >= 0.995 ? 'over 99\u00a0%' : tr.pUp <= 0.005 ? 'under 1\u00a0%' : Math.round(100 * tr.pUp) + '\u00a0%';
+    return 'Over ' + U().round(tr.weeks, 1) + ' weeks your trend moved ' + g + (tr.gain >= 0 ? ' in the better direction' : ' in the worse direction') +
+      '. With your runs so far, a change counts as clear once it reaches about ' + sdc + ' (1.96 × the margin of the gain). Chance that you improved at all: ' + pu +
+      '. The model separates early practice from later change and allows for test noise.';
   }
 
   function one(rootEl, id) {
@@ -39,10 +40,10 @@
       u.el('p', { class: 'eyebrow mono' }, p.name + ' · ' + p.distance + ' · untrained'),
       u.el('h1', { class: 'h-mid', 'data-lab-verdict-head': tr.verdict }, HEAD[tr.verdict] || HEAD.none),
       tr.ok ? u.el('div', { class: 'lab-figure' }, [u.el('span', { class: 'lab-big' }, (tr.gain >= 0 ? '+' : '−') + L.exporter.showGain(id, tr.gain)),
-        L.ui.verdictChip(tr), u.el('span', { class: 'hint' }, 'vs your baseline · 90 % interval ' + L.ui.gainLine(id, tr).split('90 % interval ')[1])]) : null,
+        L.ui.verdictChip(tr), u.el('span', { class: 'hint' }, 'vs your baseline · 90\u00a0% interval ' + L.ui.gainLine(id, tr).split('90\u00a0% interval ')[1])]) : null,
       tr.ok ? u.el('p', null, verdictText(id, tr)) : u.el('p', null, s.n ? 'Runs so far: ' + s.n + (p.core ? '. The baseline is a practice run and two measured runs.' : '. The baseline is a practice run and one measured run.') + ' The trend and its verdict start with the first weekly check-in.'
         : av.ok ? 'This check-in has not been run yet.' : av.why),
-      s.runs.length ? L.charts.trend(info, {}).el : null,
+      s.runs.length ? L.charts.trend(info, { width: Math.min(640, (rootEl.clientWidth || root.innerWidth || 640) - 32) }).el : null,
       s.runs.length ? u.el('details', { class: 'lab-details' }, [u.el('summary', null, 'Show the numbers'), L.charts.table(info)]) : null,
       u.el('section', { class: 'lab-sec' }, [u.el('h2', { class: 'h-small' }, 'What it measures'),
         u.el('p', null, p.measures), u.el('p', null, p.short + ' ' + p.answerHow),

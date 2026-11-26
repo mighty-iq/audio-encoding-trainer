@@ -35,7 +35,7 @@
     if (!items.length) { ES.core.router.go('lab', {}, { replace: true }); return; }
     var item = items[i], def = item && L.probes[item.probe];
     var title = u.el('span', { class: 'tb-title' }, def ? def.name : 'Check-in');
-    var level = u.el('span', { class: 'tb-level mono' }, (i + 1) + ' of ' + items.length);
+    var level = u.el('span', { class: 'tb-level mono' }, items.length > 1 ? (i + 1) + ' of ' + items.length : '');
     var dots = u.el('ol', { class: 'dots', 'aria-label': 'Progress' });
     var bar = u.el('header', { class: 'trial-bar' }, [
       u.el('button', { type: 'button', class: 'tb-btn', 'aria-label': 'Pause', 'data-lab-pause': '', on: { click: function () { openPause(); } } }, pauseIcon()),
@@ -166,7 +166,7 @@
     var prompt = t.ui.kind === 'matrix' ? null : u.el('p', { class: 'lab-prompt' }, t.ui.prompt);
     cur.host.appendChild(u.el('div', { class: 'lab-stage', 'data-lab-trial': String(t.i), 'data-lab-kind': t.ui.kind }, [status, prompt, w.el]));
     cur.replay = function () { sound(t.audio, t.seed, status, 'Listen…', ready); };
-    function ready(r) { if (!cur) return; cur.state = 'answer'; status.textContent = (r && r.silent ? 'Sound is unavailable here. ' : '') + (t.ui.kind === 'matrix' ? 'One word per column, then Done.' : t.ui.kind === 'keypad' ? 'Type the three digits.' : 'Tap what your voice said.'); w.enable(); }
+    function ready(r) { if (!cur) return; cur.state = 'answer'; status.textContent = (r && r.silent ? 'Sound is unavailable here. ' : '') + (t.ui.kind === 'matrix' ? 'One word per column, then Done.' : ''); w.enable(); }
     cur.replay();
   }
   function story(t) {

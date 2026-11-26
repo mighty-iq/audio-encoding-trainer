@@ -143,6 +143,18 @@ export const tests = {
     assert.ok(fin.est.m > 0 && fin.est.m <= 100);
     assert.ok(typeof fin.extra.slope10 === 'number');
   },
+  'story answers may be option texts or option indices; options are shuffled per form'(ES, assert) {
+    const saved = ES.data.vocab.stories;
+    ES.data.vocab.stories = [{ id: 'story-f0', title: 'The late ferry', text: 'x', questions: [0, 1, 2, 3, 4].map((k) => ({ q: 'Q' + k, options: ['right' + k, 'w1', 'w2', 'w3'], answer: 0 })) }];
+    ES.lab.materials.reset();
+    try {
+      const run = ES.lab.probes.story.make(0, ES.core.rng('idx'), {}), t = run.next();
+      assert.deepEqual(t.answer, ['right0', 'right1', 'right2', 'right3', 'right4']);
+      assert.ok(t.ui.questions.some((q) => q.options[0] !== q.answer), 'the right option is not always first');
+      run.record(t, { answers: t.answer.slice(), effort: 2 });
+      assert.equal(run.finish().est.m, 100);
+    } finally { ES.data.vocab.stories = saved; ES.lab.materials.reset(); }
+  },
   'story rotates passages across forms; diary averages answered items only'(ES, assert) {
     const ids = [0, 1, 2, 3].map((f) => runAll(ES, 'story', f, 's' + f, true).fin.extra.story);
     assert.equal(new Set(ids.slice(0, 3)).size, 3);

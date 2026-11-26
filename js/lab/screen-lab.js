@@ -19,7 +19,7 @@
   W.gainLine = function (id, tr) {
     if (!tr || !tr.ok) return '';
     var X = L.exporter, sign = tr.gain >= 0 ? 'better' : 'worse';
-    return X.showGain(id, tr.gain) + ' ' + sign + ' · 90 % interval ' + signed(id, tr.lo90) + ' to ' + signed(id, tr.hi90);
+    return X.showGain(id, tr.gain) + ' ' + sign + ' · 90\u00a0% interval ' + signed(id, tr.lo90) + ' to ' + signed(id, tr.hi90);
   };
   function signed(id, g) {
     var X = L.exporter, s = X.showGain(id, g);
@@ -84,7 +84,7 @@
       return { id: id, label: L.probes[id].name + ' — ' + L.probes[id].short };
     }));
     ES.ui.sheet({ title: 'Which situation bothers you most?', body: function (b) {
-      b.appendChild(u.el('p', { class: 'hint' }, 'Focus mode spends 60 % of training on the exercise behind this check-in. The references are provisional, not norms.'));
+      b.appendChild(u.el('p', { class: 'hint' }, 'Focus mode spends 60\u00a0% of training on the exercise behind this check-in. The references are provisional, not norms.'));
       opts.forEach(function (o) {
         var inp = u.el('input', { type: 'radio', name: 'lab-focus', value: o.id, 'data-lab-focus-opt': o.id || 'auto' });
         inp.checked = (cur || '') === o.id;
