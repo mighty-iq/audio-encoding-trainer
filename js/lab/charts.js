@@ -19,7 +19,7 @@
     return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
   }
   function axisLabel(id, v) {
-    if (id === 'rooms') { var m = L.probes.rooms.metres(v); return (m < 10 ? r1(m) : Math.round(m)) + ' m'; }
+    if (id === 'rooms') { var m = L.probes.rooms.metres(v); return (m < 10 ? r1(m) : Math.round(m)) + '\u00a0m'; }
     var p = L.probes[id];
     if (p.unit === 'dB') return U().fmtNum(r1(v), 1);
     if (p.unit === '%') return Math.round(v) + '';
@@ -86,7 +86,8 @@
       var hit = svg('circle', { class: 'lc-hit', cx: x, cy: y, r: 12, tabindex: '0', role: 'button', 'aria-label': text + ', ' + sub, 'data-run': r.id || String(i) });
       var show = function () {
         tip.textContent = '';
-        tip.appendChild(u.el('strong', null, text + (r.est.s ? ' ± ' + axisDelta(id, r) : '')));
+        tip.appendChild(u.el('strong', null, text));
+        if (r.est.s) tip.appendChild(u.el('span', null, 'give or take ' + axisDelta(id, r)));
         tip.appendChild(u.el('span', null, sub));
         tip.hidden = false;
         tip.style.left = (100 * x / W) + '%'; tip.style.top = (100 * y / H) + '%';
@@ -102,9 +103,9 @@
     return { el: box, svg: g };
   };
   function axisDelta(id, r) {
-    if (id === 'rooms') return Math.round(100 * r.est.s / 6.02) / 100 + ' doublings';
+    if (id === 'rooms') return '×' + r1(Math.pow(2, r.est.s / 6.02)) + ' in distance';
     var p = L.probes[id];
-    return p.unit === 'dB' ? r1(r.est.s) + ' dB' : p.unit === '%' ? Math.round(r.est.s) + ' points' : r1(r.est.s);
+    return p.unit === 'dB' ? r1(r.est.s) + '\u00a0dB' : p.unit === '%' ? Math.round(r.est.s) + ' points' : r1(r.est.s);
   }
 
   /** The table view of a probe's runs (every value the chart shows). */
@@ -112,11 +113,11 @@
     var u = U(), runs = info.runs || [], t0 = runs.length ? runs[0].at : 0;
     var rows = runs.map(function (r, i) {
       return u.el('tr', null, [u.el('td', { class: 'num' }, String(i + 1)), u.el('td', { class: 'num' }, 'day ' + Math.round((r.at - t0) / DAY)),
-        u.el('td', null, kindText(r)), u.el('td', { class: 'num' }, L.exporter.showValue(info.id, r.est.m)), u.el('td', { class: 'num' }, r.est.s ? '± ' + axisDelta(info.id, r) : ''),
+        u.el('td', null, kindText(r)), u.el('td', { class: 'num' }, L.exporter.showValue(info.id, r.est.m)), u.el('td', { class: 'num' }, r.est.s ? axisDelta(info.id, r) : ''),
         u.el('td', null, r.hp ? 'headphones' : 'speaker')]);
     });
     return u.el('table', { class: 'lab-table', 'data-lab-table': info.id }, [
-      u.el('thead', null, u.el('tr', null, ['Run', 'When', 'Kind', 'Result', 'Margin', 'Sound'].map(function (h) { return u.el('th', { scope: 'col' }, h); }))),
+      u.el('thead', null, u.el('tr', null, ['Run', 'When', 'Kind', 'Result', 'Give or take', 'Sound'].map(function (h) { return u.el('th', { scope: 'col' }, h); }))),
       u.el('tbody', null, rows)]);
   };
   C.kindText = kindText;

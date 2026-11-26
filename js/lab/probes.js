@@ -73,7 +73,7 @@
 
   // ---- Matrix (near–mid): 5-word closed-set sentences in steady speech-shaped noise, word scoring, Bayesian track
   PROBES.matrix = {
-    id: 'matrix', name: 'Matrix', distance: 'near–mid', minutes: 3, core: true, proc: 'matrix-1', n: 20,
+    id: 'matrix', name: 'Matrix', distance: 'near–mid', reach: 'close to training', minutes: 3, core: true, proc: 'matrix-1', n: 20,
     unit: 'dB', better: -1, sigmaW: 0.6, sigmaX: 0.3, practice: { c0: 0.5, sd: 0.4, q: 0.35 }, ref: { m: -6, s: 2 },
     short: 'Five-word sentences in steady noise, from voices you never train with.',
     measures: 'The noise level at which you catch half the words. Lower (more negative) is better.',
@@ -118,7 +118,7 @@
 
   // ---- Digits (mid): natural talkers, digit triplets in steady noise, 1-up/1-down 2 dB, SRT = mean of trials 5–25
   PROBES.digits = {
-    id: 'digits', name: 'Digits', distance: 'mid', minutes: 2.5, core: true, proc: 'digits-1', n: 24,
+    id: 'digits', name: 'Digits', distance: 'mid', reach: 'a step from training', minutes: 2.5, core: true, proc: 'digits-1', n: 24,
     unit: 'dB', better: -1, sigmaW: 0.9, sigmaX: 0.4, practice: { c0: 0.3, sd: 0.4, q: 0.35 }, ref: { m: -9, s: 2 },
     short: 'Three digits in steady noise, spoken by real people you never train with.',
     measures: 'The noise level at which you get half of the triplets fully right. Lower is better.',
@@ -166,7 +166,7 @@
 
   // ---- Two voices (mid): natural sentences of a held-out talker against two other talkers, adaptive TMR
   PROBES.twovoices = {
-    id: 'twovoices', name: 'Two voices', distance: 'mid', minutes: 2.5, core: true, proc: 'twovoices-1', n: 24,
+    id: 'twovoices', name: 'Two voices', distance: 'mid', reach: 'a step from training', minutes: 2.5, core: true, proc: 'twovoices-1', n: 24,
     unit: 'dB', better: -1, sigmaW: 1.8, sigmaX: 0.8, practice: { c0: 0.8, sd: 0.8, q: 0.35 }, ref: { m: -2, s: 3 },
     short: 'One real voice to follow while two others talk over it.',
     measures: 'How much louder the two other voices can be while you still follow yours. Lower is better.',

@@ -62,6 +62,26 @@
     intro();
   }
 
+  /** Test aid for agents that cannot hear (test builds only, `?captions=1` or ES_CONFIG.captions; the rule of
+      js/ui/trialview.js showCaption): what the probe sound said. Never in release builds. */
+  function captionsOn() {
+    try { return !!ES.TEST_BUILD && (!!(ES.CONFIG && ES.CONFIG.captions) || /[?&]captions=1(&|$)/.test(String(root.location.search))); } catch (e) { return false; }
+  }
+  function saidText(t) {
+    if (t.ui.kind === 'keypad') return t.answer.join(' ');
+    if (t.ui.kind === 'choice') {
+      var it = (M().idx().twovoices.items || []).filter(function (x) { return x.key === t.answer; })[0];
+      return (it ? it.text + ' (' + it.key + ')' : t.answer) + ' · others: ' + t.meta.items.slice(1).join(', ');
+    }
+    if (t.ui.kind === 'story') return '“' + (t.meta.title || 'story') + '”';
+    return (t.answer || []).join(' ');
+  }
+  function caption(statusEl, t, extra) {
+    if (!captionsOn() || !statusEl) return;
+    statusEl.textContent = '';
+    statusEl.appendChild(U().el('span', { class: 'trial-caption', 'data-caption': '' }, 'Test aid · said: ' + saidText(t) + (extra || '')));
+  }
+  function M() { return L.materials; }
   /** setTimeout bound to the current run: it does nothing if another run (or no run) is mounted by then. */
   function later(fn, ms) { var me = cur; setTimeout(function () { if (cur && cur === me && cur.state !== 'done') fn(); }, ms); }
   function panel(children) { var u = U(); U().clear(cur.host); var p = u.el('section', { class: 'card lab-panel' }, children); cur.host.appendChild(p); return p; }
@@ -79,7 +99,7 @@
     cur.practice = practice;
     var hp = settings().headphones;
     panel([
-      u.el('p', { class: 'eyebrow mono' }, def.distance + ' · ' + (practice ? 'practice run' : (cur.items[cur.i].second ? 'second run · ' : '') + (KIND[cur.kind] || 'check-in')) + ' · about ' + def.minutes + ' min'),
+      u.el('p', { class: 'eyebrow mono' }, (def.reach || def.distance) + ' · ' + (practice ? 'practice run' : (cur.items[cur.i].second ? 'second run · ' : '') + (KIND[cur.kind] || 'check-in')) + ' · about ' + def.minutes + ' min'),
       u.el('h1', { 'data-autofocus': '' }, def.name),
       u.el('p', { class: 'lead' }, def.short),
       u.el('p', null, [u.el('strong', null, 'How to answer: '), def.answerHow]),
@@ -226,14 +246,15 @@
     var prompt = t.ui.kind === 'matrix' ? null : u.el('p', { class: 'lab-prompt' }, t.ui.prompt);
     cur.host.appendChild(u.el('div', { class: 'lab-stage', 'data-lab-trial': String(t.i), 'data-lab-kind': t.ui.kind }, [status, prompt, w.el]));
     cur.replay = function () { sound(t.audio, t.seed, status, 'Listen…', ready); };
-    function ready() { if (!cur) return; cur.state = 'answer'; status.textContent = t.ui.kind === 'matrix' ? 'One word per column, then Done.' : ''; w.enable(); }
+    function ready() { if (!cur) return; cur.state = 'answer'; status.textContent = t.ui.kind === 'matrix' ? 'One word per column, then Done.' : ''; caption(status, t); w.enable(); }
     cur.replay();
   }
   function story(t) {
     var u = U(), status = u.el('p', { class: 'lab-status', 'aria-live': 'polite' }), answers = [], qi = 0;
     u.clear(cur.host);
     cur.host.appendChild(u.el('div', { class: 'lab-stage', 'data-lab-kind': 'story' }, [u.el('p', { class: 'lab-prompt' }, t.meta.title ? '“' + t.meta.title + '”' : 'A short story'), status]));
-    cur.replay = function () { sound(t.audio, t.seed, status, 'Listen to the whole story (about a minute)…', function () { cur.state = 'answer'; question(); }); };
+    var secs = Math.max(10, Math.round(((t.audio && t.audio.dur || 42) - 2) / 5) * 5);   // the passage itself (≈ 35–40 s)
+    cur.replay = function () { sound(t.audio, t.seed, status, 'Listen to the whole story (about ' + secs + ' seconds)…', function () { cur.state = 'answer'; question(); }); };
     function question() {
       if (qi >= t.ui.questions.length) { effort(); return; }
       var q = t.ui.questions[qi], w = L.ui.choice(q.options, function (r) { answers[qi] = r.pick; qi++; later(question, 250); }, { list: true, label: q.q });
@@ -241,7 +262,9 @@
       cur.widget = w;
       paintDots(t.ui.questions.length + 1, qi);
       u.clear(cur.host);
-      cur.host.appendChild(u.el('div', { class: 'lab-stage', 'data-lab-kind': 'question', 'data-q': String(qi) }, [u.el('p', { class: 'lab-status' }, 'Question ' + (qi + 1) + ' of ' + t.ui.questions.length), u.el('p', { class: 'lab-q' }, q.q), w.el]));
+      var qs = u.el('p', { class: 'lab-status' }, 'Question ' + (qi + 1) + ' of ' + t.ui.questions.length);
+      caption(qs, t, ' · answer: ' + q.answer);
+      cur.host.appendChild(u.el('div', { class: 'lab-stage', 'data-lab-kind': 'question', 'data-q': String(qi) }, [qs, u.el('p', { class: 'lab-q' }, q.q), w.el]));
       w.enable();
     }
     function effort() {
@@ -292,7 +315,7 @@
       : tr.ok ? 'Trend: ' + (L.stats.VERDICT_TEXT[tr.verdict] || tr.verdict) + '.' : (L.stats.VERDICT_TEXT[tr.verdict] || 'Saved') + '.';
     panel([
       u.el('p', { class: 'eyebrow mono' }, def.name + ' · ' + (cur.practice ? 'practice run' : KIND[cur.kind] || 'run') + (saved ? ' · saved' : ' · not saved on this device')),
-      u.el('h1', { 'data-autofocus': '' }, [u.el('span', { class: 'mono' }, value), fin.est.s && def.id !== 'diary' ? u.el('span', { class: 'hint mono' }, ' ± ' + (def.unit === 'dB' ? U().round(fin.est.s, 1) + ' dB' : def.id === 'rooms' ? U().round(fin.est.s / 6.02, 2) + ' doublings' : Math.round(fin.est.s) + ' points')) : null]),
+      u.el('h1', { 'data-autofocus': '' }, [u.el('span', { class: 'mono' }, value), fin.est.s && def.id !== 'diary' ? u.el('span', { class: 'hint' }, ' give or take ' + (def.unit === 'dB' ? U().round(fin.est.s, 1) + '\u00a0dB' : def.id === 'rooms' ? '×' + U().round(Math.pow(2, fin.est.s / 6.02), 1) + ' in distance' : Math.round(fin.est.s) + ' points')) : null]),
       u.el('p', null, line),
       fin.edge ? u.el('p', { class: 'hint' }, fin.edge === 'hi' ? 'You reached the easy end of this check-in’s range: the true value may be better still.' : 'You reached the hard end of this check-in’s range.') : null,
       ES.core.playtest && ES.core.playtest.enabled() ? ES.core.playtest.ratingEl('probe:' + def.id, {}) : null,

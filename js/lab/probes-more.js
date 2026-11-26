@@ -5,7 +5,7 @@
      6.02 dB per doubling (the "dB*" unit) and shown in metres.
    - New voice: tone-vocoded matrix sentences (a degradation family never trained; the engine trains noise
      carriers) from held-out voices; accuracy over 16 sentences and its slope across them (adaptation).
-   - Story: one passage in café noise at a fixed SNR, then 5 questions and an effort rating.
+   - Story: one short passage (about 35–40 s) in restaurant noise at a fixed SNR, then 5 questions and an effort rating.
    - Diary: five original weekly items on everyday listening (1 very hard … 5 very easy, or "did not happen").
    MIT licence. */
 (function (root) {
@@ -20,7 +20,7 @@
 
   // ---- Rooms (mid): distance ladder in a held-out hall
   PROBES.rooms = {
-    id: 'rooms', name: 'Rooms', distance: 'mid', minutes: 2, core: false, proc: 'rooms-1', n: 12,
+    id: 'rooms', name: 'Rooms', distance: 'mid', reach: 'a step from training', minutes: 2, core: false, proc: 'rooms-1', n: 12,
     unit: 'dB*', show: 'm', better: 1, sigmaW: 2.5, sigmaSource: 'working', sigmaX: 1.0, practice: { c0: 1.5, sd: 1.5, q: 0.35 }, ref: { m: 14, s: 5 },
     room: { rt60: 1.4, size: 'large', seed: 10007 }, noiseDb: -12,
     short: 'Sentences from further and further away in a hall you never train in.',
@@ -64,7 +64,7 @@
 
   // ---- New voice (mid–far): a never-trained degradation family, accuracy and adaptation over 16 sentences
   PROBES.newvoice = {
-    id: 'newvoice', name: 'New voice', distance: 'mid', minutes: 2.5, core: false, proc: 'newvoice-1', n: 16,
+    id: 'newvoice', name: 'New voice', distance: 'mid', reach: 'a step from training', minutes: 2.5, core: false, proc: 'newvoice-1', n: 16,
     unit: '%', better: 1, sigmaW: 7, sigmaSource: 'working', sigmaX: 3, practice: { c0: 8, sd: 6, q: 0.35 }, ref: { m: 60, s: 15 },
     fx: { type: 'vocode', bands: 6, carrier: 'tone' },
     short: 'A kind of voice you have never trained with: speech rebuilt from a few tones.',
@@ -103,12 +103,12 @@
     }
   };
 
-  // ---- Story (far): a passage in café noise at a fixed SNR, then 5 questions and an effort rating
+  // ---- Story (far): a passage in restaurant noise (the probe bed, X.cafe) at a fixed SNR, then 5 questions and an effort rating
   PROBES.story = {
-    id: 'story', name: 'Story', distance: 'far', minutes: 2, core: false, proc: 'story-1', n: 1, snr: 3,
+    id: 'story', name: 'Story', distance: 'far', reach: 'far from training', minutes: 2, core: false, proc: 'story-1', n: 1, snr: 3,
     unit: '%', better: 1, sigmaW: 15, sigmaSource: 'working', sigmaX: 6, practice: { c0: 5, sd: 8, q: 0.35 }, ref: { m: 70, s: 15 },
-    short: 'A one-minute story in a busy café, then five questions about it.',
-    measures: 'How much of a real passage you take in and keep, in café noise. Higher is better.',
+    short: 'A short story (about 40 seconds) in a busy restaurant, then five questions.',
+    measures: 'How much of a short passage you take in and keep, in restaurant noise. Higher is better.',
     answerHow: 'Listen to the whole story once. Then answer five questions about it and say how much effort it took.',
     available: function () {
       var X = M.idx();
@@ -163,7 +163,7 @@
   ];
   var SCALE = ['very hard', 'hard', 'mixed', 'easy', 'very easy'];
   PROBES.diary = {
-    id: 'diary', name: 'Diary', distance: 'far', minutes: 1, core: false, proc: 'diary-1', n: 1,
+    id: 'diary', name: 'Diary', distance: 'far', reach: 'everyday life', minutes: 1, core: false, proc: 'diary-1', n: 1,
     unit: 'pts', better: 1, sigmaW: 0.5, sigmaSource: 'working', sigmaX: 0.3, practice: { c0: 0, sd: 0.2, q: 0.35 }, ref: { m: 3, s: 1 },
     items: DIARY_ITEMS, scale: SCALE,
     short: 'Five quick questions about listening in your week.',

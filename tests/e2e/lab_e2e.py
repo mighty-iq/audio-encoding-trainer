@@ -95,7 +95,7 @@ def t_all_probes(browser, base, rel):
         except Exception as e:  # noqa: BLE001
             checks.ok(False, pid + ' runs end to end', str(e)[:300]); shot(p, 'fail-' + pid); continue
         txt = p.inner_text('.lab-panel')
-        checks.ok(('saved' in txt.lower()) and ('±' in txt or pid in ('diary',)), pid + ' runs end to end and shows its result (%d trials)' % n, txt[:200])
+        checks.ok(('saved' in txt.lower()) and ('give or take' in txt or pid in ('diary',)) and '±' not in txt, pid + ' runs end to end and shows its result (%d trials)' % n, txt[:200])
         p.locator('[data-lab-back]').click()
     got = p.evaluate("() => ES.core.store.get('lab').runs.map(r => r.probe)")
     checks.eq(sorted(got), sorted(['matrix', 'digits', 'twovoices', 'rooms', 'newvoice', 'story']), 'six probe runs saved')
@@ -415,7 +415,7 @@ def t_fixround(browser, base, rel):
     checks.ok('working estimate' in txt and 'change in distance' in txt and 'dB*' not in txt, 'C20/C34: Rooms noise as a working estimate, in distance terms', txt[:300])
     C.go(p, 'report', {'probe': 'matrix'})
     txt = p.inner_text('[data-lab-report=matrix]')
-    checks.ok('Run-to-run noise of tests like this one' in txt and '8 in 10' in txt and 'weeks sooner' not in txt, 'C20/C38: Matrix noise sourced; doubling rate from the simulation')
+    checks.ok('Results of tests like this one typically vary' in txt and '8 in 10' in txt and 'weeks sooner' not in txt, 'C20/C38: Matrix noise sourced; doubling rate from the simulation')
     home = p.evaluate("""() => { const s = ES.lab.schedule; ES.lab.schedule = () => ({ due: { kind: 'weekly', title: 'x', minutes: 1, items: [{ probe: 'diary', minutes: 1 }] } });
       const t = ES.lab.homeCard().textContent; ES.lab.schedule = s; return t; }""")
     checks.ok('About 1 minute,' in home and '1 minutes' not in home, 'plural: About 1 minute', home)
@@ -425,7 +425,63 @@ def t_fixround(browser, base, rel):
     p.context.close()
 
 
-SUITES = [('overview', t_overview), ('weekly', t_weekly), ('fixround', t_fixround), ('baseline', t_baseline_block), ('probes', t_all_probes), ('fit', t_fit), ('hpcheck', t_hpcheck),
+JARGON = ['90 % interval', '90\u00a0% interval', 'provisional', 'one SD', '±1 SD', 'NEAR–MID', 'MID–FAR', 'dB*']
+
+
+def t_round2(browser, base, rel):
+    """Fix round 2: plain language in the Lab (P10), Story copy (40-second passages, restaurant bed), the test aid
+    (test builds with ?captions=1 only) without scrolling at 360×640."""
+    t = tab(browser, base, rel, records={'lab': history(), 'log': C.session_log(5)})
+    p = t.page
+    texts = []
+    C.go(p, 'lab'); texts.append(p.inner_text('[data-lab-screen=overview]'))
+    tags = p.evaluate("() => [...document.querySelectorAll('.lab-dist')].map(e => e.textContent)")
+    checks.ok('close to training' in tags and 'far from training' in tags and 'everyday life' in tags, 'P10: plain "how far from training" tags', str(tags))
+    for pid in ['matrix', 'rooms', 'story']:
+        C.go(p, 'report', {'probe': pid}); texts.append(p.inner_text('[data-lab-report=%s]' % pid))
+    C.go(p, 'report', {'probe': 'matrix'})
+    p.locator('.lab-chart .lc-hit').nth(3).hover()
+    texts.append(p.inner_text('.lab-tip'))
+    p.locator('.lab-details summary').click()
+    texts.append(p.inner_text('[data-lab-table=matrix]'))
+    joined = '\n'.join(texts)
+    bad = [j for j in JARGON if j.lower() in joined.lower()]
+    checks.ok(not bad, 'P10: no jargon on the Lab screens (%s)' % ', '.join(bad), '')
+    checks.ok('likely range' in joined and 'give or take' in joined, 'P10: "likely range" and "give or take" carry the numbers')
+    story = texts[3]
+    checks.ok('about 40 seconds' in story and 'restaurant' in story and 'one-minute' not in story and 'café' not in story, 'Story copy: 40 seconds, restaurant', story[:200])
+    p.context.close()
+    # the test aid: on in a test build with ?captions=1, at 360×640 without scrolling; off without ?test
+    for query, want in (('?test&captions=1', True), ('?captions=1', False)):
+        t = tab(browser, base, rel + query, viewport=C.SIZES['phone-s'], records={'log': C.session_log(1)})
+        p = t.page
+        for pid in (['matrix', 'digits', 'twovoices', 'story'] if want else ['matrix']):
+            C.go(p, 'report', {'probe': pid})
+            p.locator('[data-lab-run-now="%s"]' % pid).click()
+            p.locator('[data-lab-start]').click()
+            if pid == 'twovoices':
+                p.wait_for_selector('[data-lab-begin]:not([disabled])', timeout=20000); p.locator('[data-lab-begin]').click()
+            if pid == 'story':
+                p.wait_for_selector('[data-lab-kind=question]', timeout=30000)
+            else:
+                p.wait_for_function("() => ES.lab.runner.state().state === 'answer'", timeout=20000)
+            cap = p.locator('[data-caption]')
+            if want:
+                st = C.runner_state(p)
+                txt = cap.inner_text() if cap.count() else ''
+                ans = st['trial']['answer']
+                expect = st['trial']['questions'][0]['answer'] if pid == 'story' else (' '.join(ans) if isinstance(ans, list) else ans)
+                checks.ok(txt.startswith('Test aid · said: ') and expect in txt, 'test aid after the %s sound' % pid, txt)
+                if pid == 'matrix':
+                    fit(p, 'matrix grid with the test aid at 360×640')
+                    shot(p, 'round2-caption-matrix')
+            else:
+                checks.eq(cap.count(), 0, 'no test aid outside test builds')
+            p.evaluate("() => ES.core.router.go('lab', {}, { reset: true })")
+        p.context.close()
+
+
+SUITES = [('overview', t_overview), ('weekly', t_weekly), ('fixround', t_fixround), ('round2', t_round2), ('baseline', t_baseline_block), ('probes', t_all_probes), ('fit', t_fit), ('hpcheck', t_hpcheck),
           ('export', t_export_import), ('report', t_report), ('diary', t_diary), ('blocked', t_blocked)]
 
 

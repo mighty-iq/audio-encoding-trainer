@@ -17,16 +17,16 @@
   function sigmaText(p) {
     var u = U(), one = L.stats.sdcSimple(p.sigmaW, 1), two = L.stats.sdcSimple(p.sigmaW, 2);
     var working = p.sigmaSource === 'working';
-    var lead = working ? 'Our working estimate of run-to-run noise for this check-in is about ' : 'Run-to-run noise of tests like this one is about ';
+    var lead = working ? 'Our working estimate: results of this check-in typically vary by about ' : 'Results of tests like this one typically vary by about ';
     var tail = working ? ' Your own runs refine it.' : '';
     if (p.id === 'rooms') {
       var f = function (db) { return u.round(Math.pow(2, db / L.DB_PER_DOUBLING), 1) + '×'; };
-      return lead + u.round(p.sigmaW, 1) + ' dB of direct sound, roughly a ' + f(p.sigmaW) + ' change in distance (one SD), so two single runs must differ by about a ' +
+      return lead + u.round(p.sigmaW, 1) + '\u00a0dB of direct sound, roughly a ' + f(p.sigmaW) + ' change in distance, from run to run, so two single runs must differ by about a ' +
         f(one) + ' change in distance before the difference stands out; averaging two runs on each side brings that to about ' + f(two) + '.' + tail;
     }
-    var unit = p.unit === 'dB' ? ' dB' : p.unit === '%' ? ' points' : ' points on the 1–5 scale';
-    return lead + u.round(p.sigmaW, 1) + unit + ' (one SD), so two single runs must differ by 2.77 × ' + u.round(p.sigmaW, 1) + ' = ' + u.round(one, 1) + unit +
-      ' before the difference stands out; averaging two runs on each side brings that to ' + u.round(two, 1) + unit + '.' + tail;
+    var unit = p.unit === 'dB' ? '\u00a0dB' : p.unit === '%' ? ' points' : ' points on the 1–5 scale';
+    return lead + u.round(p.sigmaW, 1) + unit + ' from run to run, so two single runs must differ by about ' + u.round(one, 1) + unit + ' (2.77 × ' + u.round(p.sigmaW, 1) +
+      ') before the difference stands out; averaging two runs on each side brings that to ' + u.round(two, 1) + unit + '.' + tail;
   }
   function verdictText(id, tr) {
     var X = L.exporter;
@@ -34,8 +34,8 @@
     var g = X.showGain(id, tr.gain), sdc = X.showGain(id, tr.sdc);
     var pu = tr.pUp >= 0.995 ? 'over 99\u00a0%' : tr.pUp <= 0.005 ? 'under 1\u00a0%' : Math.round(100 * tr.pUp) + '\u00a0%';
     return 'Over ' + U().round(tr.weeks, 1) + ' weeks your trend moved ' + g + (tr.gain >= 0 ? ' in the better direction' : ' in the worse direction') +
-      '. With your runs so far, a change counts as clear once it reaches about ' + sdc + ' (1.96 × the margin of the gain). Chance that you improved at all: ' + pu +
-      '. The model separates early practice from later change and allows for test noise.';
+      '. The likely range is where the true change lies, 90\u00a0% sure. With your runs so far, a change counts as clear once it reaches about ' + sdc +
+      ', about twice its own uncertainty. Chance that you improved at all: ' + pu + '. The model separates early practice from later change and allows for test noise.';
   }
 
   function one(rootEl, id) {
@@ -48,10 +48,10 @@
     if (edges) notes.push(u.plural(edges, 'run') + ' reached the easy end of this check-in’s range: the true value may be better still.');
     rootEl.appendChild(u.el('div', { class: 'wrap narrow lab lab-report', 'data-lab-report': id }, [
       ES.ui.w.header({ back: true, title: p.name }),
-      u.el('p', { class: 'eyebrow mono' }, p.name + ' · ' + p.distance + ' · untrained'),
+      u.el('p', { class: 'eyebrow mono' }, p.name + ' · ' + (p.reach || p.distance)),
       u.el('h1', { class: 'h-mid', 'data-lab-verdict-head': tr.verdict }, HEAD[tr.verdict] || HEAD.none),
       tr.ok ? u.el('div', { class: 'lab-figure' }, [u.el('span', { class: 'lab-big' }, (tr.gain >= 0 ? '+' : '−') + L.exporter.showGain(id, tr.gain)),
-        L.ui.verdictChip(tr), u.el('span', { class: 'hint' }, 'vs your baseline · 90\u00a0% interval ' + L.ui.gainLine(id, tr).split('90\u00a0% interval ')[1])]) : null,
+        L.ui.verdictChip(tr), u.el('span', { class: 'hint' }, 'vs your baseline · likely range ' + L.ui.gainLine(id, tr).split('likely range ')[1])]) : null,
       tr.ok ? u.el('p', null, verdictText(id, tr)) : u.el('p', null, s.n ? 'Runs so far: ' + s.n + (p.core ? '. The baseline is a practice run and two measured runs.' : '. The baseline is a practice run and one measured run.') + ' The trend and its verdict start with the first weekly check-in.'
         : av.ok ? 'This check-in has not been run yet.' : av.why),
       s.runs.length ? L.charts.trend(info, { width: Math.min(640, (rootEl.clientWidth || root.innerWidth || 640) - 32) }).el : null,

@@ -125,6 +125,7 @@ export const tests = {
       assert.ok(lines.some((l) => l.includes('"a,""b"""')), 'quotes and commas escaped');
       assert.ok(lines.some((l) => /,-6\.1,0\.5,dB,−6\.1 dB,/.test(l)), 'numbers stay numbers; shown value in units');
       assert.ok(lines.some((l) => l.includes(',5.7 m,')), 'rooms shown in metres');
+      assert.ok(!/\u00a0/.test(runs.text), 'CSV cells use plain spaces');
       const ses = ES.lab.exporter.csv('sessions').text.trim().split('\r\n');
       assert.equal(ses.length, 2);
       assert.ok(ses[1].includes(',14,') && ses[1].includes(',40,26,crowd far,'), ses[1]);
@@ -153,9 +154,11 @@ export const tests = {
   },
   'display values match the units of each probe'(ES, assert) {
     const X = ES.lab.exporter;
-    assert.equal(X.showValue('matrix', -6.14), '−6.1 dB');
-    assert.equal(X.showValue('rooms', 6.02 * 3), '8 m');
-    assert.equal(X.showValue('rooms', 6.02 * 4), '16 m');
+    const plain = (s) => s.replace(/\u00a0/g, ' ');   // dB comes from ES.core.util.fmtDb (no-break space since RV P13)
+    assert.equal(plain(X.showValue('matrix', -6.14)), '−6.1 dB');
+    assert.equal(X.showValue('rooms', 6.02 * 3), '8\u00a0m');
+    assert.equal(X.showValue('rooms', 6.02 * 4), '16\u00a0m');
+    assert.equal(X.showGain('matrix', 1.5), '1.5\u00a0dB', 'a gain keeps its number and unit together');
     assert.equal(X.showValue('newvoice', 61.4), '61\u00a0%');
     assert.equal(X.showValue('diary', 3.25), '3.3 of 5');
   }

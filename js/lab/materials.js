@@ -4,7 +4,7 @@
    Shapes read (fixture: tests/fixtures/lab-data.js; requested from stimuli in docs/dev/requests.md):
    vocab.matrix {name, verb, num, adj, obj: [words]} + clips kind 'word' per probe voice; clips kind 'digit'
    ('zero'…'nine'); vocab.twovoices [{id, text, key}] + clips kind 'sentence'; vocab.stories [{id, title, text,
-   questions:[{q, options, answer}]}] + clips kind 'story'; a probe bed (kind 'bed', bed 'cafe'). MIT licence. */
+   questions:[{q, options, answer}]}] + clips kind 'story'; a probe bed (kind 'bed'; the build's is DEMAND's restaurant scene, PRESTO). MIT licence. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};

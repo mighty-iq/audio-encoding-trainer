@@ -115,12 +115,13 @@ export const tests = {
     const d = R.runsOf([], 'diary', { entries: [{ week: '2026-W45', at: T0, items: [{ id: 'loud', v: 2 }, { id: 'far', v: 4 }, { id: 'memory', v: 3 }] }] });
     assert.equal(d.length, 1); assert.equal(d[0].est.m, 3);
   },
-  'weakest probe for Focus mode: the player pick wins, else the lowest against provisional references'(ES, assert) {
+  'weakest probe for Focus mode: the player pick wins, else the one furthest below our starting guesses'(ES, assert) {
     const R = ES.lab.records;
     const runs = [run('matrix', T0, 'baseline', -6), run('matrix', T0 + DAY, 'baseline', -6.5), run('digits', T0, 'baseline', -9), run('digits', T0 + DAY, 'baseline', -4)];
     runs[0].practice = runs[2].practice = true;
     const sum = R.summarize(runs, { entries: [] });
     assert.equal(R.weakestFrom(sum, null).weakest, 'digits');   // −4 dB is far worse than the digits reference
+    assert.equal(R.weakestFrom(sum, null).why, 'furthest below our starting guesses');   // P10: plain words even here
     assert.equal(R.weakestFrom(sum, 'twovoices').weakest, 'twovoices');
   },
   'store-backed records: add, summary, pooling id kept'(ES, assert) {

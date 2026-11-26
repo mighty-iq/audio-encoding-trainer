@@ -125,7 +125,7 @@
     if (checkToday && typeof st.trend === 'function') {
       var tr = st.trend('matrix'), mToday = runs.filter(function (r) { return r.probe === 'matrix' && dayKey(r.at) === today; }).length;
       if (tr && tr.ok && tr.verdict !== 'clear' && mToday < 2 && avail('matrix')) {
-        out.extra.push({ probe: 'matrix', role: 'measured', minutes: minutes('matrix'), why: 'One more Matrix run today narrows the interval of your trend.' });
+        out.extra.push({ probe: 'matrix', role: 'measured', minutes: minutes('matrix'), why: 'One more Matrix run today narrows the likely range of your trend.' });
       }
     }
     return out;

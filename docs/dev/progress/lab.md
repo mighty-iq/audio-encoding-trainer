@@ -131,6 +131,7 @@ at most the first 8 check-ins (schedule.js DOUBLE_WEEKS; due card says ≈ 11–
 - 2026-11-26 Headphone check: own 200 Hz tones, anti-phase method, 6 rounds, pass ≥ 5 (chance 1.8 %), manual override with a note; owned by the Lab. Reason: lab brief; generic published method.
 - 2026-11-26 Pooled export: random pooling id, relative days and weeks, no record ids or absolute times, nickname and device facts only when ticked; trial-level arrays included for item calibration. Reason: privacy rules; pooled data must allow item-difficulty work.
 - 2026-11-26 Lab chart series colour: light #2A56CF, dark #6F8EF0 (validated; the dark token #86A6FF fails the lightness band for marks). Reason: dataviz checks.
+- 2026-11-26 (fix round 2, RV P10) The Lab speaks plain words with the same numbers: "likely range" (the 90 % interval), "give or take" (one SD), reach tags "close to training / a step from training / far from training / everyday life" (probe field `reach`; `distance` near/mid/far stays in data and exports), "our starting guesses" (the provisional references). Unit symbols keep a no-break space on screens (shell's RV P13); CSV cells get plain spaces. Reason: players read the Lab.
 
 ## 2026-11-26 20:25 UTC — fix round 1 (docs/dev/reviews/FIX-ROUND-1.md; rulings binding)
 - H2 fixed (js/lab/runner.js): a sound that did not play (no audio, suspended or interrupted context, play timed out,
@@ -163,3 +164,26 @@ at most the first 8 check-ins (schedule.js DOUBLE_WEEKS; due card says ≈ 11–
 - Unit tests now take the core store files from tools/build-index.mjs (tests/unit/lab-scripts.mjs), so the shell's new
   js/core/store-merge.js loads automatically. Status: 34 unit tests pass; Lab browser suite green (every suite run
   after the fixes; weekly preset updated for C13).
+
+## 2026-11-26 23:59 UTC — fix round 2 (RV-stimuli ST-06/07/14, RV-play-a11y P10, FRESH-A Lab section)
+- Story copy (ST-14): passages last 33–40 s in the restaurant scene, not a minute in a café. probes-more.js header,
+  short ("A short story (about 40 seconds) in a busy restaurant, then five questions."), measures; the runner says
+  "about N seconds" from the clip's real length (35 or 40 with the current stories).
+- P10 plain language: verdicts and figure hint say "likely range", run results and tooltips "give or take", the noise
+  paragraph "results of tests like this one typically vary by about X from run to run"; eyebrows and cards show the
+  reach tag instead of NEAR/MID/FAR; Focus copy and the planner reason say "our starting guesses"; the extra Matrix run
+  "narrows the likely range". Tests: e2e round2 (no jargon on overview, three reports, tooltip, table; tags; Story copy).
+- Test aid (test builds with ?captions=1 only, same rule as trialview showCaption): after each probe sound the runner
+  shows "Test aid · said: …" (Matrix words, digits, the Two voices target with the others, the Story title, and each
+  question's answer). Tests: e2e round2 (Matrix, Digits, Two voices, Story; Matrix grid still fits 360×640; nothing
+  without ?test).
+- FRESH-A: the runner bar's own Note button is hidden on the Lab intro (only the page's Note shows) until a trial runs.
+- ST-06 confirmed: af_jessica and af_river each lack one matrix word, so materials never used them; a real-data unit
+  test drops their 98 clips and finds availability, voices per role, stories and bed unchanged, every form still runs
+  on existing probe clips (tests/unit/lab-realdata.test.mjs; holds before and after the stimuli change lands).
+- ST-07: nothing to change; options are shuffled per form and scored by text or index. The real-data test checks the
+  options are the story's own, the answer is among them, and most orders differ across seeds.
+- Shell's download helper (fe51b23) changed export-ui.js's call site: export → Chimera invite → copy box → import
+  round trip re-run, green. Unit spacing follows the shell's pending no-break-space change in util.js either way.
+- Status: 37 unit tests pass (`node tests/unit/run.mjs lab`); `tools/with-browser.sh python3 tests/e2e/run_all.py
+  --only=lab` 119 checks, 0 failed.

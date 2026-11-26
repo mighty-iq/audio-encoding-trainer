@@ -65,7 +65,7 @@
     });
     return out;
   };
-  /** The probe furthest below its provisional reference (z units, better direction); the player's pick wins. */
+  /** The probe furthest below our starting guess for it (p.ref; z units, better direction); the player's pick wins. */
   R.weakestFrom = function (sum, focus) {
     if (focus && L.probes[focus]) return { weakest: focus, why: 'your pick' };
     var best = null;
@@ -76,7 +76,7 @@
       var z = p.better * (m - p.ref.m) / p.ref.s;
       if (!best || z < best.z) best = { weakest: id, z: z };
     });
-    return best ? { weakest: best.weakest, why: 'lowest against provisional references', z: S.round(best.z, 2) } : { weakest: null, why: 'no measured runs yet' };
+    return best ? { weakest: best.weakest, why: 'furthest below our starting guesses', z: S.round(best.z, 2) } : { weakest: null, why: 'no measured runs yet' };
   };
 
   // ---- store-backed

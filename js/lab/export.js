@@ -29,7 +29,7 @@
   X.showValue = function (id, m) {
     var p = L.probes[id];
     if (m == null || !isFinite(m) || !p) return '';
-    if (id === 'rooms') { var mt = p.metres(m); return (mt < 10 ? Math.round(mt * 10) / 10 : Math.round(mt)) + ' m'; }
+    if (id === 'rooms') { var mt = p.metres(m); return (mt < 10 ? Math.round(mt * 10) / 10 : Math.round(mt)) + '\u00a0m'; }
     if (p.unit === 'dB') return U().fmtDb(m);
     if (p.unit === '%') return Math.round(m) + '\u00a0%';
     return (Math.round(m * 10) / 10) + ' of 5';
@@ -41,7 +41,7 @@
     if (g == null || !isFinite(g) || !p) return '';
     var a = Math.abs(g);
     if (id === 'rooms') { var f = Math.pow(2, a / 6.02); return '×' + (Math.round(f * 100) / 100) + ' the distance'; }
-    if (p.unit === 'dB') return (Math.round(a * 10) / 10) + ' dB';
+    if (p.unit === 'dB') return (Math.round(a * 10) / 10) + '\u00a0dB';
     if (p.unit === '%') return Math.round(a) + ' points';
     return (Math.round(a * 10) / 10) + ' points';
   };
@@ -57,7 +57,7 @@
     if (v === null || v === undefined) return '';
     if (typeof v === 'number') return isFinite(v) ? String(v) : '';
     if (typeof v === 'boolean') return v ? '1' : '0';
-    var s = String(v);
+    var s = String(v).replace(/\u00a0/g, ' ');   // screens keep number and unit together; CSV cells use plain spaces
     if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;   // formula injection guard for text cells
     return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
