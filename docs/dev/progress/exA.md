@@ -25,7 +25,7 @@ field(trial, phase, result), tutorialTrial(step, i, rng) }`.
 - Strategy cards (plateau breaker), each from the notes: R3 §1/§3/§5 (Crowd), §10 (Far), R2 §1.0/§1.11/§3.3
   (Strange), R3 §4/§6 (Repair).
 
-Tests: tests/e2e/ex_a_*.py under `flock /tmp/earshot-browser.lock`, outputs in tests/out/.
+Tests: tests/e2e/ex_a_*.py via `tools/with-browser.sh` (two browser slots), outputs in tests/out/exa/.
 
 ## 2026-11-26 18:03 UTC — modules, tests, first review
 Done (commit 0605c4a + this one): js/ex/{crowd,far,strange,repair,strategies}.js. The shell adopted prepare, prime,
@@ -70,3 +70,17 @@ Open: Help sheet styles/adoption (shell); index.html lacks far/strange/repair un
   context claims, "phrase" wording).
 - ES.ex[id].venues now reads ES.game.venues.forExercise(id) (fallback lists match the map).
 Next: rerun ex_a_tutorial.py --miss once the shell fix lands; then final report.
+
+## 2026-11-26 19:24 UTC — done (brief's acceptance met)
+- Shell fixed tutorial scoring (plainScorer); engine falls back to call-sign phrases when content has no clips.
+- Final runs (all pass):
+  - fixtures: ex_a_tutorial.py --miss 76/76 (tutorial time crowd 28.3 s, far 48.8 s, strange 31.7 s, repair
+    29.5 s; a miss shows "Try again" and stays; 3 set trials each after the tutorial, right answers accepted);
+    ex_a_layout.py 81/81 (360×640 light+dark, 390×844, 1366×768 dark; answer and miss feedback fit; Help ranges
+    equal the engine's dials; Strange text-first prime ≥ 1 s before the sound).
+  - real starter pack (--real): ex_a_tutorial.py 68/68 (19.6 / 29.0 / 23.1 / 18.9 s); ex_a_layout.py --quick 25/25.
+- Screenshots reviewed (tests/out/exa/*.png): phone light/dark, desktop dark, Help sheet, examples, miss feedback.
+- Open (other owners, in requests.md): Help sheet CSS for .help-* classes and "Replay the tutorial" via
+  openHelp({actions}) (shell); strategy-card `seen` + skipping the engine's duplicate line on the plateau card
+  (shell); number "neighbours" in data/vocab.js are not sound-alikes (stimuli); optional run_all entry (shell).
+- Run: `tools/with-browser.sh python3 tests/e2e/ex_a_tutorial.py --miss` and `… ex_a_layout.py`.

@@ -4,7 +4,7 @@ and dark, with the tutorial marked done. For each: the answer state and the feed
 feedback: the miss lines, the words and the automatic replays) need no scrolling; a right answer is accepted;
 the Help sheet opens (the shell's, and exA's own openHelp() with every dial's real range); a Strange voices
 text-first trial shows its words before the sound. Screenshots for review go to tests/out/exa/layout-*.png.
-Run:  flock /tmp/earshot-browser.lock python3 tests/e2e/ex_a_layout.py [crowd ...] [--quick]
+Run:  tools/with-browser.sh python3 tests/e2e/ex_a_layout.py [crowd ...] [--quick] [--real]
 MIT licence."""
 import pathlib
 import sys

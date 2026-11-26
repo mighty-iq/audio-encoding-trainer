@@ -6,7 +6,7 @@ are the real ones), plus js/ex/{crowd,far,repair,strange,strategies}.js if the i
 the test fixtures (tests/fixtures/data-fixture.js, audio-fixture.js) and a small alias script that gives every
 data-fixture clip one of the synthetic fixture sounds (no recordings), so ES.audio.render really renders.
 A hook wraps ES.ex[id].prepare to keep the last prepared trial in window.__exaTrials (answers for the simulated
-player). Run every browser test inside the lock: flock /tmp/earshot-browser.lock python3 tests/e2e/ex_a_<name>.py
+player). Run every browser test in a browser slot: tools/with-browser.sh python3 tests/e2e/ex_a_<name>.py
 """
 import json
 import pathlib

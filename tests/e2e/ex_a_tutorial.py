@@ -5,7 +5,7 @@ every practice trial correctly (except one deliberate miss on the first practice
 that a wrong answer does not advance), listens to automatic replays after a miss, then plays the set's trials.
 Checks: the tutorial ends (Chimera link shown) within 120 s of simulated play; every practice and set trial gets
 the right answer accepted; trials need no scrolling at 360×640 while answering and in feedback; no page errors.
-Run:  flock /tmp/earshot-browser.lock python3 tests/e2e/ex_a_tutorial.py [crowd far ...] [--miss]
+Run:  tools/with-browser.sh python3 tests/e2e/ex_a_tutorial.py [crowd far ...] [--miss] [--real]
 Outputs: tests/out/exa/ (screenshots, ex_a_tutorial.json). MIT licence."""
 import pathlib
 import sys
