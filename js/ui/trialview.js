@@ -146,10 +146,20 @@
       playBuf(buf, function (r) {
         if (aborted || state !== 'listen' || r.stopped) return;
         if (r.silent) { noSound(buf); return; }
+        showCaption();
         if (mode === 'demo') { showExample(r); return; }
         if (delayMs && answerBox.classList.contains('is-held')) { holdAnswer(r); return; }
         openAnswer(r);
       });
+    }
+    /** Testing aid for agents that cannot hear (test builds only, `?captions=1`): shows what the target said. */
+    function showCaption() {
+      var on = false;
+      try { on = !!ES.TEST_BUILD && (!!(ES.CONFIG && ES.CONFIG.captions) || /[?&]captions=1(&|$)/.test(String(win.location.search))); } catch (e) { on = false; }
+      if (!on || !trial.meta || !trial.meta.text || !prompt.parentNode) return;
+      var old = prompt.parentNode.querySelector('.trial-caption');
+      if (old) old.parentNode.removeChild(old);
+      prompt.parentNode.appendChild(U.el('p', { class: 'trial-caption', 'data-caption': '' }, 'Test aid · said: ' + trial.meta.text));
     }
     /** No sound came through: nothing is shown as heard, nothing is scored; a tap unlocks audio and plays again. */
     function noSound(buf) {
