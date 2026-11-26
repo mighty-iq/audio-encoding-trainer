@@ -19,10 +19,11 @@
 
   function make(rng, setting, ctx) {
     ctx = ctx || {};
-    var V = (ES.data && ES.data.vocab) || {}, breadth = ctx.breadth !== undefined ? ctx.breadth : 0.3;
+    var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
-    var d = familyOf(dials) || E.dialDef('strange', ctx.family || 'vocoded');
-    if (dials[d.id] === undefined || dials[d.id] === null) dials[d.id] = d.start;
+    var d = (setting.focus && E.dialDef('strange', setting.focus) && dials[setting.focus] !== undefined && dials[setting.focus] !== null ? E.dialDef('strange', setting.focus) : null) ||
+      familyOf(dials) || E.dialDef('strange', ctx.family || 'vocoded');
+    if (dials[d.id] === undefined || dials[d.id] === null) dials[d.id] = 0;
     Object.keys(dials).forEach(function (k) { if (k !== d.id) delete dials[k]; });
     var lvl = Math.max(d.min, Math.min(d.max, Math.round(dials[d.id]))), v = d.values[lvl];
     dials[d.id] = lvl;
@@ -48,7 +49,7 @@
     var ok = idx.poolCache['strange:items'] || (idx.poolCache['strange:items'] = items.filter(function (it) {
       return it.keys && it.keys.length >= 2 && it.keys.every(function (k) { return answers.indexOf(C.norm(it.words[k])) >= 0; });
     }));
-    var hit = X.itemVoice(rng, ok, 'sentence', pool, ctx.recentVoices);
+    var hit = X.itemVoice(rng, ok, 'sentence', pool, C.recentOf(ctx));
     if (!hit) throw new Error('strange: no phrase for family ' + d.id);
     var fx = [], beds = [];
     if (d.id === 'fast') fx.push({ type: 'wsola', rate: v });
@@ -76,6 +77,7 @@
     var s1 = C.slot(rng, { label: 'First word', answer: k1, pool: dist[0].support, draw: dist[0].draw, neighbours: X.neighbours, avoid: [k2] });
     var s2 = C.slot(rng, { label: 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, neighbours: X.neighbours, avoid: [k1] });
     var vo = X.voice(hit.voice), c = meta(hit.clip);
+    C.remember(ctx, hit.voice, null);
     var cond = d.id === 'accent' ? 'accent:' + (vo.accent || '?') : d.id;
     return {
       id: 'strange-' + C.seedOf(rng).toString(36), ex: 'strange', seed: setting.seed || null,

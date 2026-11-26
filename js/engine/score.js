@@ -12,6 +12,9 @@
   function score(trial, response) {
     var slots = (trial && trial.question && trial.question.slots) || [];
     var picks = Array.isArray(response) ? response : (response && response.picks) || [];
+    if ((!picks || !picks.length) && response && Array.isArray(response.idx)) {
+      picks = response.idx.map(function (j, i) { var sl = slots[i]; return sl && sl.options && j !== null && j !== undefined ? sl.options[j] : null; });
+    }
     var out = [], nOk = 0, intr = 0;
     slots.forEach(function (sl, i) {
       var pk = picks[i], ok = false, foil = null;

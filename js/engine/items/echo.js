@@ -30,7 +30,7 @@
 
   function make(rng, setting, ctx) {
     ctx = ctx || {};
-    var V = (ES.data && ES.data.vocab) || {}, breadth = ctx.breadth !== undefined ? ctx.breadth : 0.3;
+    var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var snr = dials.snr !== undefined ? dials.snr : 10, nDet = val('details', dials.details || 0), rate = val('rate', dials.rate || 0), delay = val('delay', dials.delay || 0);
     var cats = catPools(V);
@@ -38,7 +38,7 @@
     var cand = [];
     for (var off = 0; off < 4 && !cand.length; off++) cand = all.filter(function (it) { return Math.abs(it.facts.length - nDet) === off; });
     var pool = X.voicePool({ kinds: ['sentence'], breadth: breadth, order: ctx.playerSeed || 'p', minN: 4, avoid: ctx.avoidVoices });
-    var hit = X.itemVoice(rng, cand, 'sentence', pool, ctx.recentVoices);
+    var hit = X.itemVoice(rng, cand, 'sentence', pool, C.recentOf(ctx));
     if (!hit) throw new Error('echo: no message');
     var it = hit.item, actual = it.facts.length;
     dials.details = Math.max(0, Math.min(3, actual - 2));
@@ -49,6 +49,7 @@
     var b = X.bed(rng, breadth < 0.4 ? ['cafe'] : ['cafe', 'party', 'babble']);
     var beds = [b ? { kind: b.kind === 'babble' ? 'babble' : 'ambience', bed: b.id, db: -snr } : { kind: 'babble', clips: X.babbleClips(rng, [hit.voice], 6), db: -snr }];
     var audio = { out: { db: -20 }, dur: Math.round((0.6 + dur + 0.8) * 100) / 100, spatial: 'mono', parts: [part], beds: beds, room: null };
+    C.remember(ctx, hit.voice, null);
     var nQ = Math.min(3, actual), facts = C.sample(rng, it.facts.filter(function (f) { return cats[f.cat] && cats[f.cat].length >= 4; }), nQ);
     var slots = facts.map(function (f) {
       var others = it.facts.filter(function (g) { return g !== f && g.cat === f.cat; }).map(function (g) { return g.value; });

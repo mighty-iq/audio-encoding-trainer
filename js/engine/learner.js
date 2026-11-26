@@ -11,7 +11,7 @@
   var ES = root.ES = root.ES || {};
   ES.engine = ES.engine || {};
   var E = ES.engine;
-  var LN2PI8 = Math.PI / 8, GRID = 81, DAY = 86400000;
+  var LN2PI8 = Math.PI / 8, GRID = 61, DAY = 86400000;
 
   function L(z) { return z >= 0 ? 1 / (1 + Math.exp(-z)) : Math.exp(z) / (1 + Math.exp(z)); }
   function logit(p) { p = Math.min(1 - 1e-9, Math.max(1e-9, p)); return Math.log(p / (1 - p)); }
@@ -32,8 +32,14 @@
   function isHp(ck) { return ck.indexOf('@hp') > 0; }
   function baseEx(ck) { return ck.split('@')[0]; }
   // Dials active in a context; for family exercises, only the named family (plus shared non-family dials).
+  var ACT = {};
   function active(ex, opts) {
     opts = opts || {};
+    var ak = ex + '|' + (opts.ctxKey || '') + '|' + (opts.headphones ? 1 : 0) + '|' + opts.family + '|' + (opts.allFamilies ? 1 : 0);
+    if (ACT[ak]) return ACT[ak];
+    return (ACT[ak] = activeRaw(ex, opts));
+  }
+  function activeRaw(ex, opts) {
     var hp = opts.ctxKey ? isHp(opts.ctxKey) : !!opts.headphones;
     return dialsOf(ex).filter(function (d) {
       if (d.requires === 'headphones' && !(hp && meta(ex).hpContext)) return false;
@@ -46,7 +52,13 @@
     if (meta(ex).families) return 1;
     return Math.max(1, active(ex, { ctxKey: ck }).length);
   }
+  var ZS = {};
   function zStar(ex, ck) {
+    var zk = ex + '|' + ck;
+    if (ZS[zk] !== undefined) return ZS[zk];
+    return (ZS[zk] = zStarRaw(ex, ck));
+  }
+  function zStarRaw(ex, ck) {
     var m = meta(ex), md = M();
     var fT = (md.target - m.gamma) / (1 - m.gamma - md.lapse);
     return logit(Math.min(0.995, fT / Math.pow(md.fc, nTyp(ex, ck) - 1)));
@@ -58,11 +70,11 @@
     self.state = fresh();
     if (initial) load(initial);
 
-    function fresh() { return { v: 1, n: 0, dials: {}, breadth: {}, recent: {}, cond: {}, path: {}, best: {}, plat: {}, cast: {} }; }
+    function fresh() { return { v: 1, n: 0, dials: {}, breadth: {}, recent: {}, edge: {}, cond: {}, path: {}, best: {}, plat: {}, cast: {} }; }
     function load(obj) {
       var s = fresh();
       if (obj && typeof obj === 'object' && (obj.v === 1 || obj.v === undefined)) {
-        ['dials', 'breadth', 'recent', 'cond', 'path', 'best', 'plat', 'cast'].forEach(function (k) {
+        ['dials', 'breadth', 'recent', 'edge', 'cond', 'path', 'best', 'plat', 'cast'].forEach(function (k) {
           if (obj[k] && typeof obj[k] === 'object') s[k] = JSON.parse(JSON.stringify(obj[k]));
         });
         s.n = +obj.n || 0;
@@ -101,6 +113,15 @@
       var p = post(ex, d, ck), b = d.slope;
       var k = 1 / Math.sqrt(1 + LN2PI8 * b * b * p.s * p.s);
       return L(k * ((zs === undefined ? zStar(ex, ck) : zs) - b * d.dir * (x - p.m) - (offsetLogit || 0)));
+    }
+    // Same as compE with a posterior p = {m, s} already looked up (hot paths: controller, update).
+    function compP(d, x, p, zs, offsetLogit) {
+      var b = d.slope, k = 1 / Math.sqrt(1 + LN2PI8 * b * b * p.s * p.s);
+      return L(k * (zs - b * d.dir * (x - p.m) - (offsetLogit || 0)));
+    }
+    function solveP(d, need, p, zs, offsetLogit) {
+      var b = d.slope, k = Math.sqrt(1 + LN2PI8 * b * b * p.s * p.s);
+      return p.m + d.dir * (zs - (offsetLogit || 0) - k * logit(need)) / b;
     }
     // Level x (unclamped, continuous) at which E[F] = need.
     function solve(ex, d, need, ck, zs, offsetLogit) {
@@ -159,7 +180,25 @@
       for (i = 0; i < GRID; i++) { th = lo + i * step; s2 += Math.exp(lp[i] - mx) * (th - mean) * (th - mean); }
       return { m: mean, s: Math.sqrt(s2 / sw) };
     }
+    // The app's learner (E.learner) reads its record from the store on first use and writes it back after every
+    // update (updates happen at answer time, between stimuli). Other instances (simulations) are never bound.
+    function sync() {
+      if (self._bound || !self._default) return;
+      try {
+        var S = ES.core && ES.core.store;
+        if (!S || !S.peek) return;
+        var rec = S.peek('learner');
+        if (rec && typeof rec === 'object' && rec.dials) load(rec);
+        self._bound = true;
+      } catch (e) { /* storage blocked: keep memory state */ }
+    }
     function update(trial, result) {
+      sync();
+      var out0 = updateRaw(trial, result);
+      if (self._bound) save();
+      return out0;
+    }
+    function updateRaw(trial, result) {
       var st = self.state, ex = trial.ex, set = trial.setting || {}, md = M();
       var ck = (trial.meta && trial.meta.ctxKey) || ctxKey(ex, false);
       var prop = result && typeof result.prop === 'number' ? result.prop : 0;
@@ -173,27 +212,38 @@
       if (rec.length > 30) rec.splice(0, rec.length - 30);
       var cond = (trial.meta && trial.meta.cond) || 'base', cid = ex + ':' + cond;
       var c = st.cond[cid] = st.cond[cid] || { n: 0, acc: 0.7, at: 0 };
+      var newCond = c.n < 3 && !(trial.meta && trial.meta.task === 'meet'); // first items of a condition: rapid adaptation, no threshold update
       c.n++; c.acc = c.n === 1 ? 0.5 * c.acc + 0.5 * prop : 0.85 * c.acc + 0.15 * prop; c.at = self.clock();
-      breadthRule(ex);
+      if (!set.warmup && !set.anchor) {
+        var er = st.edge[ex] = st.edge[ex] || [];
+        er.push(Math.round(prop * 100) / 100);
+        if (er.length > 20) er.splice(0, er.length - 20);
+        breadthRule(ex);
+      }
       if (ex === 'voices' && trial.meta && trial.meta.voices && trial.meta.voices[0]) {
         var cv = trial.meta.voices[0]; st.cast[cv] = (st.cast[cv] || 0) + 1;
       }
-      var out = { updated: [], warmup: !!set.warmup };
-      if (set.warmup || set.noUpdate) return out;
+      var out = { updated: [], warmup: !!set.warmup || newCond };
+      if (set.warmup || set.noUpdate || newCond || set.tutorial) return out;
       var dials = set.dials || {}, fam = familyOf(ex, dials);
       var act = active(ex, { ctxKey: ck, family: fam }).filter(function (d) { return dials[d.id] !== undefined && dials[d.id] !== null; });
       if (!act.length) return out;
       var zs = zStar(ex, ck), offDb = (trial.meta && trial.meta.offsetDb) || 0;
-      var comps = act.map(function (d) { return compE(ex, d, dials[d.id], ck, zs, offsetFor(ex, d, dials, offDb, set.focus)); });
-      var resp = comps.map(function (f) { return 1 - f; }), rmax = Math.max.apply(null, resp) || 1;
+      var posts = act.map(function (d) { return post(ex, d, ck); });
+      var comps = act.map(function (d, i) { return compP(d, dials[d.id], posts[i], zs, offsetFor(ex, d, dials, offDb, set.focus)); });
+      // Only the focus dial learns from a trial: its threshold is defined with the others at comfort, and dials held
+      // at one level carry no information that could separate their thresholds from the focus dial's (updating them
+      // too lets confounded posteriors wander off). Every dial is the focus often enough (bandit + staleness).
+      var fid = set.focus && dials[set.focus] !== undefined ? set.focus : act[0].id;
       var keff = Math.pow(k, 0.7), now = self.clock();
       act.forEach(function (d, j) {
-        var w = resp[j] / rmax;
-        if (w < 0.05) return;
+        if (d.id !== fid) return;
+        var w = 1;
         var others = 1;
         for (var i = 0; i < act.length; i++) if (i !== j) others *= comps[i];
-        var pr = post(ex, d, ck);
-        pr = { m: pr.m, s: Math.sqrt(pr.s * pr.s + d.drift * d.drift), n: pr.n };
+        var pr = posts[j];
+        var dr = d.drift * (M().driftScale || 1);
+        pr = { m: pr.m, s: Math.sqrt(pr.s * pr.s + dr * dr), n: pr.n };
         var x = dials[d.id], off = offsetFor(ex, d, dials, offDb, set.focus);
         var nu = gridUpdate(d, pr, function (th) {
           var F = L(zs - d.slope * d.dir * (x - th) - off) * others;
@@ -213,9 +263,10 @@
       });
       return out;
     }
-    // Variety (breadth) widens when accuracy over the last 20 trials ≥ 0.75, narrows below 0.55 (PLAN §7).
+    // Variety (breadth) widens when accuracy over the last 20 edge trials ≥ 0.75 (the player is ahead of the edge
+    // target 0.72), narrows below 0.55 (PLAN §7). Anchors and warm-ups are left out: they are easy by design.
     function breadthRule(ex) {
-      var st = self.state, rec = st.recent[ex], b = st.breadth[ex];
+      var st = self.state, rec = st.edge[ex], b = st.breadth[ex];
       if (b === undefined) b = st.breadth[ex] = 0.2;
       var cnt = (st.cond['_b:' + ex] = st.cond['_b:' + ex] || { n: 0, acc: 0, at: 0 });
       cnt.n++;
@@ -233,6 +284,7 @@
     }
     function summary(ex, opts) {
       opts = opts || {};
+      sync();
       var ck = opts.ctxKey || ctxKey(ex, opts.headphones);
       var list = active(ex, { ctxKey: ck, allFamilies: true }).map(function (d) {
         var p = post(ex, d, ck), reach = p.m > d.max ? (d.dir > 0 ? 'beyond' : 'floor') : p.m < d.min ? (d.dir > 0 ? 'floor' : 'beyond') : 'in';
@@ -251,6 +303,7 @@
       return false;
     }
 
+    self.sync = sync;
     self.create = create;
     self.load = load;
     self.toJSON = function () { return JSON.parse(JSON.stringify(self.state)); };
@@ -262,6 +315,8 @@
     self.post = post;
     self.est = est;
     self.compE = compE;
+    self.compP = compP;
+    self.solveP = solveP;
     self.solve = solve;
     self.snap = snapDial;
     self.offsetFor = offsetFor;
@@ -275,4 +330,11 @@
   }
 
   E.learner = create();
+  E.learner._default = true;
+  // Accept an instance or a stored record; a record means "the app's learner" (synced from the store).
+  E.lrOf = function (x) {
+    if (x && x.state && typeof x.update === 'function') return x;
+    E.learner.sync();
+    return E.learner;
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

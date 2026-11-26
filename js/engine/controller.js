@@ -19,12 +19,20 @@
   var FAMILY_ORDER = ['accent', 'fast', 'phone', 'muffled', 'whisper', 'vocoded'];
 
   function M() { return E.model; }
-  function lrOf(ctx) { return (ctx && ctx.learner) || E.learner; }
+  function lrOf(ctx) { return E.lrOf(ctx && ctx.learner); }
   function rnd(ctx) { return (ctx && ctx.rng) || ES.core.rng('controller'); }
 
+  // Posterior cache for one decision (posteriors do not change while a trial is planned).
+  function cached(lr, ex, ck) {
+    var c = {};
+    return { get: function (d) { return c[d.id] || (c[d.id] = lr.post(ex, d, ck)); } };
+  }
+  var PC = null;
+  function comp(lr, ex, d, x, ck, zs) { return PC ? lr.compP(d, x, PC.get(d), zs, 0) : lr.compE(ex, d, x, ck, zs, 0); }
+  function solv(lr, ex, d, need, ck, zs) { return PC ? lr.solveP(d, need, PC.get(d), zs, 0) : lr.solve(ex, d, need, ck, zs, 0); }
   function pAt(lr, ex, ck, act, dials, zs) {
     var F = 1;
-    for (var i = 0; i < act.length; i++) F *= lr.compE(ex, act[i], dials[act[i].id], ck, zs, 0);
+    for (var i = 0; i < act.length; i++) F *= comp(lr, ex, act[i], dials[act[i].id], ck, zs);
     var g = lr.gammaOf(ex, dials);
     return g + (1 - g - M().lapse) * F;
   }
@@ -38,7 +46,7 @@
   }
 
   // Level for dial d so that p ≈ target, other dials fixed in `dials` (mutates dials[d.id]).
-  function levelFor(lr, ex, ck, act, d, dials, target, rng, zs) {
+  function levelFor(lr, ex, ck, act, d, dials, target, rng, zs, safe) {
     var res = { saturated: false, floor: false };
     if (d.kind === 'ord') {
       var ps = [];
@@ -48,19 +56,19 @@
       else if (ps[ps.length - 1] >= target) { x = d.max; res.saturated = true; }
       else {
         for (var j = 0; j < ps.length - 1; j++) {
-          if (ps[j] >= target && ps[j + 1] < target) { var fr = (ps[j] - target) / Math.max(1e-6, ps[j] - ps[j + 1]); x = d.min + j + (rng.next() < fr ? 1 : 0); break; }
+          if (ps[j] >= target && ps[j + 1] < target) { var fr = (ps[j] - target) / Math.max(1e-6, ps[j] - ps[j + 1]); x = d.min + j + (!safe && rng.next() < fr ? 1 : 0); break; }
         }
       }
       dials[d.id] = x;
     } else {
       var others = 1;
-      for (var k = 0; k < act.length; k++) if (act[k] !== d) others *= lr.compE(ex, act[k], dials[act[k].id], ck, zs, 0);
+      for (var k = 0; k < act.length; k++) if (act[k] !== d) others *= comp(lr, ex, act[k], dials[act[k].id], ck, zs);
       var need = needF(lr, ex, dials, target) / Math.max(1e-6, others);
       var xc;
       if (need >= 0.999) { xc = easiest(d); res.floor = true; }
       else if (need <= 0.001) { xc = hardest(d); res.saturated = true; }
-      else xc = lr.solve(ex, d, need, ck, zs, 0);
-      var snapped = lr.snap(d, xc);
+      else xc = solv(lr, ex, d, need, ck, zs);
+      var snapped = safe ? towardEasy(d, xc) : lr.snap(d, xc);
       if (snapped === hardest(d) && (d.dir > 0 ? xc > hardest(d) : xc < hardest(d))) res.saturated = true;
       if (snapped === easiest(d) && (d.dir > 0 ? xc < easiest(d) : xc > easiest(d))) res.floor = true;
       dials[d.id] = snapped;
@@ -68,13 +76,13 @@
     res.p = pAt(lr, ex, ck, act, dials, zs);
     return res;
   }
-  function comfortOf(lr, ex, ck, d, zs) { return towardEasy(d, lr.solve(ex, d, M().fc, ck, zs, 0)); }
+  function comfortOf(lr, ex, ck, d, zs) { return towardEasy(d, solv(lr, ex, d, M().fc, ck, zs)); }
   // Every dial eased by the same share so that the product reaches p (anchors, warm-ups).
   function equalShare(lr, ex, ck, act, p, zs) {
     var dials = {}, n = act.length;
     act.forEach(function (d) { dials[d.id] = easiest(d); });
     var each = Math.pow(Math.max(0.01, Math.min(0.999, needF(lr, ex, dials, p))), 1 / Math.max(1, n));
-    act.forEach(function (d) { dials[d.id] = towardEasy(d, lr.solve(ex, d, Math.min(0.999, each), ck, zs, 0)); });
+    act.forEach(function (d) { dials[d.id] = towardEasy(d, solv(lr, ex, d, Math.min(0.999, each), ck, zs)); });
     return dials;
   }
 
@@ -134,11 +142,42 @@
 
   function next(ex, ctx) {
     ctx = ctx || {};
-    var lr = lrOf(ctx), rng = rnd(ctx), md = M(), set = ctx.set || {}, mode = ctx.mode || 'edge';
-    var meta = E.dialMeta[ex] || {};
+    var lr0 = lrOf(ctx), prev = PC;
+    PC = cached(lr0, ex, lr0.ctxKey(ex, !!ctx.headphones));
+    try { return nextRaw(ex, ctx); } finally { PC = prev; }
+  }
+  // Set counters: the flow runner keeps them itself (ctx.set.__flow); other callers pass the planner's set plus
+  // ctx.index and ctx.prev (last results), and the counters live in a hidden memo on that set object.
+  function setView(ctx, lr, ex) {
+    var raw = ctx.set;
+    if (raw && raw.__flow) return raw;
+    var m = E.items.common.memo(ctx), idx = typeof ctx.index === 'number' ? ctx.index : (m.i || 0), prev = ctx.prev || [];
+    if (m.lastAnchor === undefined) { m.lastAnchor = -1; m.anchorGap = 3 + (ES.core.hash(String((raw && raw.exId) || ex) + ':' + lr.state.n) % 2); }
+    var misses = 0;
+    for (var k = prev.length - 1; k >= 0; k--) { if ((+prev[k].prop || 0) < 0.5) misses++; else break; }
+    m.i = idx; m.sinceAnchor = idx - m.lastAnchor - 1; m.misses = misses;
+    m.kind = (raw && raw.kind) || m.kind || 'normal'; m.hint = (raw && raw.hint) || m.hint || null;
+    return m;
+  }
+  function effBreadth(lr, ex, mode, ctx) {
+    if (mode === 'variety') return 1;
+    if (typeof ctx.breadthOverride === 'number') return ctx.breadthOverride;
+    var b = lr.state.breadth[ex];
+    return b === undefined ? 0.2 : b;
+  }
+  function nextRaw(ex, ctx) {
+    var lr = lrOf(ctx), rng = rnd(ctx), md = M(), mode = ctx.mode || 'edge';
+    var set = setView(ctx, lr, ex), meta = E.dialMeta[ex] || {};
     if (mode === 'path' && E.path && E.path.next) return E.path.next(ex, ctx);
-    var ck = lr.ctxKey(ex, !!ctx.headphones), zs = lr.zStar(ex, ck);
-    var family = meta.families ? chooseFamily(ex, ctx, mode) : null;
+    var ck = lr.ctxKey(ex, !!ctx.headphones), zs = lr.zStar(ex, ck), breadth = effBreadth(lr, ex, mode, ctx);
+    var family = meta.families ? chooseFamily(ex, { learner: lr, rng: rng, set: set, breadth: breadth, family: ctx.family, lab: ctx.lab }, mode) : null;
+    var out0 = decide(ex, ctx, lr, rng, md, set, mode, meta, ck, zs, family);
+    out0.breadth = breadth;
+    if (out0.anchor) { set.lastAnchor = set.i || 0; set.anchorGap = 3 + (rng.next() < 0.5 ? 0 : 1); }
+    if (out0.family) set.lastFamily = out0.family;
+    return out0;
+  }
+  function decide(ex, ctx, lr, rng, md, set, mode, meta, ck, zs, family) {
     var act = lr.active(ex, { ctxKey: ck, family: family });
     var out = { ex: ex, ctxKey: ck, family: family, anchor: false, warmup: false, mode: mode };
     // overnight re-test: yesterday's hardest condition (the caller avoids yesterday's voices)
@@ -147,7 +186,14 @@
       if (meta.families && set.hint.family) { family = out.family = set.hint.family; act = lr.active(ex, { ctxKey: ck, family: family }); }
       act.forEach(function (d) { if (hd[d.id] === undefined) hd[d.id] = comfortOf(lr, ex, ck, d, zs); });
       out.dials = pick(act, hd); out.focus = set.hint.focus || act[0].id; out.overnight = true;
-      out.p = pAt(lr, ex, ck, act, out.dials, zs); out.target = out.p;
+      out.p = pAt(lr, ex, ck, act, out.dials, zs);
+      if (out.p < md.floor) {
+        // keep yesterday's hardest level on its dial; ease the others, then that dial only as far as the floor needs
+        act.forEach(function (d) { if (d.id !== out.focus) out.dials[d.id] = easiest(d); });
+        out.p = pAt(lr, ex, ck, act, out.dials, zs);
+        if (out.p < md.floor) { var r1 = levelFor(lr, ex, ck, act, E.dialDef(ex, out.focus), out.dials, md.floor, rng, zs, true); out.p = r1.p; }
+      }
+      out.target = out.p;
       return out;
     }
     var condN = family ? famStats(lr, ex, family).n : exposureN(lr, ex, ck);
@@ -183,21 +229,27 @@
       var r = levelFor(lr, ex, ck, act, d, tr, md.target, rng, zs);
       probe.push({ d: d, r: r, dials: tr });
     });
+    // a dial whose estimate says even its easiest level is beyond the edge gets the focus now and then (12 %; at its
+    // easiest level, the others eased): only its own focus trials can correct that estimate
+    var floored = probe.filter(function (q) { return q.r.floor && q.r.p < md.floor && !q.d.family; });
     var ok = probe.filter(function (q) { return !(q.r.saturated && q.r.p > md.target + 0.06) && !(q.r.floor && q.r.p < md.floor); });
-    if (!ok.length) ok = probe.filter(function (q) { return !(q.r.floor && q.r.p < md.floor); });
+    if (floored.length && (!ok.length || rng.next() < 0.12)) ok = floored;
     if (!ok.length) ok = probe;
     var chosen, forced = ctx.forceFocus ? ok.filter(function (q) { return q.d.id === ctx.forceFocus; })[0] : null;
     if (forced && rng.next() < 0.7) chosen = forced;
     else if (family) chosen = ok.filter(function (q) { return q.d.family === family; })[0] || ok[0];
     else if (mode === 'variety') chosen = C().pick(rng, ok);
-    else if (mode === 'focus' && rng.next() < 0.6) chosen = focusPick(lr, ex, ck, ok, ctx.lab);
+    else if (mode === 'focus' && rng.next() < 0.6) {
+      var trainable = ok.filter(function (q) { return !(q.r.floor && q.r.p < md.floor); });
+      chosen = focusPick(lr, ex, ck, trainable.length ? trainable : ok, ctx.lab);
+    }
     else { var bd = bandit(lr, ex, ck, ok.map(function (q) { return q.d; }), rng); chosen = ok.filter(function (q) { return q.d === bd; })[0]; }
     dials = chosen.dials;
     out.focus = chosen.d.id; out.p = chosen.r.p; out.target = md.target;
     if (out.p < md.floor) {
       // adaptation floor: ease the other dials, then everything
       act.forEach(function (d) { if (d !== chosen.d) dials[d.id] = easiest(d); });
-      var r2 = levelFor(lr, ex, ck, act, chosen.d, dials, md.target, rng, zs);
+      var r2 = levelFor(lr, ex, ck, act, chosen.d, dials, md.target, rng, zs, true);
       out.p = r2.p;
       if (out.p < md.floor) { dials[chosen.d.id] = easiest(chosen.d); out.p = pAt(lr, ex, ck, act, dials, zs); out.floor = true; }
     }
@@ -212,6 +264,6 @@
     return ok.slice().sort(function (a, b) { return z(lr, ex, a.d.id, ck) - z(lr, ex, b.d.id, ck); })[0];
   }
 
-  E.controller = { exposureN: exposureN, next: next, levelFor: levelFor, pAt: pAt, equalShare: equalShare, comfortOf: comfortOf, chooseFamily: chooseFamily,
+  E.controller = { exposureN: exposureN, famStats: famStats, next: next, levelFor: levelFor, pAt: pAt, equalShare: equalShare, comfortOf: comfortOf, chooseFamily: chooseFamily,
     bandit: bandit, PROBE_MAP: PROBE_MAP, FAMILY_ORDER: FAMILY_ORDER };
 })(typeof window !== 'undefined' ? window : globalThis);

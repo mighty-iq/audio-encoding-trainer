@@ -14,7 +14,7 @@
 
   function make(rng, setting, ctx) {
     ctx = ctx || {};
-    var V = (ES.data && ES.data.vocab) || {}, breadth = ctx.breadth !== undefined ? ctx.breadth : 0.3;
+    var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var g = val('gap', dials.gap || 0), pred = val('context', dials.context || 0), gate = val('gate', dials.gate || 0), fill = val('fill', dials.fill || 0);
     var all = (V.repair || []).filter(function (it) { return it.key >= 0 && it.words && it.words[it.key]; });
@@ -29,7 +29,7 @@
     var withTimes = cand.filter(function (it) { return true; });
     var hit = null, tries = 0;
     while (!hit && tries++ < 6) {
-      var h = X.itemVoice(rng, withTimes, 'sentence', pool, ctx.recentVoices);
+      var h = X.itemVoice(rng, withTimes, 'sentence', pool, C.recentOf(ctx));
       if (h && X.clip(h.clip).wt && X.clip(h.clip).wt[h.item.key]) hit = h;
       else if (h) withTimes = withTimes.filter(function (it) { return it !== h.item; });
       if (!withTimes.length) break;
@@ -49,6 +49,7 @@
     var dist = idx.poolCache[dk] || (idx.poolCache[dk] = C.answerDist(lvlItems, function (it) { return C.norm(it.words[it.key]); }));
     var s1 = C.slot(rng, { label: 'Lost word', answer: key, pool: dist.support, draw: dist.draw, neighbours: X.neighbours, context: hit.item.alts || [],
       avoid: hit.item.words.filter(function (w, i) { return i !== hit.item.key; }) });
+    C.remember(ctx, hit.voice, null);
     var shown = hit.item.words.map(function (w, i) { return i === hit.item.key ? '[' + w + ']' : w; }).join(' ');
     return {
       id: 'repair-' + C.seedOf(rng).toString(36), ex: 'repair', seed: setting.seed || null,

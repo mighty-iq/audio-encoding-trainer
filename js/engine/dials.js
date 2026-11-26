@@ -4,7 +4,9 @@
    digits in steady noise ~13 %/dB, steady-noise sentences ~8–13 %/dB, one or two competing talkers ~4 %/dB
    (MacPherson & Akeroyd 2014), converted with slope ≈ 4 × (%/dB) / 100. Ordinal ladders are spaced so that
    each step costs roughly the same intelligibility (R2 §3.8, R3 §1–3, §10). prior = threshold prior {m, s};
-   drift = per-trial SD of the random walk that lets the posterior follow learning; start = first level shown. */
+   drift = per-trial SD of the random walk that lets the posterior follow learning; start = comfort = an easy, fixed
+   level for first trials and tutorials (null for Strange family dials: a family is set only when chosen);
+   margin = how far below a player's own edge the non-focus dials sit, in dial units (shown in help texts). */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -12,7 +14,7 @@
 
   function ord(id, label, unit, values, labels, o) {
     var d = { id: id, label: label, unit: unit, kind: 'ord', min: 0, max: values.length - 1, step: 1, dir: 1,
-      start: o.start || 0, slope: o.slope, comfort: 0, levels: labels, values: values,
+      start: o.family ? null : (o.start || 0), slope: o.slope, comfort: o.family ? null : (o.start || 0), margin: 0, levels: labels, values: values,
       prior: o.prior, drift: o.drift || 0.035 };
     if (o.requires) d.requires = o.requires;
     if (o.family) d.family = o.family;
@@ -20,7 +22,7 @@
   }
   function cont(id, label, unit, min, max, step, dir, o) {
     return { id: id, label: label, unit: unit, kind: 'cont', min: min, max: max, step: step, dir: dir,
-      start: o.start, slope: o.slope, comfort: 0, prior: o.prior, drift: o.drift || 0.08 };
+      start: o.start, slope: o.slope, comfort: o.start, margin: 0, prior: o.prior, drift: o.drift || 0.08 };
   }
   function pct(v) { return Math.round(v * 100) + ' %'; }
 
@@ -28,9 +30,9 @@
   D.crowd = [
     cont('tmr', 'Your voice vs the others', 'dB', -15, 12, 0.5, -1, { start: 8, slope: 0.18, prior: { m: -3, s: 5 } }),
     ord('talkers', 'Other voices', 'voices', [1, 2, 3], ['1 other voice', '2 other voices', '3 other voices'],
-      { slope: 0.7, prior: { m: 1.2, s: 1.2 } }),
+      { slope: 0.7, prior: { m: 2, s: 1 } }),
     ord('similar', 'Voice similarity', '', [0, 1, 2, 3], ['other sex', 'same sex', 'same sex, similar pitch', 'near-twin voice'],
-      { slope: 0.6, prior: { m: 1.3, s: 1.2 } }),
+      { slope: 0.6, prior: { m: 2, s: 1 } }),
     ord('space', 'Spatial separation', '°', [90, 45, 30, 20, 15, 10, 5, 0], ['90°', '45°', '30°', '20°', '15°', '10°', '5°', 'same place'],
       { slope: 0.22, prior: { m: 4, s: 2 }, requires: 'headphones' })
   ];
@@ -64,14 +66,14 @@
   ];
   D.repair = [
     ord('gap', 'Word lost', '%', [0.3, 0.45, 0.6, 0.75, 0.9, 1.0], [0.3, 0.45, 0.6, 0.75, 0.9, 1.0].map(pct),
-      { slope: 0.5, prior: { m: 3, s: 1.8 } }),
+      { slope: 0.5, prior: { m: 3.2, s: 1.5 } }),
     ord('context', 'Context', '', ['hi', 'mid', 'lo'], ['strong context', 'some context', 'little context'],
-      { slope: 0.7, prior: { m: 1.5, s: 1.2 } }),
+      { slope: 0.7, prior: { m: 2, s: 1 } }),
     ord('gate', 'Broken-up sentence', '', [{ rate: 0, duty: 1 }, { rate: 4, duty: 0.75 }, { rate: 3, duty: 0.65 }, { rate: 2, duty: 0.55 },
       { rate: 1.5, duty: 0.5 }], ['whole sentence', '75 % kept', '65 % kept', '55 % kept', '50 % kept'],
-      { slope: 0.4, prior: { m: 2, s: 1.5 } }),
+      { slope: 0.4, prior: { m: 2.5, s: 1.2 } }),
     ord('fill', 'What fills the gaps', '', [{ fill: 'noise', db: 6 }, { fill: 'noise', db: 0 }, { fill: 'noise', db: -6 }, { fill: 'silence' }],
-      ['loud noise', 'noise', 'soft noise', 'silence'], { slope: 0.25, prior: { m: 2, s: 1.5 } })
+      ['loud noise', 'noise', 'soft noise', 'silence'], { slope: 0.25, prior: { m: 2.5, s: 1.2 } })
   ];
   D.echo = [
     cont('snr', 'Speech vs noise', 'dB', -8, 20, 0.5, -1, { start: 15, slope: 0.3, prior: { m: 2, s: 5 } }),
@@ -113,16 +115,17 @@
       gammaOf: function (dials) { var v = D.voices[0].values[Math.round(dials.cast || 0)] || 4; return 1 / v; } },
     missions: { gamma: 0, slots: 0, primary: null, setTrials: 0, secPerTrial: 0 }
   };
-  var MODEL = { target: 0.72, anchor: 0.9, warm: 0.85, floor: 0.65, lapse: 0.04, fc: 0.92 };
+  // driftScale multiplies every dial's drift (1.5 tracked simulated learning best: docs/dev/progress/engine.md)
+  var MODEL = { target: 0.72, anchor: 0.9, warm: 0.85, floor: 0.65, lapse: 0.04, fc: 0.92, driftScale: 1.5 };
 
-  // Comfort margins in dial units for the UI ("other dials sit this far below your edge").
+  // Margins in dial units for the UI ("the other dials sit this far below your edge").
   function logit(p) { return Math.log(p / (1 - p)); }
   Object.keys(D).forEach(function (ex) {
     var m = META[ex], nTyp = Math.max(1, D[ex].filter(function (d) { return !d.requires && !d.family; }).length);
     if (m.families) nTyp = 1;
     var fT = (MODEL.target - m.gamma) / (1 - m.gamma - MODEL.lapse);
     var zStar = logit(Math.min(0.99, fT / Math.pow(MODEL.fc, nTyp - 1)));
-    D[ex].forEach(function (d) { d.comfort = Math.round(Math.max(0, logit(MODEL.fc) - zStar) / d.slope * 10) / 10; });
+    D[ex].forEach(function (d) { d.margin = Math.round(Math.max(0, logit(MODEL.fc) - zStar) / d.slope * 10) / 10; });
   });
 
   ES.engine.dials = D;

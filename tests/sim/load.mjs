@@ -24,7 +24,8 @@ export function loadEngine(opts = {}) {
   ctx.globalThis = ctx;
   vm.createContext(ctx);
   const run = (rel) => vm.runInContext(fs.readFileSync(path.join(ROOT, rel), 'utf8'), ctx, { filename: rel });
-  const useRealData = opts.realData ?? (exists('data/manifest.js') && exists('data/vocab.js') && exists('data/voices.js'));
+  // the fixture by default (complete and deterministic); opts.realData = true loads data/*.js when present
+  const useRealData = opts.realData === true && exists('data/manifest.js') && exists('data/vocab.js') && exists('data/voices.js');
   if (exists('js/core/ns.js') && opts.realCore !== false) run('js/core/ns.js');
   if (exists('js/core/rng.js') && opts.realCore !== false) run('js/core/rng.js');
   run('tests/fixtures/rng.js'); // no-op when the real rng is present

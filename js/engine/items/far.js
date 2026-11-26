@@ -14,7 +14,7 @@
 
   function make(rng, setting, ctx) {
     ctx = ctx || {};
-    var V = (ES.data && ES.data.vocab) || {}, breadth = ctx.breadth !== undefined ? ctx.breadth : 0.3;
+    var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var distM = val('dist', dials.dist || 0), rt = val('rt60', dials.rt60 || 0), snr = dials.noise !== undefined ? dials.noise : 20;
     var items = (V.phrases && V.phrases.length ? V.phrases : V.sus) || [];
@@ -24,7 +24,7 @@
     var ok = idx.poolCache['far:items'] || (idx.poolCache['far:items'] = items.filter(function (it) {
       return it.keys.length >= 2 && it.keys.every(function (k) { return answers.indexOf(C.norm(it.words[k])) >= 0; });
     }));
-    var hit = X.itemVoice(rng, ok, 'sentence', pool, ctx.recentVoices);
+    var hit = X.itemVoice(rng, ok, 'sentence', pool, C.recentOf(ctx));
     if (!hit) throw new Error('far: no phrase available');
     // carrier: another sentence by the same voice in the same room
     var carriers = X.kindsOf(hit.voice, 'sentence').filter(function (id) { return id !== hit.clip; });
@@ -34,7 +34,7 @@
     var size = SIZES[sizeIdx];
     if (breadth >= 0.5 && C.chance(rng, 0.4)) size = SIZES[Math.min(3, Math.max(0, sizeIdx + (C.chance(rng, 0.5) ? 1 : -1)))];
     size = X.fitSize(size, distM);
-    var last = ctx.lastRoom, room;
+    var last = ctx.lastRoom || C.memo(ctx).lastRoom, room;
     if (last && last.size === size && !C.chance(rng, 0.8 * breadth)) room = { rt60: rt, dist: distM, size: size, seed: last.seed };
     else room = X.room(rng, rt, distM, size);
     size = room.size;
@@ -61,6 +61,7 @@
       parts: [{ clip: hit.clip, at: 0.3, db: 0, role: 'target' }], room: null };
     near.dur = Math.round((0.3 + ((meta(hit.clip) && meta(hit.clip).dur) || 1.5) + 0.5) * 100) / 100;
     var c = meta(hit.clip);
+    C.remember(ctx, hit.voice, room);
     return {
       id: 'far-' + C.seedOf(rng).toString(36), ex: 'far', seed: setting.seed || null,
       setting: { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup },

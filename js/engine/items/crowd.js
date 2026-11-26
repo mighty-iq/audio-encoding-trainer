@@ -21,7 +21,7 @@
 
   function make(rng, setting, ctx) {
     ctx = ctx || {};
-    var V = (ES.data && ES.data.vocab) || {}, breadth = ctx.breadth !== undefined ? ctx.breadth : 0.3;
+    var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var tmr = dials.tmr !== undefined ? dials.tmr : 6;
     var nMask = dialVal('crowd', 'talkers', { dials: { talkers: dials.talkers || 0 } });
@@ -30,7 +30,7 @@
     var names = X.pool('name', V.names || [], 2), nouns = X.pool('word', V.nouns || [], 2), nums = X.pool('number', V.numbers || [], 2);
     var pool = X.voicePool({ kinds: ['name', 'word', 'number'], breadth: breadth, order: ctx.playerSeed || 'p', minN: 6, avoid: ctx.avoidVoices });
     if (pool.length < 2) throw new Error('crowd: not enough voices');
-    var recent = ctx.recentVoices || [];
+    var recent = C.recentOf(ctx) || [];
     var tPool = pool.filter(function (v) { return recent.indexOf(v) < 0; });
     var target = C.pick(rng, tPool.length ? tPool : pool);
     var tName = wordFor(rng, target, 'name', names), tWord = wordFor(rng, target, 'word', nouns), tNum = wordFor(rng, target, 'number', nums);
@@ -91,7 +91,8 @@
     var others = talkers.map(function (m) { return '“' + m.word + ', ' + m.num + '”'; }).join(' and ');
     var offs = targetParts.map(function (p) { var c = meta(p.clip); return (c && c.diff) || 0; });
     var offsetDb = Math.round((offs.reduce(function (a, x) { return a + x; }, 0) / Math.max(1, offs.length)) * 100) / 100;
-    var ctxKey = (ctx.learner || E.learner).ctxKey('crowd', hp);
+    C.remember(ctx, target, null);
+    var ctxKey = E.lrOf(ctx.learner).ctxKey('crowd', hp);
     return {
       id: 'crowd-' + C.seedOf(rng).toString(36), ex: 'crowd', seed: setting.seed || null,
       setting: { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup },

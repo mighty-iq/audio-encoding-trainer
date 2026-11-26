@@ -53,8 +53,11 @@
         out.push({ stage: si, venue: s[0], label: s[1] + ' · step ' + (k + 1), dials: d, primary: s[3] });
       });
       if (si > 0) {
-        var mix = [out.length - 1, out.length - 2, out.length - 1 - s[4].length];
-        out.push({ stage: si, venue: s[0], label: s[1] + ' · mixed', mix: mix.filter(function (i) { return i >= 0; }), primary: s[3] });
+        // this stage's two hardest steps and the previous stage's hardest plain step
+        var plain = out.map(function (x, i) { return x.mix ? -1 : i; }).filter(function (i) { return i >= 0; });
+        var mine = plain.filter(function (i) { return out[i].stage === si; }), prev = plain.filter(function (i) { return out[i].stage === si - 1; });
+        var mix = mine.slice(-2).concat(prev.slice(-1));
+        out.push({ stage: si, venue: s[0], label: s[1] + ' · mixed', mix: mix, primary: s[3] });
       }
     });
     return out;
@@ -69,7 +72,7 @@
 
   function next(ex, ctx) {
     ctx = ctx || {};
-    var lr = ctx.learner || E.learner, rng = ctx.rng || ES.core.rng('path'), md = E.model, set = ctx.set || {};
+    var lr = E.lrOf(ctx.learner), rng = ctx.rng || ES.core.rng('path'), md = E.model, set = ctx.set || {};
     var all = list(ex), ps = state(lr, ex), st = all[Math.min(ps.i, all.length - 1)], ck = lr.ctxKey(ex, !!ctx.headphones);
     var src = st.mix ? all[st.mix[Math.floor(rng.next() * st.mix.length)]] : st;
     var family = E.dialMeta[ex].families ? E.dials[ex].filter(function (d) { return d.id === src.primary; })[0].family : null;
@@ -86,8 +89,8 @@
       dials[pd.id] = lr.snap(pd, nx); eased++;
       p = E.controller.pAt(lr, ex, ck, act, dials, zs);
     }
-    var condN = family ? (lr.state.cond[ex + ':' + family] || { n: 0 }).n : E.controller.exposureN(lr, ex, ck);
-    return { ex: ex, ctxKey: ck, family: family, dials: dials, focus: pd.id, anchor: false, warmup: (set.i || 0) < 1 || condN < 3,
+    var condN = family ? E.controller.famStats(lr, ex, family).n : E.controller.exposureN(lr, ex, ck);
+    return { ex: ex, ctxKey: ck, family: family, dials: dials, focus: pd.id, anchor: false, warmup: (set.i || 0) < 1 || condN < 3, breadth: st.mix ? 0.6 : 0.25,
       p: p, target: p, mode: 'path', path: { i: ps.i, of: all.length, label: st.label, venue: st.venue, stage: st.stage, eased: eased } };
   }
   // Called after each Path trial. Returns { advanced, back, i }.

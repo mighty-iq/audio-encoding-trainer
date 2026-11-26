@@ -132,8 +132,28 @@
     items.forEach(function (it) { var a = getAns(it); if (a === undefined || a === null) return; list.push(a); var k = norm(a); if (!seen[k]) { seen[k] = 1; support.push(a); } });
     return { support: support, draw: function (rng) { return list.length ? list[ri(rng, list.length)] : undefined; } };
   }
+  // Per-set memory for callers that pass the planner's set object as ctx.set (the shell): the controller keeps its
+  // counters there and generators remember recent voices and the last room. Non-enumerable, so never logged.
+  function memo(ctx) {
+    var s = ctx && ctx.set;
+    if (!s || typeof s !== 'object') return (ctx && (ctx.__es = ctx.__es || {})) || {};
+    if (s.__flow) return s;
+    if (!s.__es) { try { Object.defineProperty(s, '__es', { value: {}, enumerable: false, writable: true, configurable: true }); } catch (e) { return {}; } }
+    return s.__es;
+  }
+  function remember(ctx, voice, room) {
+    var m = memo(ctx);
+    if (voice) { m.recentVoices = [voice].concat((m.recentVoices || []).filter(function (v) { return v !== voice; })).slice(0, 3); }
+    if (room) m.lastRoom = room;
+  }
+  function recentOf(ctx) { return (ctx && ctx.recentVoices) || memo(ctx).recentVoices || []; }
+  function breadthOf(setting, ctx) {
+    if (setting && typeof setting.breadth === 'number') return setting.breadth;
+    return ctx && typeof ctx.breadth === 'number' ? ctx.breadth : 0.3;
+  }
   function seedOf(rng) { return Math.floor(rng.next() * 4294967296); }
 
   ES.engine.items.common = { ri: ri, pick: pick, shuffle: shuffle, sample: sample, chance: chance, weighted: weighted,
-    norm: norm, slug: slug, uniq: uniq, homophones: homophones, slot: slot, answerDist: answerDist, sequence: sequence, seedOf: seedOf };
+    norm: norm, slug: slug, uniq: uniq, homophones: homophones, slot: slot, answerDist: answerDist, memo: memo, remember: remember,
+    recentOf: recentOf, breadthOf: breadthOf, sequence: sequence, seedOf: seedOf };
 })(typeof window !== 'undefined' ? window : globalThis);

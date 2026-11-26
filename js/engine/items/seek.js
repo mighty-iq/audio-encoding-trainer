@@ -22,12 +22,12 @@
 
   function make(rng, setting, ctx) {
     ctx = ctx || {};
-    var V = (ES.data && ES.data.vocab) || {}, breadth = ctx.breadth !== undefined ? ctx.breadth : 0.3;
+    var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var snr = dials.snr !== undefined ? dials.snr : 10, nDec = val('decoys', dials.decoys || 0), r = val('size', dials.size || 0), gap = val('gap', dials.gap || 0);
     var nouns = X.pool('word', V.nouns || [], 2);
     var pool = X.voicePool({ kinds: ['word'], breadth: breadth, order: ctx.playerSeed || 'p', minN: 5, avoid: ctx.avoidVoices });
-    var recent = ctx.recentVoices || [], tp = pool.filter(function (v) { return recent.indexOf(v) < 0; });
+    var recent = C.recentOf(ctx) || [], tp = pool.filter(function (v) { return recent.indexOf(v) < 0; });
     var tv = C.pick(rng, tp.length ? tp : pool);
     var used = [], start = { x: 0, y: -0.9 };
     function wordOf(v) {
@@ -46,6 +46,7 @@
       decoys.push({ clip: X.clipFor(v, 'word', w), x: p.x, y: p.y, db: snr - 1, gapMs: Math.round(gap * 1000 * (0.8 + 0.4 * rng.next())), word: w, voice: v });
     });
     if (decoys.length < nDec) dials.decoys = decoys.length;
+    C.remember(ctx, tv, null);
     var b = X.bed(rng, breadth < 0.4 ? ['babble'] : ['babble', 'party', 'cafe', 'station']);
     var hp = !!ctx.headphones;
     var live = { bed: b ? { kind: b.kind === 'babble' ? 'babble' : 'ambience', bed: b.id, db: 0 } : { kind: 'pink', db: 0 },

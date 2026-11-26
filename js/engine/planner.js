@@ -17,7 +17,7 @@
   function sessions(log) { return ((log && log.sessions) || []).filter(function (s) { return s && s.start; }); }
   function weights(mode, opts) {
     opts = opts || {};
-    var avail = opts.available || E.exercises, lr = opts.learner || E.learner, w = {};
+    var avail = opts.available || E.exercises, lr = E.lrOf(opts.learner), w = {};
     avail.forEach(function (ex) {
       var base = mode === 'variety' ? 1 : (W[ex] || 0.05);
       var pl = lr.state.plat[ex];
@@ -36,7 +36,7 @@
 
   function overnight(opts) {
     opts = opts || {};
-    var lr = opts.learner || E.learner, now = opts.now || lr.clock(), ss = sessions(opts.log);
+    var lr = E.lrOf(opts.learner), now = opts.now || lr.clock(), ss = sessions(opts.log);
     if (!ss.length) return null;
     var today = dayKey(now), prev = ss.filter(function (s) { return dayKey(s.start) !== today && s.start < now; });
     if (!prev.length) return null;
@@ -61,7 +61,7 @@
   }
   function freshEars(opts) {
     opts = opts || {};
-    var lr = opts.learner || E.learner, now = opts.now || lr.clock(), ss = sessions(opts.log);
+    var lr = E.lrOf(opts.learner), now = opts.now || lr.clock(), ss = sessions(opts.log);
     if (!ss.length) return null;
     var last = ss[ss.length - 1], away = (now - (last.end || last.start)) / DAY;
     if (away < 2) return null;
@@ -73,8 +73,8 @@
 
   function session(opts) {
     opts = opts || {};
-    var lr = opts.learner || E.learner, mode = opts.mode || 'edge', now = opts.now || lr.clock(), rng = opts.rng || ES.core.rng('plan:' + now);
-    var minutes = opts.minutes || 15, nSets = Math.max(1, Math.round(minutes / 3)), avail = (opts.available || E.exercises).filter(function (ex) { return E.items[ex]; });
+    var lr = E.lrOf(opts.learner), mode = opts.mode || 'edge', now = opts.now || lr.clock(), rng = opts.rng || ES.core.rng('plan:' + now);
+    var minutes = opts.minutes || opts.sessionMin || 15, nSets = Math.max(1, Math.round(minutes / 3)), avail = (opts.available || E.exercises).filter(function (ex) { return E.items[ex]; });
     var sets = [], notes = [], w = weights(mode, { available: avail, learner: lr, lab: opts.lab }), C = E.items.common;
     var today = sessions(opts.log).filter(function (s) { return dayKey(s.start) === dayKey(now); }).length;
     if (today >= 3) notes.push({ kind: 'sleep', text: 'Third session today. Skills settle during sleep, so tomorrow is the best time for the next one. Nothing is lost by stopping here.' });
@@ -89,10 +89,15 @@
     var used = {};
     sets.forEach(function (s) { used[s.exId] = 1; });
     var nInter = 0;
+    // Focus mode: the exercise behind the weakest probe takes ~60 % of sets (it may repeat, never back to back)
+    var fex = mode === 'focus' && opts.lab && opts.lab.weakest && E.controller.PROBE_MAP[opts.lab.weakest] ? E.controller.PROBE_MAP[opts.lab.weakest].ex : null;
+    if (fex && avail.indexOf(fex) < 0) fex = null;
+    var nF = fex ? Math.max(1, Math.round(0.6 * nSets)) - sets.filter(function (x) { return x.exId === fex; }).length : 0;
     while (sets.length < nSets) {
-      var last = sets.length ? sets[sets.length - 1].exId : null;
-      var cand = avail.filter(function (ex) { return !used[ex] && ex !== last; });
-      if (!cand.length) { used = {}; cand = avail.filter(function (ex) { return ex !== last; }); if (!cand.length) cand = avail; }
+      var last = sets.length ? sets[sets.length - 1].exId : null, left = nSets - sets.length;
+      if (fex && nF > 0 && (last !== fex || nF >= left)) { sets.push({ exId: fex, trials: E.dialMeta[fex].setTrials, kind: 'normal', interlude: null, focus: true }); nF--; continue; }
+      var cand = avail.filter(function (ex) { return !used[ex] && ex !== last && ex !== fex; });
+      if (!cand.length) { used = {}; cand = avail.filter(function (ex) { return ex !== last && ex !== fex; }); if (!cand.length) cand = avail; }
       var ex = C.weighted(rng, cand, cand.map(function (k) { return w[k]; }));
       used[ex] = 1;
       sets.push({ exId: ex, trials: E.dialMeta[ex].setTrials, kind: 'normal', interlude: null });

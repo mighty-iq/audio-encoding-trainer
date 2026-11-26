@@ -23,15 +23,15 @@
 
   function start(ex, opts) {
     opts = opts || {};
-    var lr = opts.learner || E.learner, seed = opts.seed !== undefined ? opts.seed : 'set:' + ex + ':' + lr.state.n;
+    var lr = E.lrOf(opts.learner), seed = opts.seed !== undefined ? opts.seed : 'set:' + ex + ':' + lr.state.n;
     var meta = E.dialMeta[ex] || {};
     var sc = { ex: ex, mode: opts.mode || 'edge', lr: lr, rng: ES.core.rng(seed), seed: seed, i: 0,
       n: opts.trials || meta.setTrials || 20, headphones: !!opts.headphones, lab: opts.lab || null, overrides: opts.overrides || null,
       playerSeed: opts.playerSeed || (lr.state.seed = lr.state.seed || ('p' + ES.core.hash(String(lr.clock())))),
       met: opts.met, avoidVoices: opts.avoidVoices || null, breadth: opts.breadth, kind: opts.kind || 'normal',
-      set: { i: 0, sinceAnchor: 0, anchorGap: 3 + (ES.core.hash(String(seed)) % 2), misses: 0, block: null, lastFamily: null,
+      set: { __flow: true, i: 0, sinceAnchor: 0, anchorGap: 3 + (ES.core.hash(String(seed)) % 2), misses: 0, block: null, lastFamily: null,
         kind: opts.kind || 'normal', hint: opts.hint || null },
-      recentVoices: [], lastRoom: null, results: [], voices: {}, startIdx: index(lr, ex, lr.ctxKey(ex, !!opts.headphones)), pending: null };
+      synth: opts.synth || null, avgS: {}, avgN: {}, recentVoices: [], lastRoom: null, results: [], voices: {}, startIdx: index(lr, ex, lr.ctxKey(ex, !!opts.headphones)), pending: null };
     if (sc.kind === 'fresh') sc.fresh = { before: sc.startIdx, daysAway: opts.daysAway || null };
     return sc;
   }
@@ -48,10 +48,10 @@
     if (plat.anchorBoost > 0) sc.set.anchorGap = Math.min(sc.set.anchorGap, 2);
     var dec = E.controller.next(ex, { mode: sc.mode, rng: sc.rng.fork('c' + sc.i), learner: lr, headphones: sc.headphones, set: sc.set,
       breadth: sc.mode === 'variety' ? 1 : undefined, lab: sc.lab, overrides: sc.overrides, lastFocus: sc.lastFocus, forceFocus: plat.forceN > 0 ? plat.forceFocus : null });
-    var setting = { dials: dec.dials, focus: dec.focus, anchor: !!dec.anchor, warmup: !!dec.warmup, seed: sc.seed + ':' + sc.i };
-    var ctx = { breadth: breadthFor(sc), headphones: sc.headphones, recentVoices: sc.recentVoices, avoidVoices: sc.set.kind === 'overnight' && sc.i < 3 ? sc.avoidVoices : null,
+    var setting = { dials: dec.dials, focus: dec.focus, anchor: !!dec.anchor, warmup: !!dec.warmup, seed: sc.seed + ':' + sc.i, breadth: dec.breadth };
+    var ctx = { breadth: dec.breadth !== undefined ? dec.breadth : breadthFor(sc), headphones: sc.headphones, set: sc.set, recentVoices: sc.recentVoices, avoidVoices: sc.set.kind === 'overnight' && sc.i < 3 ? sc.avoidVoices : null,
       playerSeed: sc.playerSeed, lastRoom: sc.lastRoom, learner: lr, met: sc.met, family: dec.family };
-    var spec = E.items[ex].make(sc.rng.fork('m' + sc.i), setting, ctx);
+    var spec = sc.synth ? sc.synth(ex, setting, ctx, sc) : E.items[ex].make(sc.rng.fork('m' + sc.i), setting, ctx);
     // a condition met for the first time (new accent, room type, task) is a warm-up whatever its level (R2 §1.0)
     var c = lr.state.cond[ex + ':' + spec.meta.cond];
     if (!spec.setting.warmup && (!c || c.n < 3) && sc.mode !== 'free') { spec.setting.warmup = true; spec.setting.warmupReason = 'new condition'; }
@@ -76,6 +76,12 @@
     (spec.meta.voices || []).forEach(function (v) { sc.voices[v] = 1; });
     if (spec.meta.room) sc.lastRoom = spec.meta.room;
     if (!st.anchor && !st.warmup) sc.lastFocus = st.focus;
+    // running average of each dial's estimate over the set (a less noisy session value than the end point)
+    var ck0 = lr.ctxKey(ex, sc.headphones);
+    lr.active(ex, { ctxKey: ck0, allFamilies: true }).forEach(function (d) {
+      var r = lr.state.dials[ck0 + '.' + d.id]; if (!r) return;
+      sc.avgS[d.id] = (sc.avgS[d.id] || 0) + r.m; sc.avgN[d.id] = (sc.avgN[d.id] || 0) + 1;
+    });
     sc.results.push({ prop: res.prop, correct: res.correct, anchor: !!st.anchor, warmup: !!st.warmup, focus: st.focus, p: spec.meta.decision.p,
       intrusions: res.intrusions, overnight: spec.meta.decision.overnight, dials: st.dials });
     sc.pending = null;
@@ -90,10 +96,18 @@
     });
     R.forEach(function (r) { if (r.correct) nOk++; sum += r.prop; if (r.anchor) anchors++; if (r.warmup) warm++; if (!r.anchor && !r.warmup) focus[r.focus] = (focus[r.focus] || 0) + 1; });
     var mainFocus = Object.keys(focus).sort(function (a, b) { return focus[b] - focus[a]; })[0] || null;
-    var idx = index(lr, ex, ck), best = lr.state.best[ck];
-    var pb = n >= 5 && best !== undefined && idx > best + 0.3;
-    if (best === undefined || idx > best) lr.state.best[ck] = idx;
-    var out = { ex: ex, n: n, correct: nOk, acc: n ? Math.round(sum / n * 1000) / 1000 : 0, focus: mainFocus, end: endV, sd: sd, pb: !!pb,
+    var idx = index(lr, ex, ck);
+    // personal bests per dial, in real units: a focus-trained dial beyond its best by ≥ 0.1 logit
+    var pbs = [];
+    Object.keys(focus).forEach(function (id) {
+      var d = E.dialDef(ex, id), p = lr.post(ex, d, ck); if (!d || !p.n) return;
+      var a = d.dir * d.slope * p.m, key = ck + '.' + id, best = lr.state.best[key];
+      if (best === undefined) { lr.state.best[key] = a; return; }
+      if (a > best + 0.1) { lr.state.best[key] = a; pbs.push({ dial: id, m: Math.round(p.m * 100) / 100 }); }
+    });
+    var avg = {};
+    Object.keys(sc.avgS).forEach(function (k) { avg[k] = Math.round(sc.avgS[k] / sc.avgN[k] * 100) / 100; });
+    var out = { ex: ex, n: n, correct: nOk, acc: n ? Math.round(sum / n * 1000) / 1000 : 0, focus: mainFocus, foci: focus, end: endV, avg: avg, sd: sd, pb: pbs.length > 0, pbs: pbs,
       idx: idx, startIdx: sc.startIdx, mode: sc.mode, ctxKey: ck, anchors: anchors, warmups: warm, breadth: breadthFor(sc), voices: Object.keys(sc.voices) };
     if (sc.kind === 'overnight') {
       var on = R.filter(function (r) { return r.overnight; });
@@ -109,7 +123,7 @@
     opts = opts || {};
     var gen = E.items[ex];
     if (!gen || !gen.exposure) return [];
-    var lr = opts.learner || E.learner, rng = ES.core.rng(opts.seed || 'exp:' + ex + ':' + lr.state.n), ck = lr.ctxKey(ex, !!opts.headphones);
+    var lr = E.lrOf(opts.learner), rng = ES.core.rng(opts.seed || 'exp:' + ex + ':' + lr.state.n), ck = lr.ctxKey(ex, !!opts.headphones);
     var family = E.dialMeta[ex].families ? (opts.family || E.controller.chooseFamily(ex, { learner: lr, rng: rng, set: {} }, 'edge')) : null;
     var act = lr.active(ex, { ctxKey: ck, family: family }), zs = lr.zStar(ex, ck), dials = {};
     act.forEach(function (d) { dials[d.id] = E.controller.comfortOf(lr, ex, ck, d, zs); });

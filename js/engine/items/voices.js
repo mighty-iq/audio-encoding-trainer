@@ -42,10 +42,10 @@
 
   function make(rng, setting, ctx) {
     ctx = ctx || {};
-    var V = (ES.data && ES.data.vocab) || {}, breadth = ctx.breadth !== undefined ? ctx.breadth : 0.3;
+    var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var k = val('cast', dials.cast || 0), lvl = Math.round(dials.similar || 0), snr = dials.snr !== undefined ? dials.snr : 30, len = val('length', dials.length || 0);
-    var cast = castVoices(), lr = ctx.learner || E.learner;
+    var cast = castVoices(), lr = E.lrOf(ctx.learner);
     var met = (ctx.met || Object.keys((lr.state && lr.state.cast) || {})).filter(function (v) { return cast.indexOf(v) >= 0; });
     var meta = X.clip, nouns = X.pool('word', V.nouns || [], 2);
     var task = ctx.task || (met.length < Math.max(2, k) ? 'meet' : breadth >= 0.4 && C.chance(rng, 0.25) ? 'find' : 'who');
@@ -61,7 +61,7 @@
       fb = 'That was ' + nameOf(target) + '. You will hear this voice again.';
       setOut.noUpdate = true;
     } else if (task === 'who') {
-      var recent = ctx.recentVoices || [], tp = met.filter(function (v) { return recent.indexOf(v) < 0; });
+      var recent = C.recentOf(ctx) || [], tp = met.filter(function (v) { return recent.indexOf(v) < 0; });
       target = C.pick(rng, tp.length ? tp : met);
       var ch = choose(rng, target, met, Math.min(k, met.length), lvl);
       others = ch.list; dials.similar = Math.min(lvl, ch.level === 0 && lvl > 0 ? 0 : lvl);
@@ -95,6 +95,7 @@
       var b = X.bed(rng, ['babble', 'cafe']);
       beds.push(b ? { kind: b.kind === 'babble' ? 'babble' : 'ambience', bed: b.id, db: -snr } : { kind: 'pink', db: -snr });
     }
+    C.remember(ctx, target, null);
     var end = 0.5;
     parts.forEach(function (p) { end = Math.max(end, p.at + ((meta(p.clip) && meta(p.clip).dur) || 0.6)); });
     var audio = { out: { db: -20 }, dur: Math.round((end + 0.5) * 100) / 100, spatial: 'mono', parts: parts, beds: beds, room: null };
