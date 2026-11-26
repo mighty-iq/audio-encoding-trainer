@@ -1,6 +1,6 @@
 /* ES.ui.settingsData.section() — the Data part of Settings: where the record lives, export (download with a
-   copy-box fallback when downloads are blocked), import (file or pasted text; damaged input is repaired or
-   refused safely) and delete everything (confirmed). Backups carry no name except a nickname the player typed,
+   copy-box fallback when downloads are blocked), import (file or pasted text; a damaged or newer backup is refused
+   whole with a plain message, so nothing changes) and delete everything (confirmed). Backups carry no name except a nickname the player typed,
    and no device facts; own-voice recordings never leave the device. */
 (function (ES, win) {
   'use strict';
@@ -44,6 +44,14 @@
       return 'Imported: ' + rep.imported.join(', ') + '.' + (rep.repaired ? ' ' + U.plural(rep.repaired, 'damaged entry', 'damaged entries') + ' repaired or left out.' : '') +
         (rep.skipped.length ? ' Skipped: ' + rep.skipped.map(function (s) { return s.key + ' (' + s.reason + ')'; }).join(', ') + '.' : '');
     }
+    // A damaged or newer backup is refused whole: nothing changes (RV M9).
+    if (rep.error === 'damaged') {
+      return 'This backup is damaged, so nothing was imported and your record is unchanged. Damaged parts: ' + (rep.damaged || []).map(function (d) {
+        return d.key + ' (' + U.plural((d.fixed || 0) + (d.dropped || 0), 'wrong entry', 'wrong entries') + ')'; }).join(', ') + '.';
+    }
+    if (rep.error === 'newer-version') {
+      return 'This backup was saved by a newer version of Earshot (' + (rep.keys || []).join(', ') + '). Nothing was imported; open the newer version to use it.';
+    }
     return { 'not-a-backup': 'That does not look like an Earshot backup.', 'nothing-usable': 'Nothing in that backup could be used' +
       (rep.skipped.length ? ' (' + rep.skipped.map(function (s) { return s.key + ': ' + s.reason; }).join(', ') + ')' : '') + '.',
       'read-only': 'This tab is read-only because a newer version saved your record.', 'too-large': 'That file is too large to be a backup.' }[rep.error] || 'The import failed.';
@@ -78,11 +86,14 @@
     return ES.ui.confirm('Your training record, settings and any own-voice recordings on this device will be deleted. This cannot be undone. Export a backup first to keep a copy.',
       { title: 'Delete everything?', ok: 'Delete everything', danger: true }).then(function (yes) {
       if (!yes) return false;
+      // The waiting session is dropped without writing, so nothing it holds comes back after the wipe (RV M5).
+      if (ES.ui.session && ES.ui.session.abandon) ES.ui.session.abandon({ discard: true });
       // Own-voice recordings first: their module closes its database so the deletion is not blocked.
       try { if (ES.ex.voicesOwn && typeof ES.ex.voicesOwn.wipe === 'function') ES.ex.voicesOwn.wipe(); } catch (e) { /* the store wipe still deletes it */ }
       var r = ES.core.store.wipe();
       if (!r.ok) { ES.ui.toast(r.reason === 'read-only' ? 'This tab is read-only: delete from the newer version.' : 'Nothing was deleted.'); return false; }
-      if (ES.ui.session && ES.ui.session.abandon) ES.ui.session.abandon();
+      var L = ES.engine && ES.engine.learner;
+      if (L && typeof L.reset === 'function') L.reset();
       if (ES.app && ES.app.applyTheme) ES.app.applyTheme();
       ES.ui.toast('Everything on this device was deleted');
       ES.core.router.go('home', {}, { reset: true });

@@ -73,6 +73,9 @@ def run(h):
         wait_ready(pg)
         close_sheets(pg)
         c.ok(pg.evaluate('ES.ui.session.realAvailable()'), f'{tag}: real sessions are available')
+        # the real planner, without sets for custom views (Seek plays a scene, not keyword trials; exB tests it)
+        pg.evaluate("""() => { const P = ES.engine.planner, orig = P.session; P.session = function () { const p = orig.apply(P, arguments);
+          if (p && p.sets) p.sets = p.sets.filter(s => !(ES.ex[s.exId] && ES.ex[s.exId].view === 'custom')); return p; }; }""")
         pg.click('[data-start]')
         pg.wait_for_function("() => ES.ui.session.active()", timeout=8000)
         c.eq(pg.evaluate('ES.ui.session.state().demo'), False, f'{tag}: the session is real, not the demo')

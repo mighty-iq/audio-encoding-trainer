@@ -11,10 +11,11 @@
   var URL = 'https://discord.gg/chmr';
   var queue = [];
   var TEXT = {
-    pb: { title: 'New personal best', body: 'Post it in the Chimera community on Discord.' },
-    milestone: { title: 'Milestone reached', body: 'Share it with the Chimera community on Discord.' },
-    plateau: { title: 'Compare notes', body: 'Stuck at a level? Talk it through with the Chimera community on Discord.' },
-    export: { title: 'Pool your data', body: 'Pooled exports help test the bets this tool makes. Bring yours to the Chimera community on Discord.' }
+    // RV C30: only that Earshot was built by the Chimera community on Discord, and an invitation to join.
+    pb: { title: 'New personal best', body: 'Earshot was built by the Chimera community on Discord. Come and share it with us:' },
+    milestone: { title: 'Milestone reached', body: 'Earshot was built by the Chimera community on Discord. Come and share it with us:' },
+    plateau: { title: 'Join us on Discord', body: 'Earshot was built by the Chimera community on Discord, and you are welcome to join us:' },
+    export: { title: 'Join us on Discord', body: 'Earshot was built by the Chimera community on Discord, and you are welcome to join us:' }
   };
 
   function linkEl(label, opts) {

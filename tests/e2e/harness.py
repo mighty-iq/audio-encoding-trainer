@@ -10,6 +10,7 @@ import fcntl
 import functools
 import http.server
 import json
+import os
 import pathlib
 import re
 import threading
@@ -42,10 +43,30 @@ class Checks:
         return [i for i in self.items if not i[0]]
 
 
+def inherited_slot():
+    """True when this process holds an open descriptor on a slot file, inherited from tools/with-browser.sh or
+    flock(1), which keep the lock for their child."""
+    want = {os.path.realpath(p) for p in LOCKS}
+    try:
+        for fd in os.listdir('/proc/self/fd'):
+            try:
+                if os.path.realpath(os.readlink('/proc/self/fd/' + fd)) in want:
+                    return True
+            except OSError:
+                pass
+    except OSError:
+        return False
+    return False
+
+
 @contextlib.contextmanager
 def browser_lock(timeout=1800):
     """Hold one of the two machine-wide browser slots (the protocol of tools/with-browser.sh: slot 1 is the
-    classic lock file, slot 2 its sibling), so at most two browsers run at once. Gives up after `timeout` s."""
+    classic lock file, slot 2 its sibling), so at most two browsers run at once. Gives up after `timeout` s.
+    Under tools/with-browser.sh (or flock) the process inherits the wrapper's slot: then it takes no second one."""
+    if inherited_slot():
+        yield
+        return
     t0, held = time.time(), None
     while held is None:
         for path in LOCKS:

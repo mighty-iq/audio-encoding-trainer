@@ -63,7 +63,7 @@
       var trial = null, err = null;
       try { trial = sess.makeTrial(); } catch (e) { err = e; reportErr(e); }
       if (!trial && !err) { sess.finishSet(); return; }          // the engine says the set is complete
-      if (!trial) { sess.skip(null, err); if (set.skips > 5) { sess.endSetEarly(); return; } setTimeout(loop, 0); return; }
+      if (!trial) { if (sess.replaceTrial(null, 'generator: ' + (err && err.message || err))) setTimeout(loop, 0); return; }
       level.textContent = sess.levelText(trial);
       root.querySelector('.trial').setAttribute('data-index', String(set.results.length));
       var view = ES.ui.trialView.run(host, { trial: trial, mode: 'set', score: sess.scorer(trial),
@@ -71,7 +71,8 @@
       cur.view = view;
       view.done.then(function (out) {
         if (!cur || cur.aborted || (out && out.aborted)) return;
-        if (out && out.skipped) sess.skip(trial, out.error);
+        // A trial that could not play, or was interrupted twice, is replaced by a new one (never charged).
+        if (out && (out.skipped || out.voided) && !sess.replaceTrial(trial, out.voided ? 'voided' : out.error)) return;
         loop();
       });
     }
@@ -90,7 +91,7 @@
       if (ES._keepError) ES._keepError({ at: Date.now(), kind: 'play', msg: String(e && e.message || e), stack: String(e && e.stack || '').slice(0, 800) });
     }
     function runCustom(host2, s, inf) {
-      var api = { engine: ES.engine, audio: ES.audio, ui: ES.ui, set: { index: s.index, n: s.n, exId: s.exId, plan: s.plan },
+      var api = { engine: ES.engine, audio: ES.audio, ui: ES.ui, set: { index: s.index, n: s.n, exId: s.exId, plan: s.plan, answered: s.results.length },
         done: function (result) { if (cur && !cur.aborted) sess.finishSet(result || {}); },
         rate: function () { return ratingSheet(s.exId, s.index); },
         /** Record an answered trial; the view's own flow (if it drives ES.engine.flow) already updated the learner. */

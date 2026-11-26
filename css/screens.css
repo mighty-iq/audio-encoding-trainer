@@ -160,3 +160,23 @@
 .tips { padding-left: 18px; }
 .tips li { margin: 4px 0; }
 .bet { color: var(--ink-2); }
+
+/* Credits: one row per source, then the licence notices that travel with the app (RV C02). */
+.credit-list { list-style: none; margin: 8px 0 0; padding: 0; border-top: 1px solid var(--rule); }
+.credit { display: grid; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.credit-src { color: var(--ink-2); font-size: var(--fs-1); overflow-wrap: anywhere; }
+.credit .hint { font-size: var(--fs-1); }
+.notice { margin: 8px 0; border: 1px solid var(--rule); border-radius: var(--r-1); background: var(--surface); }
+.notice summary { min-height: var(--tap); display: flex; align-items: center; padding: 0 12px; cursor: pointer; font-weight: 600; }
+.notice-text { margin: 0; padding: 10px 12px 12px; border-top: 1px solid var(--rule); max-height: 50vh; overflow: auto;
+  white-space: pre-wrap; overflow-wrap: anywhere; font: 400 12px/1.5 var(--mono); color: var(--ink-2); }
+
+/* Free mode picker (Settings, RV C06): exercise chips, dial rows with their range, the coach's line. */
+.free-pick { margin: 6px 0 4px; padding: 12px; border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--surface); }
+.free-pick .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+.free-dial { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--rule); }
+.free-dial input[type=range] { grid-column: 1 / -1; width: 100%; min-height: var(--tap); accent-color: var(--blue); }
+.free-dial select { grid-column: 1 / -1; min-height: var(--tap); }
+.free-val { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.free-coach { color: var(--ink-2); font-size: var(--fs-1); }
+.free-dial.is-auto .free-val { color: var(--ink-3); }

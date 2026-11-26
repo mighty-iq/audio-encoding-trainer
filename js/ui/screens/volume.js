@@ -32,7 +32,8 @@
         U.el('li', null, 'Play the reference: ' + REF_S + ' seconds of soft noise.'),
         U.el('li', null, 'Adjust the device volume until it is clear but never loud.')]),
       playBtn, status, okBtn,
-      U.el('p', { class: 'hint' }, 'Every trial plays at this same loudness, however hard it gets. If anything ever sounds too loud, turn it down; short sessions are plenty.')
+      U.el('p', { class: 'hint' }, 'Every trial except Seek’s live search plays at this loudness, however hard it gets. If anything ever sounds too loud, turn it down; short sessions are plenty.'),
+      U.el('p', { class: 'hint', 'data-audiologist': '' }, 'If you notice ringing, muffled hearing or pain after listening, stop and see an audiologist.')
     ]));
   }
   function unmount() { if (cur && cur.player) cur.player.stop(); cur = null; }

@@ -26,7 +26,7 @@ export const AREAS = [
   { dir: 'js/lab' },
   { dir: 'js/game' },
   { dir: 'js/ex' },
-  { dir: 'js/ui', order: ['sound.js', 'demo.js', 'widgets.js', 'trialview.js', 'session.js', 'tutorial.js', 'interlude.js', '*', 'screens/*'] },
+  { dir: 'js/ui', order: ['sound.js', 'demo.js', 'widgets.js', 'trialview.js', 'session-info.js', 'session-store.js', 'session.js', 'tutorial.js', 'interlude.js', '*', 'screens/*'] },
   { file: 'js/app.js' }
 ];
 

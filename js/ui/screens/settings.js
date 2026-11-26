@@ -4,11 +4,11 @@
   'use strict';
   var U = ES.core.util;
   var MODES = [
-    ['edge', 'Edge', 'Keeps every dial at the edge of what you can hear. No setup.', 'Right for almost everyone; it is the default.'],
+    ['edge', 'Edge', 'Tracks your edge on every dial and pushes one at a time to it, the rest just below. No setup.', 'Right for almost everyone; it is the default.'],
     ['path', 'Path', 'Venues in order: one condition at a time, then mixed.', 'Right for beginners, for clear goals, or when mixing feels confusing.'],
     ['variety', 'Variety', 'A new talker, room or voice type on every trial.', 'Right after a plateau, or when you already do well and want breadth.'],
     ['focus', 'Focus', 'Spends 60 % of the time on your hardest situation.', 'Right when one situation bothers you most.'],
-    ['free', 'Free', 'Pick any exercise and dial yourself; a coach suggests settings.', 'Right when you want to explore.']
+    ['free', 'Free', 'Pick one exercise and set its dials yourself; a coach line shows your current edge on each.', 'Right when you want to explore.']
   ];
   var LENGTHS = [10, 15, 20, 30];
 
@@ -44,11 +44,15 @@
       var id = 'mode-' + m[0];
       var input = U.el('input', { type: 'radio', name: 'mode', id: id, value: m[0], 'data-mode': m[0] });
       input.checked = m[0] === current;
-      input.addEventListener('change', function () { if (input.checked) setSetting('mode', m[0]); });
+      input.addEventListener('change', function () { if (input.checked) { setSetting('mode', m[0]); showFree(m[0] === 'free'); } });
       list.appendChild(U.el('label', { class: 'mode', for: id }, [input, U.el('span', { class: 'mode-text' }, [
         U.el('strong', null, m[1] + (m[0] === 'edge' ? ' · default' : '')), U.el('span', null, m[2]), U.el('span', { class: 'hint' }, m[3])])]));
     });
-    return [list, engine ? null : U.el('p', { class: 'hint' }, 'Modes take effect once the training engine is installed; the demo ignores them.')];
+    // the Free picker sits under the list while Free is the mode (RV C06)
+    var pick = ES.ui.settingsFree ? U.el('div', { 'data-free-slot': '' }) : null;
+    function showFree(on) { if (!pick) return; U.clear(pick); if (on) pick.appendChild(ES.ui.settingsFree.el()); }
+    showFree(current === 'free');
+    return [list, pick, engine ? null : U.el('p', { class: 'hint' }, 'Modes take effect once the training engine is installed; the demo ignores them.')];
   }
   function headphones(s) {
     var r = s.hpCheck && s.hpCheck.result;
@@ -105,13 +109,13 @@
       ]), 'training'),
       section('Sound', [
         U.el('div', { class: 'row' }, [U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Comfortable level'),
-          U.el('span', { class: 'hint' }, s.volumeSet ? 'Set on ' + U.dayKey(s.volumeSet) + '. Every trial plays at this level.' : 'Not set yet. Takes 20 seconds.')]),
+          U.el('span', { class: 'hint' }, s.volumeSet ? 'Set on ' + U.dayKey(s.volumeSet) + '. Every trial except Seek’s live search plays at this level.' : 'Not set yet. Takes 20 seconds.')]),
           ES.ui.button('Set level', { small: true, go: 'volume' })])
       ].concat(headphones(s), ownVoices()), 'sound'),
       section('Display', [
         U.el('div', { class: 'row' }, [U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Theme')]),
           seg('Theme', [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']], s.theme || 'system', function (v) { setSetting('theme', v); applyTheme(); })]),
-        U.el('div', { class: 'row' }, [U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Nickname'), U.el('span', { class: 'hint' }, 'Shown only on result cards you choose to share.')]), nick])
+        U.el('div', { class: 'row' }, [U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Nickname'), U.el('span', { class: 'hint' }, 'Shown on result cards you share and kept in backups; pool files include it only if you tick it.')]), nick])
       ], 'display'),
       section('Playtest', [
         toggle('Playtest mode', ES.TEST_BUILD ? 'On in this test build: ratings after each set, a Note button on every screen.' : 'Ratings after each set and a Note button on every screen.',

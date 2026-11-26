@@ -96,6 +96,9 @@
         skip]),
       host]));
     document.documentElement.classList.add('in-trial');
+    // A hidden tab stops the sound; coming back plays it again (once: the trial view's pause rule, RV L2).
+    cur.onVis = function () { if (!cur || !cur.view) return; if (document.hidden) cur.view.pause(); else cur.view.resume(); };
+    document.addEventListener('visibilitychange', cur.onVis);
 
     function clearTimer() { if (cur && cur.timer) { clearTimeout(cur.timer); cur.timer = null; } }
     function show() {
@@ -135,6 +138,11 @@
       cur.view = view;
       view.done.then(function (out) {
         if (!cur || cur.aborted || (out && out.aborted)) return;
+        if (out && (out.voided || out.skipped)) {          // interrupted twice or unplayable: the same step, a new trial
+          cur.voids = (cur.voids || 0) + 1;
+          runTrial(st, makeTrial(exId, st, k + ':void:' + cur.voids, k), attempt);
+          return;
+        }
         if (practice && out && out.result && !out.result.correct && attempt < 3) {
           runTrial(st, makeTrial(exId, st, k + ':again:' + attempt, k), attempt + 1);
           return;
@@ -165,7 +173,7 @@
     show();
   }
   function unmount() {
-    if (cur) { cur.aborted = true; if (cur.timer) clearTimeout(cur.timer); if (cur.view) cur.view.abort(); }
+    if (cur) { cur.aborted = true; if (cur.timer) clearTimeout(cur.timer); if (cur.view) cur.view.abort(); if (cur.onVis) document.removeEventListener('visibilitychange', cur.onVis); }
     cur = null;
     document.documentElement.classList.remove('in-trial');
   }

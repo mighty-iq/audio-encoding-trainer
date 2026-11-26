@@ -29,11 +29,9 @@
   function startButton() {
     var sess = ES.ui.session;
     if (sess.active()) {
-      return ES.ui.button('Resume session', { kind: 'primary', wide: true, cls: 'btn-start', attrs: { 'data-start': '' }, onClick: function () {
+      return ES.ui.button('Resume session', { kind: 'primary', wide: true, cls: 'btn-start', attrs: { 'data-start': '', 'data-resume-session': '' }, onClick: function () {
         ES.ui.sound.unlock();
-        var set = sess.currentSet();
-        if (set && set.finished) ES.core.router.go('results', { set: set.index });
-        else if (set) { ES.ui.inSet = true; ES.core.router.go('play', { set: set.index }); }
+        sess.resume();
       } });
     }
     return ES.ui.button('Start session', { kind: 'primary', wide: true, cls: 'btn-start', attrs: { 'data-start': '' }, onClick: function () {
@@ -67,7 +65,7 @@
           U.el('p', { class: 'eyebrow mono' }, 'Tonight'),
           U.el('h1', { class: 'h-big' }, ES.ui.session.active() ? 'Your session is waiting.' : 'Ready when you are.'),
           U.el('p', { class: 'lead' }, lead()),
-          today >= 3 ? U.el('p', { class: 'hint sleep-note' }, 'That is ' + today + ' sessions today. Learning settles overnight, so the next one pays off most after sleep.') : null,
+          today >= 3 ? U.el('p', { class: 'hint sleep-note' }, 'That is ' + today + ' sessions today. Sleep consolidates practice, so tomorrow is a good time for the next session.') : null,
           startButton()
         ]),
         U.el('div', { class: 'home-hero-pic', 'aria-hidden': 'true' }, ES.ui.field(null, { compact: true, labels: false, voices: [

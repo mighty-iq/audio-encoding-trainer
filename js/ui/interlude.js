@@ -28,7 +28,7 @@
     var btn = ES.ui.button('Play the examples', { kind: 'secondary', attrs: { 'data-interlude-play': '' }, onClick: play });
     el.appendChild(U.el('section', { class: 'card interlude-card', 'data-interlude': '' }, [
       U.el('h2', { class: 'h-small' }, 'Listen only'),
-      U.el('p', null, 'Hear the condition you just trained, with its words on screen. Listening like this between sets helps the practice settle.'),
+      U.el('p', null, 'Hear the condition you just trained, with its words on screen. In lab studies, practice mixed with short listen-only breaks like this one learned as much as practice alone.'),
       words, status, btn]));
 
     function play() {

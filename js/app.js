@@ -48,6 +48,8 @@
       doc.documentElement.classList.add('ready');
       ES.core.router.on('*', function (r) { ES.core.playtest.screen(r.name); });
       if (ES.core.playtest.enabled()) ES.core.playtest.mountFloating();
+      // a session stored before a reload is rebuilt first, so Home offers "Resume session" (RV M11)
+      try { if (ES.ui.session && typeof ES.ui.session.restore === 'function') ES.ui.session.restore(); } catch (e) { if (win.console) console.error('[restore]', e); }
       ES.core.router.start('home');
       var full = !ES.core.store.peek('profile').welcomeSeen;
       ES.core.chimera.welcome(full).then(function () {

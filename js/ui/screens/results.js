@@ -39,6 +39,7 @@
       ES.ui.w.glyphRow(set.results),
       U.el('p', { class: 'facts mono' }, ['Active ' + U.fmtClock(set.activeMs || 0), levelLine(set, entry) ? ' · ' + levelLine(set, entry) : '']),
       set.demo ? U.el('p', { class: 'hint' }, 'A demo set: tone trials stand in until the voice exercises are installed. Nothing here counts toward your levels.') : null,
+      set.partial ? U.el('p', { class: 'hint', 'data-partial': '' }, 'Ended early, so this set is logged as partial: it sets no personal best and does not count as a completed set.') : null,
       set.index === 0 && S.notes && S.notes.length ? U.el('div', { class: 'plan-notes' }, S.notes.map(function (n) { return U.el('p', { class: 'hint' }, n.text || ''); })) : null,
       interlude,
       set.plateau ? plateauCard(set) : null,

@@ -1,20 +1,23 @@
-/* ES.ui.w — small shared pieces for the shell's screens: the weekly ring (3–5 sessions a week; a new week
+/* ES.ui.w — small shared pieces for the shell's screens: the weekly ring (4–5 sessions a week, PLAN's dose; a new week
    simply starts a new ring, and nothing is ever lost or warned about), the after-set glyph row, the page
    header and footer with the permanent Chimera link, and dial-value formatting. */
 (function (ES, win) {
   'use strict';
   var U = ES.core.util;
-  var RING_SEGMENTS = 5, GOOD_RHYTHM = [3, 5];
+  var RING_SEGMENTS = 5, GOOD_RHYTHM = [4, 5];   // one number for the ring, the guide and PLAN.md (RV C29)
 
   function sessionsThisWeek() {
     var log = ES.core.store.peek('log'), wk = U.weekKey(), real = ES.ui.session.realAvailable();
-    return (log.sessions || []).filter(function (s) { return U.weekKey(s.start) === wk && (!s.demo || !real); }).length;
+    // A session counts when it holds at least one completed (not partial) set.
+    return (log.sessions || []).filter(function (s) {
+      return U.weekKey(s.start) === wk && (!s.demo || !real) && (s.sets || []).some(function (x) { return x && !x.partial; });
+    }).length;
   }
   function sessionsToday() {
     var log = ES.core.store.peek('log'), d = U.dayKey();
     return (log.sessions || []).filter(function (s) { return U.dayKey(s.start) === d; }).length;
   }
-  /** The weekly ring: five segments; the first three are the "good rhythm" goal, four and five are extra. */
+  /** The weekly ring: five segments; the first four are the "good rhythm" goal, the fifth is extra. */
   function weekRing(count) {
     var r = 34, c = 2 * Math.PI * r, gap = 4, seg = c / RING_SEGMENTS - gap;
     var svg = U.svg('svg', { class: 'week-ring', viewBox: '0 0 88 88', role: 'img',
@@ -29,8 +32,8 @@
   }
   function weekCard() {
     var n = sessionsThisWeek();
-    var text = n === 0 ? 'A new week. Three to five sessions make a good rhythm; any day works.'
-      : n < GOOD_RHYTHM[0] ? 'Three to five sessions a week make a good rhythm. Missed days cost nothing.'
+    var text = n === 0 ? 'A new week. Four or five sessions make a good rhythm; any day works.'
+      : n < GOOD_RHYTHM[0] ? 'Four or five sessions a week make a good rhythm. Missed days cost nothing.'
       : n <= GOOD_RHYTHM[1] ? 'You are in the good rhythm for this week. Extra sessions are welcome, never needed.'
       : 'Beyond the good rhythm this week. Rest days help learning settle.';
     return U.el('section', { class: 'card week', 'aria-label': 'This week' }, [

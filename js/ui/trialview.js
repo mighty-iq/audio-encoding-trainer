@@ -24,13 +24,42 @@
     return Promise.resolve(ES.audio.render(spec, { seed: String(trial.seed) }))
       .then(function (r) { return r && r.buffer ? r.buffer : r; });
   }
-  function playAudio(buf) {
-    if (buf && typeof buf.getChannelData === 'function' && ES.audio && typeof ES.audio.play === 'function') {
-      var h = ES.audio.play(buf) || {};
-      return { stop: function () { try { h.stop && h.stop(); } catch (e) { /* ignore */ } },
-        ended: Promise.resolve(h.ended).then(function () { return { silent: false }; }), silent: false };
+  /** Wait (briefly) for a running audio context; resolves true when sound can come out. */
+  function audioReady(real) {
+    var A = real ? ES.audio.ctx : null;
+    if (A && typeof A.state === 'function') {
+      if (A.state() === 'running') return Promise.resolve(true);
+      return Promise.resolve(typeof A.unlock === 'function' ? A.unlock(700) : null).then(function () { return A.state() === 'running'; }, function () { return false; });
     }
-    return ES.ui.sound.play(buf);
+    var c = ES.ui.sound.ctx();
+    if (!c) return Promise.resolve(false);
+    if (c.state === 'running') return Promise.resolve(true);
+    try { c.resume(); } catch (e) { /* ignore */ }
+    return new Promise(function (res) { setTimeout(function () { res(c.state === 'running'); }, 400); });
+  }
+  /** Play once. ended resolves {silent:true} when no sound came out (no or suspended context, ok:false, a throw):
+      such a play is not a heard trial (RV H2). */
+  function playAudio(buf) {
+    var real = !!(buf && typeof buf.getChannelData === 'function' && ES.audio && typeof ES.audio.play === 'function');
+    var stopped = false, inner = null;
+    var ended = audioReady(real).then(function (ok) {
+      if (stopped) return { stopped: true };
+      if (!ok) return { silent: true, reason: 'suspended' };
+      inner = real ? (ES.audio.play(buf) || {}) : ES.ui.sound.play(buf);
+      return Promise.resolve(inner.ended).then(function (r) {
+        if (real) return { silent: !!(r && r.ok === false), reason: r && r.reason };
+        return { silent: !!(r && r.silent) };
+      }, function () { return { silent: true, reason: 'error' }; });
+    });
+    return { stop: function () { stopped = true; try { if (inner && inner.stop) inner.stop(); } catch (e) { /* ignore */ } }, ended: ended };
+  }
+  /** A render that hangs ends in the error state (Skip) after 15 s (RV L7; ES_CONFIG.renderTimeoutMs for tests). */
+  function renderMs() { var v = ES.CONFIG && +ES.CONFIG.renderTimeoutMs; return v > 0 ? v : 15000; }
+  function withTimeout(p, ms) {
+    return new Promise(function (res, rej) {
+      var t = setTimeout(function () { rej(new Error('The sound took too long to prepare.')); }, ms);
+      p.then(function (v) { clearTimeout(t); res(v); }, function (e) { clearTimeout(t); rej(e); });
+    });
   }
   function hold() { if (ES.core.store && ES.core.store.hold) ES.core.store.hold(); }
   function release() { if (ES.core.store && ES.core.store.release) ES.core.store.release(); }
@@ -43,7 +72,7 @@
     var trial = cfg.trial, X = trial && ES.ex[trial.ex];
     if (X && typeof X.prepare === 'function') { try { trial = X.prepare(trial) || trial; } catch (e) { report(e); } }
     var mode = cfg.mode || 'set', q = trial.question || { slots: [] }, words = Object.assign({}, FOIL_WORDS, cfg.foilWords || {});
-    var primed = false, primeT = null, holdT = null, needsHold = false;
+    var primed = false, primeT = null, holdT = null, needsHold = false, listenPauses = 0, replayTok = 0, voided = false;
     // Echo: question.delayMs keeps the options out of sight while the sound plays and for the delay after it
     // (seeing them would cue what to listen for); the status stays a neutral "Hold it in mind…".
     var delayMs = Math.max(0, Math.min(15000, +(q.delayMs) || 0));
@@ -70,7 +99,7 @@
     function get(which) {
       if (which != null && !isDemo(trial) && replaySpec(trial, which) === trial.audio) which = null;  // replaying the stimulus itself
       var k = which == null ? 'main' : 'r' + which;
-      if (!cache[k]) cache[k] = renderAudio(trial, which);
+      if (!cache[k]) cache[k] = withTimeout(renderAudio(trial, which), renderMs());
       return cache[k];
     }
     function playBuf(buf, onEnd) {
@@ -115,11 +144,23 @@
     function listen(buf) {
       setState('listen', mode === 'demo' ? 'Listen to the example…' : 'Listen…');
       playBuf(buf, function (r) {
-        if (aborted || state !== 'listen') return;
+        if (aborted || state !== 'listen' || r.stopped) return;
+        if (r.silent) { noSound(buf); return; }
         if (mode === 'demo') { showExample(r); return; }
         if (delayMs && answerBox.classList.contains('is-held')) { holdAnswer(r); return; }
         openAnswer(r);
       });
+    }
+    /** No sound came through: nothing is shown as heard, nothing is scored; a tap unlocks audio and plays again. */
+    function noSound(buf) {
+      setState('nosound', 'The sound didn’t play. Tap to try again.');
+      U.clear(actions);
+      actions.appendChild(ES.ui.button('Play the sound again', { kind: 'primary', attrs: { 'data-retry': '' }, onClick: function () {
+        ES.ui.sound.unlock();
+        try { if (ES.audio && ES.audio.ctx && typeof ES.audio.ctx.unlock === 'function') ES.audio.ctx.unlock(); } catch (e) { /* ignore */ }
+        U.clear(actions);
+        listen(buf);
+      } }));
     }
     function holdAnswer(r) {
       setState('hold', 'Hold it in mind…');
@@ -127,11 +168,11 @@
     }
     function openAnswer(r) {
       r = r || {};
-      setState('answer', r.silent ? 'Sound is unavailable here: answer anyway to walk through.' : (q.slots.length > 1 ? 'Your answers:' : 'Your answer:'));
-        panel.enable();
-        t0 = Date.now();
-        panel.focusFirst();
-        (trial.feedback && trial.feedback.replays || []).forEach(function (x, i) { get(i).catch(function () { /* replay shows its own error */ }); });
+      setState('answer', q.slots.length > 1 ? 'Your answers:' : 'Your answer:');
+      panel.enable();
+      t0 = Date.now();
+      panel.focusFirst();
+      (trial.feedback && trial.feedback.replays || []).forEach(function (x, i) { get(i).catch(function () { /* replay shows its own error */ }); });
     }
     function fail(err) {
       report(err);
@@ -188,8 +229,8 @@
       (function step() {
         if (aborted || state !== 'feedback') return;
         if (i >= list.length) { body.removeAttribute('data-playing'); status.textContent = ''; setReplays(true); then(); return; }
-        var idx = list[i++];
-        get(idx).then(function (buf) { if (!aborted && state === 'feedback') playBuf(buf, step); }, function (e) { report(e); step(); });
+        var idx = list[i++], tok = replayTok;
+        get(idx).then(function (buf) { if (!aborted && state === 'feedback' && tok === replayTok) playBuf(buf, step); }, function (e) { report(e); step(); });
       })();
     }
     function showExample(r) {
@@ -204,7 +245,7 @@
       }));
       U.clear(fb);
       fb.appendChild(U.el('p', { class: 'fb-head is-right' }, [ES.ui.glyph('right'), U.el('strong', null, 'The marked key is the answer')]));
-      if (trial.feedback && trial.feedback.text) fb.appendChild(U.el('p', { class: 'fb-text' }, trial.feedback.text + (r && r.silent ? ' (Sound is unavailable here.)' : '')));
+      if (trial.feedback && trial.feedback.text) fb.appendChild(U.el('p', { class: 'fb-text' }, trial.feedback.text));
       buildActions();
       bindKeys();
     }
@@ -223,9 +264,13 @@
       cancelAuto();
       setReplays(false);
       body.setAttribute('data-playing', 'replay');
+      var tok = replayTok;
       get(i).then(function (buf) {
-        if (aborted) return;
-        playBuf(buf, function () { body.removeAttribute('data-playing'); setReplays(true); });
+        if (aborted || tok !== replayTok) return;            // paused while it was rendering: it never starts (RV L1)
+        playBuf(buf, function (r) {
+          body.removeAttribute('data-playing'); setReplays(true);
+          if (r && r.silent) ES.ui.toast('No sound came through. Check the volume, then try again.');
+        });
       }, function (e) { report(e); body.removeAttribute('data-playing'); setReplays(true); ES.ui.toast('That replay could not be prepared.'); });
     }
     function onKey(e) {
@@ -252,13 +297,17 @@
     var handle = {
       done: done,
       state: function () { return state; },
-      /** Stop the sound; the stimulus plays again from the start on resume (the trial is not scored twice). */
+      /** Pause: stop the sound. A pause while the stimulus plays allows one replay of it on resume; a second such
+          pause voids the trial (RV M7): resume then ends it as {voided:true} and the set draws a new one; nothing is
+          charged. A replay that is still rendering never starts under the pause (RV L1). */
       pause: function () {
         cancelAuto();
+        replayTok++;
         if (primeT) { clearTimeout(primeT); primeT = null; }
         if (state === 'hold') { if (holdT) { clearTimeout(holdT); holdT = null; } needsHold = true; setState('paused', 'Paused'); return; }
+        if (state === 'listen') { listenPauses++; if (listenPauses >= 2) voided = true; }
         if (state === 'listen' || state === 'loading' || state === 'prime') { loadTok++; stopPlayer(); needsReplay = true; setState('paused', 'Paused'); }
-        else if ((state === 'feedback' || state === 'example') && player) {     // a replay was playing: stop it
+        else if ((state === 'feedback' || state === 'example') && (player || body.hasAttribute('data-playing'))) {   // a replay: stop it
           stopPlayer();
           body.removeAttribute('data-playing');
           status.textContent = '';
@@ -266,11 +315,14 @@
         }
       },
       resume: function () {
-        if (needsHold && !aborted) { needsHold = false; holdAnswer({}); return; }
-        if (!needsReplay || aborted) return;
+        if (aborted) return;
+        if (voided) { finish({ voided: true }); return; }
+        if (needsHold) { needsHold = false; holdAnswer({}); return; }
+        if (!needsReplay) return;
         needsReplay = false;
         load('Listen again…');
       },
+      voided: function () { return voided; },
       abort: function () {
         if (aborted) return;
         aborted = true;
