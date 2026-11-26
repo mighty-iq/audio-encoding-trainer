@@ -1,34 +1,40 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-26 15:30 UTC
+Updated: 2026-11-26 16:30 UTC
 
 ## Phase
-1 — Research and plan. The plan gate comes next: plan message + decision board, then wait for the owner's go.
+1 — Research and plan: DONE. Now at the PLAN GATE: the plan message and decision board are with the owner.
+Do not start Phase 2 until the owner says go (or answers on the board). Name, look, voices and game frame are open.
 
 ## Done
-- Workspace: BRIEF.md and RULES.md (git-ignored), root CLAUDE.md imports, privacy check + hook, `main` pushed.
-- Repository attached: mighty-iq/audio-encoding-trainer (was empty; no owner commits to check).
-- Feasibility: Kokoro int8 TTS runs on CPU at about 2.2x real time; AudioMNIST, CREMA-D, Piper voices and a
-  Parakeet ASR model download from GitHub (raw corpora outside the repo, in the container's corpora folder).
+- Research R1–R6 complete (docs/research/), ACCESS.md lists sources not opened (core: Whitton 2017, Wright 2010/2015,
+  Brungart 2001, Darwin 2003, Cameron & Dillon 2011, Smits 2013).
+- docs/dev/PLAN.md draft (concept, failure modes, 8 exercises with bets, engine and 5 modes, Lab probes, game layer,
+  stimuli, audio engine, architecture, visual concept, milestones M1–M10 + Phase 3).
+- Decision board published privately (link in BRIEF.md and the project status note): exercise cards with switches,
+  4 decisions (name, look, voices, game frame), 3 playable sketches (Crowd, Seek, Far), rank list, notes, papers,
+  device probe (screen, touch, frames, codecs mp3/opus/aac, latency, storage, hearing + stereo check).
+- Spikes: Kokoro int8 RTF ≈2.2 on 2 CPUs; isolated TTS words unreliable, phrases fine; Parakeet ASR verifies clips
+  (~0.2–0.9 s per clip); MP3 16 kHz 24–32 kbps ≈ 3–4 KB/s; Web Audio offline mixing, HRTF, convolver work from file://.
 
-## In progress
-- Research agents R1–R6 write docs/research/R1…R6-*.md (training efficacy; non-standard speech learning;
-  cocktail-party and distance mechanisms; measurement; progression and game design; corpora and licences).
-- Spikes: audio encode size/quality (MP3 at 16 kHz), Web Audio mixing/decoding in headless Chromium.
-
-## Next three steps
-1. Read R1–R6 summaries; write docs/research/ACCESS.md (sources not opened) and tell the owner about any core paper
-   we cannot open.
-2. Write docs/dev/PLAN.md (exercises, transfer bets, modes, probes, visual concept, milestones + acceptance checks).
-3. Build the decision board page (cards, decisions, 2–3 playable sketches, rank list, device probe) and send the
-   five-part plan message; stop at the plan gate.
+## Next three steps (after the owner's go)
+1. Read the board answers (db_get slug 23b08504-… path answers/owner) or the pasted block; append them word for word
+   to BRIEF.md; apply name/look/voices/frame; mark PLAN.md approved; log decisions.
+2. M1 contracts: write docs/dev/CONTRACTS.md (namespace, module ownership, interfaces, file map) and start parallel
+   builders (core shell, audio engine, stimulus pipeline, engine/generators).
+3. M2 stimulus pipeline in the background early (TTS + ASR checks take hours): tools/audio/.
 
 ## Open questions
-- Name (owner decides; recommendation on the board). Whether synthetic voices are acceptable alongside recordings.
+- Owner: name, look, voices policy, game frame, exercise keep/drop, priorities ranking.
+- speechocean762 licence confidence medium-high (no LICENSE file in the GitHub copy).
 
 ## Last verified
-- privacy_check --self-test ok; --history clean (1 commit) before pushing `main` (c255538).
+- Board: Playwright file:// at 390×844 and 1366×768: sketches play, probe runs, no page errors (fonts offline only).
+- privacy_check clean on every push; last pushed commit on `build` see git log.
 
 ## Dead ends
-- `gh` CLI token invalid and api.github.com refused by the proxy: no repo creation or rename via API.
-- Hugging Face and other dataset hosts blocked: only GitHub/PyPI/npm sources are usable.
+- gh CLI token invalid; api.github.com refused → no repo rename by API (owner renames in Settings).
+- Hugging Face/OpenSLR/Zenodo blocked. Piper models fine-tuned from Lessac rejected (research-only data).
+- sherpa-onnx 2.0.3 has no espeak front end for Piper models → run ONNX via onnxruntime + build-time phonemiser.
+- Web-search budget is shared by all agents and ran out in research; WebFetch of URLs not from a search needs the
+  owner's approval prompts → plan future research with few agents and known URLs.
