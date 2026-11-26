@@ -1,5 +1,5 @@
-/* Earshot audio DSP: synthetic rooms (shoebox early reflections + decorrelated exponential tail), critical distance,
-   air absorption, and a light head model (ITD + ILD) used when no PannerNode HRTF is available. Pure; MIT. */
+/* Earshot audio DSP: room geometry, critical distance, Schroeder decay, air absorption, and a light head model
+   (ITD + ILD) used when no PannerNode HRTF is available. Room responses: dsp/reverb.js. Pure; MIT. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -27,8 +27,6 @@
     var d = D.roomDims(size);
     return 0.057 * Math.sqrt((Q || 2) * d.V / Math.max(0.05, rt60));
   };
-  // Reverberation time per octave band re the nominal rt60 (mid frequencies): high frequencies decay faster.
-  D.RT_BANDS = [[125, 1.15], [250, 1.08], [500, 1.0], [1000, 1.0], [2000, 0.9], [4000, 0.75], [8000, 0.6]];
 
   // Woodworth ITD (s) for azimuth (deg; front/back symmetric), head radius 8.75 cm.
   D.itd = function (azDeg) {
@@ -36,79 +34,7 @@
     return 0.0875 / C * (Math.abs(lat) + Math.sin(Math.abs(lat))) * (lat < 0 ? -1 : 1);
   };
 
-  /* rir(sr, {rt60, size, seed, maxSec}) -> [L, R], each channel with unit energy (sum of squares = 1). The direct
-     sound is NOT included (the renderer adds it through the spatialiser); sample 0 is the direct sound's arrival.
-     Early part: image sources of a shoebox up to order 3 (listener and source at fixed canonical positions, 2 m
-     apart), each with Woodworth ITD and a simple broadband ILD. Tail: independent noise per ear and octave band
-     (2nd-order band-pass), each with its own exponential decay (RT_BANDS), faded in from the first reflection over
-     the mixing time sqrt(V) ms, at a power that matches the reflections' power around the start of the tail. */
-  D.rir = function (sr, o) {
-    o = o || {};
-    var rt60 = D.clamp(+o.rt60 || 0.5, 0.1, 12), dm = D.roomDims(o.size), rng = D.rng(o.seed == null ? 'room' : 'room:' + o.seed);
-    var alpha = D.clamp(0.161 * dm.V / (dm.S * rt60), 0.01, 0.95), beta = Math.sqrt(1 - alpha);
-    var maxRT = rt60 * D.RT_BANDS[0][1], len = Math.round(Math.min(o.maxSec || 4, maxRT * 1.0 + 0.1) * sr);
-    var L = new Float32Array(len), R = new Float32Array(len);
-    // canonical geometry: listener at 40 % length, 45 % width, 1.2 m; source 2 m ahead (+x), 0.3 m to the side.
-    var lx = 0.4 * dm.l, ly = 0.45 * dm.w, lz = Math.min(1.2, dm.h * 0.45);
-    var sxp = Math.min(lx + Math.min(2, 0.35 * dm.l), dm.l - 0.3), syp = ly + 0.3, szp = Math.min(1.6, dm.h * 0.6);
-    var r0 = Math.hypot(sxp - lx, syp - ly, szp - lz), refl = [], ord = 3, tEarly = 0.1;
-    for (var a = -ord; a <= ord; a++) for (var b = -ord; b <= ord; b++) for (var c = -ord; c <= ord; c++) {
-      for (var p = 0; p < 8; p++) {
-        var px = p & 1, py = (p >> 1) & 1, pz = (p >> 2) & 1;
-        var n = Math.abs(a - px) + Math.abs(a) + Math.abs(b - py) + Math.abs(b) + Math.abs(c - pz) + Math.abs(c);
-        if (n === 0 || n > ord) continue;
-        var ix = (1 - 2 * px) * sxp + 2 * a * dm.l, iy = (1 - 2 * py) * syp + 2 * b * dm.w, iz = (1 - 2 * pz) * szp + 2 * c * dm.h;
-        var dx = ix - lx, dy = iy - ly, dz = iz - lz, r = Math.sqrt(dx * dx + dy * dy + dz * dz), dt = (r - r0) / C;
-        if (dt <= 0 || dt > tEarly) continue;
-        var az = Math.atan2(-dy, dx) * 180 / Math.PI; // listener faces +x; +az to the right (-y)
-        refl.push({ t: dt, g: Math.pow(beta, n) * r0 / r, az: az });
-      }
-    }
-    var tFirst = Infinity, eEarly = 0, i, k;
-    for (k = 0; k < refl.length; k++) {
-      var f = refl[k], it = D.itd(f.az), ild = D.db2g(3 * Math.sin(f.az * Math.PI / 180)); // right ear louder for +az
-      put(R, (f.t - Math.min(0, it)) * sr, f.g * ild); put(L, (f.t + Math.max(0, it)) * sr, f.g / ild);
-      eEarly += f.g * f.g; if (f.t < tFirst) tFirst = f.t;
-    }
-    if (!isFinite(tFirst)) tFirst = 0.003;
-    var tMix = D.clamp(Math.sqrt(dm.V) / 1000, 0.005, 0.12), tEnd = tFirst + tMix + 0.02;
-    // reflection power per second over [tFirst, tEnd] sets the tail's starting power
-    var eWin = 0; for (k = 0; k < refl.length; k++) if (refl[k].t <= tEnd) eWin += refl[k].g * refl[k].g;
-    var p0 = eWin / Math.max(1e-3, tEnd - tFirst) / sr; // per-sample power at the tail's start
-    var tail = [new Float32Array(len), new Float32Array(len)];
-    for (var ch = 0; ch < 2; ch++) {
-      var acc = tail[ch], crng = D.fork(rng, 'ch' + ch);
-      for (var bnd = 0; bnd < D.RT_BANDS.length; bnd++) {
-        var fc = D.RT_BANDS[bnd][0];
-        if (fc > sr * 0.45) continue;
-        var rtb = rt60 * D.RT_BANDS[bnd][1], decay = Math.exp(-6.9078 / (rtb * sr));
-        var nz = D.white(len, D.fork(crng, 'b' + bnd));
-        D.filterInPlace(nz, D.biquad('bandpass', fc, Math.SQRT2, sr));
-        var env = 1, s0 = Math.floor(tFirst * sr);
-        for (i = 0; i < len; i++) {
-          if (i >= s0) acc[i] += nz[i] * env;
-          env *= decay;
-        }
-      }
-      var nm = Math.floor(tMix * sr), st = Math.floor(tFirst * sr);
-      for (i = 0; i < st && i < len; i++) acc[i] = 0;
-      for (i = 0; i < nm && st + i < len; i++) acc[st + i] *= 0.5 - 0.5 * Math.cos(Math.PI * (i + 0.5) / nm);
-    }
-    // scale the tail so its power at the start matches p0 (measured over the 20 ms after the fade-in)
-    var a0 = Math.floor((tFirst + tMix) * sr), a1 = Math.min(len, a0 + Math.round(0.02 * sr));
-    var pt = a1 > a0 ? D.meanSquare(tail, a0, a1) : 1, gt = pt > 0 ? Math.sqrt(p0 / pt) : 1;
-    for (i = 0; i < len; i++) { L[i] += tail[0][i] * gt; R[i] += tail[1][i] * gt; }
-    // unit energy per channel
-    var eL = 0, eR = 0;
-    for (i = 0; i < len; i++) { eL += L[i] * L[i]; eR += R[i] * R[i]; }
-    D.scaleInPlace(L, 1 / Math.sqrt(eL || 1)); D.scaleInPlace(R, 1 / Math.sqrt(eR || 1));
-    return [L, R];
-    function put(arr, pos, g) { // fractional-delay impulse (linear split over two samples)
-      var i0 = Math.floor(pos), fr = pos - i0;
-      if (i0 >= 0 && i0 < arr.length) arr[i0] += g * (1 - fr);
-      if (i0 + 1 >= 0 && i0 + 1 < arr.length) arr[i0 + 1] += g * fr;
-    }
-  };
+  // D.rir, D.roomModel and D.reverb live in dsp/reverb.js (loaded after this file).
 
   // Schroeder backward integration -> reverberation time (s) from the decay between -5 and -25 dB (T20 x 3).
   D.schroederRT = function (ir, sr, fromDb, toDb) {

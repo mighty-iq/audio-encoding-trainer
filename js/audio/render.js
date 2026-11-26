@@ -12,6 +12,9 @@
   var ES = root.ES = root.ES || {};
   var A = ES.audio = ES.audio || {};
   var D = A.dsp, P = A.prep, N = A.native;
+  // Every active level is measured as if followed by silence (as the listener hears it once playback ends), so a
+  // clip's level alone, inside a stem and inside the mix agree however close it ends to the end of the trial.
+  var TAIL = { tail: D.SOURCE_TAIL };
 
   function now() { return root.performance && root.performance.now ? root.performance.now() : Date.now(); }
   function r2(x) { return x == null || !isFinite(x) ? null : Math.round(x * 100) / 100; }
@@ -62,14 +65,14 @@
     var srcs = parts.map(function (p, i) {
       var d = clipData[p.clip], rng = D.fork(c.rng, 'part:' + labels[i]);
       var key = p.fx && p.fx.length ? c.seed + '|' + labels[i] + '|' + JSON.stringify(p.fx) : null;
-      var y = P.applyFx(d.x, sr, p.fx, rng, warn, key), lev = key ? D.activeDb(y, sr, { tail: D.SOURCE_TAIL }) : d.lev;
+      var y = P.applyFx(d.x, sr, p.fx, rng, warn, key), lev = key ? D.activeDb(y, sr, TAIL) : d.lev;
       if (!(lev > D.FLOOR_DB + 1)) { warn('silent part ' + p.clip); lev = REF; }
       var inRoom = !!(room && p.room), dist = inRoom ? (p.dist != null ? Math.max(0.1, +p.dist) : room.dist) : null;
       return { p: p, i: i, role: p.role || 'target', u: D.scale(y, D.db2g(REF - lev)), at: Math.max(0, Math.round((+p.at || 0) * sr)),
         inRoom: inRoom, dist: dist, db: +p.db || 0 };
     });
     var useRoom = room && (srcs.some(function (s) { return s.inRoom; }) || beds.some(function (b) { return b.room; }));
-    var ir = useRoom ? P.rir(room, sr, clipData) : null, irUse = ir && (c.spatial === 'mono' ? [ir[0], ir[0]] : ir);
+    var model = useRoom ? P.roomModel(room, sr, clipData) : null;
     var contentEnd = 0;
     srcs.forEach(function (s) { contentEnd = Math.max(contentEnd, s.at + s.u.length); });
     var tail = useRoom ? Math.round(Math.min(1.0, 0.5 * room.rt60) * sr) : 0;
@@ -94,9 +97,9 @@
       else if (c.spatial === 'ild') { var lr = D.hrtfLite(dir, sr, +s.p.az || 0); st.ch = [D.place(len, lr[0], s.at), D.place(len, lr[1], s.at)]; }
       else { var m = D.place(len, dir, s.at); st.ch = [m, m]; }
       stems.push(st); s.dirStem = st;
-      if (s.inRoom) {
-        var rv = { kind: 'rev', src: s, role: s.role, dir: st, job: jobs.length };
-        jobs.push({ type: 'conv', input: s.u, at: s.at, ir: irUse });
+      if (s.inRoom) { // room sound of this part (JS, see dsp/reverb.js)
+        var w = D.reverb(s.u, model), rL = D.place(len, w[0], s.at);
+        var rv = { kind: 'rev', src: s, role: s.role, dir: st, ch: [rL, c.spatial === 'mono' ? rL : D.place(len, w[1], s.at)] };
         stems.push(rv); s.revStem = rv;
       }
     });
@@ -108,11 +111,8 @@
     }
     var bedLabels = P.labels(beds, function (b) { return 'bed:' + (b.kind || 'ssn'); });
     beds.forEach(function (b, j) {
-      var inRoom = !!(room && b.room), ch = P.makeBed(b, len, sr, stereo && !inRoom, D.fork(c.rng, bedLabels[j]), clipData, extra, warn);
-      var st = { kind: 'bed', role: 'bed', bed: b, want: targetDb + (+b.db || 0) };
-      if (inRoom) { st.job = jobs.length; jobs.push({ type: 'conv', input: P.mono(ch), at: 0, ir: irUse }); }
-      else st.ch = ch.length === 1 ? [ch[0], ch[0]] : ch;
-      stems.push(st);
+      var inRoom = !!(room && b.room), ch = P.makeBed(b, len, sr, stereo, D.fork(c.rng, bedLabels[j]), clipData, extra, warn, inRoom ? model : null);
+      stems.push({ kind: 'bed', role: 'bed', bed: b, want: targetDb + (+b.db || 0), ch: ch.length === 1 ? [ch[0], ch[0]] : ch });
     });
     mark(c, 'stems');
     // 3. native pass (HRTF, rooms)
@@ -121,7 +121,7 @@
       stems.forEach(function (st) {
         if (st.job == null) return;
         st.ch = out[st.job];
-        if (st.kind === 'dir' && st.eIn > 0 && !(D.energy(st.ch) > 0)) { // HRTF panner gave silence: light head model
+        if (st.eIn > 0 && !(D.energy(st.ch) > 0)) { // HRTF panner gave silence: light head model
           var j = jobs[st.job], lr = D.hrtfLite(j.input, sr, j.az);
           st.ch = [D.place(len, lr[0], j.at), D.place(len, lr[1], j.at)];
           warn('HRTF panner produced no output; ITD/ILD head model used');
@@ -138,7 +138,10 @@
     stems.forEach(function (st) {
       if (st.kind !== 'dir') return;
       if (c.spatial === 'mono') { st.g = st.eIn > 0 ? D.db2g(st.want) : 0; return; }
-      var lv = D.activeDb(st.ch, sr);
+      if (st.src.inRoom && room.levels === 'ear') { // only a first guess: direct + room sound are measured below
+        var eo = D.energy(st.ch); st.g = eo > 0 && st.eIn > 0 ? D.db2g(st.want - 10 * Math.log10(eo / st.eIn)) : 0; return;
+      }
+      var lv = D.activeDb(st.ch, sr, TAIL);
       st.g = lv > D.FLOOR_DB + 1 ? D.db2g(REF + st.want - st.airLoss - lv) : 0;
     });
     // Room sound: energy re the direct sound without air absorption = (dist / dc)^2, i.e. DRR = 20 log10(dc / dist).
@@ -160,7 +163,7 @@
       if (!r) { s.rxRel = d.g ? d.want - d.airLoss : D.FLOOR_DB; return; }
       var SL = new Float32Array(len), SR = new Float32Array(len);
       D.addInto(SL, d.ch[0], 0, d.g); D.addInto(SR, d.ch[1], 0, d.g); D.addInto(SL, r.ch[0], 0, r.g); D.addInto(SR, r.ch[1], 0, r.g);
-      var lv = D.activeDb([SL, SR], sr);
+      var lv = D.activeDb([SL, SR], sr, TAIL);
       if (room.levels === 'ear' && lv > D.FLOOR_DB + 1) { var k = D.db2g(REF + s.db - lv); d.g *= k; r.g *= k; s.rxRel = s.db; }
       else s.rxRel = lv - REF;
     });
@@ -169,9 +172,18 @@
     var L = new Float32Array(len), R = new Float32Array(len);
     stems.forEach(function (st) { if (st.g) { D.addInto(L, st.ch[0], 0, st.g); D.addInto(R, st.ch[1], 0, st.g); } });
     // 6. output level, limiter, hard ceiling (a numerical guard only)
-    var lev = D.activeDb([L, R], sr), G = lev > D.FLOOR_DB + 1 ? D.db2g(c.outDb - lev) : 1;
+    var lev = D.activeDb([L, R], sr, TAIL), G = lev > D.FLOOR_DB + 1 ? D.db2g(c.outDb - lev) : 1;
     D.scaleInPlace(L, G); D.scaleInPlace(R, G);
     var lim = D.limiterGain([L, R], sr, { ceilDb: -1, lookMs: 5, relMs: 80 });
+    if (lim.gain && lim.reductionDb < -0.3) { // limiting moved levels: restore each stem's level relative to the target
+      var ch0 = rebalance(stems, lim.gain, tA, tB);
+      if (ch0) {
+        c.rebalanced = true;
+        L.fill(0); R.fill(0);
+        stems.forEach(function (st) { if (st.g) { D.addInto(L, st.ch[0], 0, st.g * G); D.addInto(R, st.ch[1], 0, st.g * G); } });
+        lim = D.limiterGain([L, R], sr, { ceilDb: -1, lookMs: 5, relMs: 80 });
+      }
+    }
     D.applyGain([L, R], lim.gain);
     var ceil = D.db2g(-1);
     for (i = 0; i < len; i++) {
@@ -196,21 +208,46 @@
      look-ahead limiter), and the bed is calibrated after that. Gaussian beds (ssn, pink, babble) are rarely touched. */
   var CREST_DB = 15;
   function crest(st, sr) {
-    var same = st.ch[0] === st.ch[1], ch = same ? [st.ch[0]] : st.ch;
-    var lim = D.limiterGain(ch, sr, { ceilDb: D.rmsDb(ch) + CREST_DB, lookMs: 3, relMs: 40 });
-    if (!lim.gain) { st.crestDb = 0; return; }
-    ch = ch.map(function (x) { return new Float32Array(x); }); // the bed arrays may be shared (mono): copy first
-    D.applyGain(ch, lim.gain);
-    st.ch = same ? [ch[0], ch[0]] : ch;
-    st.crestDb = lim.reductionDb;
+    var same = st.ch[0] === st.ch[1], ch = same ? [st.ch[0]] : st.ch, copied = false, total = 0;
+    for (var pass = 0; pass < 4; pass++) { // cutting transients lowers the RMS, so repeat until the ceiling holds
+      var rms = D.rmsDb(ch);
+      if (D.peakDb(ch) <= rms + CREST_DB + 0.3) break;
+      var lim = D.limiterGain(ch, sr, { ceilDb: rms + CREST_DB, lookMs: 3, relMs: 40 });
+      if (!lim.gain) break;
+      if (!copied) { ch = ch.map(function (x) { return new Float32Array(x); }); copied = true; } // may be shared (mono)
+      D.applyGain(ch, lim.gain);
+      total = Math.min(total, lim.reductionDb);
+    }
+    if (copied) st.ch = same ? [ch[0], ch[0]] : ch;
+    st.crestDb = total;
+  }
+
+  // Level change the limiter causes on each stem (energy over its window); scale stems so the changes match the
+  // target's. Returns true when anything was adjusted.
+  function rebalance(stems, gain, tA, tB) {
+    var ref = null, e0 = 0, e1 = 0, ch = false;
+    stems.forEach(function (st) {
+      if (!st.g) return;
+      var a = st.kind === 'bed' ? tA : 0, b = st.kind === 'bed' ? tB : null;
+      var pre = D.meanSquare(st.ch, a, b), post = D.meanSquareGained(st.ch, gain, a, b);
+      st.limDb = pre > 0 && post > 0 ? 10 * Math.log10(post / pre) : 0;
+      if (st.role === 'target') { e0 += pre * st.g * st.g; e1 += post * st.g * st.g; }
+    });
+    ref = e0 > 0 ? 10 * Math.log10(e1 / e0) : 0;
+    stems.forEach(function (st) { st.g0 = st.g; if (st.g && Math.abs(st.limDb - ref) > 0.02) { st.g *= D.db2g(ref - st.limDb); ch = true; } });
+    return ch;
   }
 
   function makeReport(stems, srcs, len, tA, tB, c, room, G, lim, mix) {
     var sr = c.sr, REF = P.REF, gdb = 20 * Math.log10(G);
-    function limDbOf(list) { // level change from the limiter on a group of stems (energy ratio)
+    function limDbOf(list) { // level change from rebalancing and the limiter on a group of stems (energy ratio)
       var e0 = 0, e1 = 0;
-      list.forEach(function (st) { if (st && st.g) { e0 += D.meanSquare(st.ch) * st.g * st.g; e1 += D.meanSquareGained(st.ch, lim.gain) * st.g * st.g; } });
-      return e0 > 0 && lim.gain ? 10 * Math.log10(e1 / e0) : 0;
+      list.forEach(function (st) {
+        if (!st || !st.g) return;
+        var g0 = st.g0 == null ? st.g : st.g0, ms = D.meanSquare(st.ch);
+        e0 += ms * g0 * g0; e1 += (lim.gain ? D.meanSquareGained(st.ch, lim.gain) : ms) * st.g * st.g;
+      });
+      return e0 > 0 && (lim.gain || c.rebalanced) ? 10 * Math.log10(e1 / e0) : 0;
     }
     var parts = srcs.map(function (s) {
       var rel = s.rxRel + limDbOf([s.dirStem, s.revStem]);
@@ -220,12 +257,13 @@
     var crestDb = 0;
     stems.forEach(function (st) { if (st.kind === 'bed' && st.crestDb < crestDb) crestDb = st.crestDb; });
     // the target: measured directly on its summed stems (the most important number)
-    var tLev = null;
-    if (srcs.some(function (s) { return s.role === 'target'; })) {
+    var tLev = null, tg = srcs.filter(function (s) { return s.role === 'target'; });
+    if (tg.length === 1 && !lim.gain && !c.rebalanced) tLev = REF + gdb + tg[0].rxRel; // set by measurement at calibration
+    else if (tg.length) {
       var TL = new Float32Array(len), TR = new Float32Array(len);
       stems.forEach(function (st) { if (st.src && st.src.role === 'target' && st.g) { D.addInto(TL, st.ch[0], 0, st.g * G); D.addInto(TR, st.ch[1], 0, st.g * G); } });
       D.applyGain([TL, TR], lim.gain);
-      tLev = D.activeDb([TL, TR], sr);
+      tLev = D.activeDb([TL, TR], sr, TAIL);
     }
     var mk = parts.filter(function (p) { return p.role === 'masker'; }), mMax = null, mSum = 0;
     mk.forEach(function (p) { mMax = mMax == null ? p.abs : Math.max(mMax, p.abs); mSum += Math.pow(10, p.abs / 10); });
@@ -236,7 +274,7 @@
       snrDb: tLev != null && bedDb != null ? r2(tLev - bedDb) : null,       // target active level vs beds' RMS
       tmrDb: tLev != null && mMax != null ? r2(tLev - mMax) : null,        // vs the loudest masker
       tmrAllDb: tLev != null && mk.length ? r2(tLev - D.p2db(mSum)) : null, // vs all maskers together
-      outDb: r2(D.activeDb(mix, sr)), peakDb: r2(D.peakDb(mix)), limitDb: r2(lim.reductionDb), bedCrestDb: r2(crestDb),
+      outDb: r2(D.activeDb(mix, sr, TAIL)), peakDb: r2(D.peakDb(mix)), limitDb: r2(lim.reductionDb), bedCrestDb: r2(crestDb),
       targetDb: r2(tLev), bedDb: r2(bedDb), // dBFS at the output
       drrDb: t0 ? r2(20 * Math.log10(room.dc / t0.dist)) : null, dc: room ? r2(room.dc) : null,
       rt60: room ? r2(room.rt60) : null, levels: room ? room.levels : null,

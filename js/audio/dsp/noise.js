@@ -10,6 +10,9 @@
      smooth approximation, not a standard's table): a rise to 250 Hz, a plateau to 500 Hz, then about -9 dB per
      octave to 1 kHz and -8 dB per octave above. Prefer a measured LTAS of the actual voices (ES.data.ltas or ltasOf). */
   D.LTAS_DEFAULT = [[50, -22], [100, -9], [160, -3], [250, 0], [500, 0], [1000, -9], [2000, -17], [4000, -25], [8000, -33]];
+  D.LTAS_PINK = [[31.5, 15], [63, 12], [125, 9], [250, 6], [500, 3], [1000, 0], [2000, -3], [4000, -6], [8000, -9], [16000, -12]];
+  // Sum (in dB) of two LTAS, at the frequencies of the second (e.g. a source spectrum times a room's colour).
+  D.ltasSum = function (a, b) { return b.map(function (p) { return [p[0], D.ltasAt(a, p[0]) + p[1]]; }); };
   D.ltasAt = function (ltas, f) {
     var L = ltas && ltas.length ? ltas : D.LTAS_DEFAULT;
     if (f <= L[0][0]) return L[0][1];

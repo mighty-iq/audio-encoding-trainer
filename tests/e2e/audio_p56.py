@@ -23,8 +23,11 @@ def rms_db(x, a=None, b=None):
     return 10 * np.log10(ms) if ms > 0 else -200.0
 
 
-def active_db(x, sr, tc=0.03, hang=0.2, margin=15.9):
+def active_db(x, sr, tc=0.03, hang=0.2, margin=15.9, tail=0.5):
+    """tail: seconds of silence assumed after the signal (the renderer's convention: levels as heard, then silence)."""
     x = chans(x)
+    if tail:
+        x = np.concatenate([x, np.zeros((x.shape[0], int(round(tail * sr))))], axis=1)
     p = np.mean(x ** 2, axis=0)
     E, n = p.sum(), p.size
     if E <= 0:

@@ -66,56 +66,58 @@
       dist: room.dist == null ? 2 : Math.max(0.1, +room.dist), key: rt60 + '|' + JSON.stringify(size) + '|' + seed + '|' + (ir ? ir.join(',') : '')
     };
   };
-  // A measured response as the room sound: cut its direct sound (up to 2.5 ms after the peak), fade in 1 ms,
-  // unit energy per channel. One clip serves both ears.
-  P.measuredRir = function (chs, sr) {
-    var out = chs.map(function (x) {
+  /* Room model for the renderer (see dsp/reverb.js), cached by room and rate. A measured response (room.ir) becomes a
+     model without separate early taps: its direct sound (up to 2.5 ms after the peak) is cut, the rest is the room
+     sound at half rate; one clip serves both ears. */
+  var modelCache = [], MODEL_CACHE = 6;
+  P.measuredModel = function (chs, sr) {
+    var ir = chs.map(function (x) {
       var pk = 0, pi = 0, i;
       for (i = 0; i < x.length; i++) { var v = Math.abs(x[i]); if (v > pk) { pk = v; pi = i; } }
-      var cut = pi + Math.round(0.0025 * sr), fd = Math.max(1, Math.round(0.001 * sr)), y = new Float32Array(Math.max(1, x.length - pi));
+      var cut = pi + Math.round(0.0025 * sr), fd = Math.max(1, Math.round(0.001 * sr)), y = new Float32Array(Math.max(2, x.length - pi));
       for (i = cut; i < x.length; i++) y[i - pi] = x[i] * (i - cut < fd ? (i - cut + 0.5) / fd : 1);
-      return D.scaleInPlace(y, 1 / Math.sqrt(D.energy(y) || 1));
+      return y;
     });
-    return out.length === 1 ? [out[0], out[0]] : out;
+    if (ir.length === 1) ir = [ir[0], ir[0]];
+    var model = { sr: sr, len: ir[0].length, early: [], tail: [D.decimate2(ir[0]), D.decimate2(ir[1])], G: {}, measured: true };
+    var comp = D.composeRir(model);
+    for (var ch = 0; ch < 2; ch++) D.scaleInPlace(model.tail[ch], 1 / Math.sqrt(D.energy(comp[ch]) || 1));
+    model.rt60 = D.clamp(D.schroederRT(D.composeRir(model)[0], sr) || 0.5, 0.1, 12);
+    return model;
   };
-  var rirCache = [], RIR_CACHE = 6;
-  P.rir = function (info, sr, clipData) {
-    var key = info.key + '|' + sr;
-    if (info.ir && clipData) {
-      var hitM = null;
-      for (var m = 0; m < rirCache.length; m++) if (rirCache[m].key === key) hitM = rirCache[m];
-      if (!hitM) {
+  P.roomModel = function (info, sr, clipData) {
+    var key = info.key + '|' + sr, hit = null;
+    for (var m = 0; m < modelCache.length; m++) if (modelCache[m].key === key) { hit = modelCache.splice(m, 1)[0]; modelCache.unshift(hit); break; }
+    if (!hit) {
+      var model = null;
+      if (info.ir && clipData) {
         var have = info.ir.filter(function (id) { return clipData[id]; });
-        if (have.length) {
-          var mir = P.measuredRir(have.map(function (id) { return clipData[id].x; }), sr);
-          hitM = { key: key, ir: mir, rt60: D.clamp(D.schroederRT(mir[0], sr) || info.rt60, 0.1, 12) };
-          rirCache.unshift(hitM); if (rirCache.length > RIR_CACHE) rirCache.pop();
-        }
+        if (have.length) model = P.measuredModel(have.map(function (id) { return clipData[id].x; }), sr);
       }
-      if (hitM) {
-        if (!info.rtGiven) { info.rt60 = hitM.rt60; info.dc = D.critDist(info.rt60, info.size); }
-        return hitM.ir;
-      }
+      if (!model) model = D.roomModel(sr, { rt60: info.rt60, size: info.size, seed: info.seed });
+      hit = { key: key, model: model };
+      modelCache.unshift(hit);
+      if (modelCache.length > MODEL_CACHE) modelCache.pop();
     }
-    for (var i = 0; i < rirCache.length; i++) if (rirCache[i].key === key) { var hit = rirCache.splice(i, 1)[0]; rirCache.unshift(hit); return hit.ir; }
-    var ir = D.rir(sr, { rt60: info.rt60, size: info.size, seed: info.seed });
-    rirCache.unshift({ key: key, ir: ir });
-    if (rirCache.length > RIR_CACHE) rirCache.pop();
-    return ir;
+    if (hit.model.measured && !info.rtGiven) { info.rt60 = hit.model.rt60; info.dc = D.critDist(info.rt60, info.size); }
+    return hit.model;
   };
 
   // ---- beds ----
-  // clipData: {id: {x: Float32Array, lev: dB}}; extra: {targetLtas, partsLtas}. Returns channels ([m] or [L, R]).
-  P.makeBed = function (bed, n, sr, stereo, rng, clipData, extra, warn) {
+  /* clipData: {id: {x: Float32Array, lev: dB}}; extra: {targetLtas, partsLtas}; model: a room model when the bed is in
+     the room. Returns channels ([m] or [L, R]). In a room, stationary noise (ssn, pink) is the same noise coloured
+     by the room's long-term spectrum (no convolution needed); babble and ambience are reverberated (mono in). */
+  P.makeBed = function (bed, n, sr, stereo, rng, clipData, extra, warn, model) {
     var kind = bed.kind || 'ssn', ch;
-    if (kind === 'ssn') {
-      var ltas = bed.ltas || (bed.from === 'target' && extra.targetLtas) || (bed.from === 'parts' && extra.partsLtas) ||
-        (ES.data && ES.data.ltas) || null;
-      ch = D.ssn(n, sr, ltas, rng, { stereo: stereo });
+    if (kind === 'ssn' || kind === 'pink') {
+      var ltas = kind === 'pink' ? D.LTAS_PINK : bed.ltas || (bed.from === 'target' && extra.targetLtas) ||
+        (bed.from === 'parts' && extra.partsLtas) || (ES.data && ES.data.ltas) || null;
+      if (model) ltas = D.ltasSum(ltas || D.LTAS_DEFAULT, D.roomColour(model));
+      ch = kind === 'pink' && !model ? D.pink(n, rng, { stereo: stereo }) : D.ssn(n, sr, ltas, rng, { stereo: stereo });
       if (!stereo) ch = [ch];
-    } else if (kind === 'pink') {
-      ch = D.pink(n, rng, { stereo: stereo });
-      if (!stereo) ch = [ch];
+    } else if (model) {
+      var dry = P.makeBed(bed, n, sr, false, rng, clipData, extra, warn, null)[0], w = D.reverb(dry, model);
+      ch = stereo ? [w[0].subarray(0, n).slice(), w[1].subarray(0, n).slice()] : [w[0].subarray(0, n).slice()];
     } else if (kind === 'babble') {
       ch = babble(bed, n, sr, stereo, rng, clipData, warn);
     } else if (kind === 'ambience') {
