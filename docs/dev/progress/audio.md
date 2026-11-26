@@ -88,3 +88,14 @@ Dead end: native ConvolverNode per stem (too slow, see above). An FDN reverb was
 
 Open (for the lead): Safari and Firefox are untested here (HRTF in a 16 kHz OfflineAudioContext, 16 kHz decoding);
 both fall back safely (hrtfLite; a 48/44.1 kHz decode context makes everything render at that rate, slower).
+
+## 2026-11-26 19:40 — verified (commit 73651fb)
+- `node tests/unit/run.mjs audio`: 25 passed. `tools/with-browser.sh python3 tests/e2e/audio_render.py`: 66 checks
+  passed (exact SNR/TMR to 0.00–0.02 dB in mono, ild, hrtf and rooms; DRR to 0.02 dB; output −20.00 dB; peaks ≤ −1 dBFS;
+  determinism; file://; sandboxed srcdoc; assets LRU; HRIR table; live scene; timing).
+- Timing, Chromium with 4× CPU throttling, fastest of 12 interleaved renders, 3 s trial, room + 3 parts + babble bed
+  in the room, load average 4.6 on 2 CPUs: same room hrtf 220 ms, ild 220 ms, mono 156 ms; a new room each time
+  (model built per render) hrtf 236, ild 256, mono 196 ms. Medians 259–452 ms on this shared machine. Room models
+  are cached (6), so the extra cost only hits room changes; CPU time per render in Node is ≈ 40 ms (ild, same room).
+- Next if needed: build room models ahead (e.g. in warm() for the rooms a set will use), pack the HRIR block FFTs
+  across parts, and a radix-4 FFT.
