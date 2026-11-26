@@ -76,7 +76,7 @@ Decisions (each cheap to change; reasons):
 Browser tests: run WITHOUT an outer `flock` (harness.browser_lock takes /tmp/earshot-browser.lock itself; wrapping
 it deadlocks). Logs: tests/out/game-screens.log, screenshots tests/out/game/.
 
-## 2026-11-26 19:35 UTC — state at hand-off (commits 9bc5f91, b3b9706, f1a6f81, 365e9fd)
+## 2026-11-26 19:21 UTC — state at hand-off (commits 9bc5f91, b3b9706, f1a6f81, 365e9fd)
 Done and verified:
 - Unit: `node tests/unit/run.mjs game-` → 30/30 (venues, weekly, growth, hooks; engine flow sets answered in Node).
 - Browser: `python3 tests/e2e/game_all.py` (one browser slot via harness.browser_lock; no wrapper) → screens on a fresh
