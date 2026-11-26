@@ -22,7 +22,7 @@
     view: 'keyword', feedback: 'standard',
     strategies: ['far.tune-in', 'far.starts', 'far.closer'],
     tips: [
-      'The first phrase is there so you can hear the room: listeners adjust to a room within about half a second to three seconds.',
+      'The first phrase is there so you can hear the room: listeners adjust to a room within about half a second to three seconds, most of all with headphones.',
       'Echo blurs the ends of words more than their starts. Hold on to the first sound and the vowel of each word.',
       'Each doubling of distance makes the direct sound 6 dB weaker against the room’s echo, so the same voice gets harder fast.'
     ],
@@ -59,14 +59,31 @@
   }
   function drrDrop(dist) { return Math.round(20 * Math.log(Math.max(1, dist)) / Math.LN10); }
 
+  // The field's outer ring radius in viewBox units (js/core/field.js R = 86) and how far below "you" the back wall
+  // must sit to clear the "you" label (baseline 15 units below the dot, ~8 units tall).
+  var FIELD_R = 86, CLEAR = 20, DOT = 9;   // DOT: the talker's dot (r 7) plus a margin, kept inside the far wall
+  function maxDistOf(box, dist) { return Math.max(dist * 1.1, box.far * 0.9); }
+  /** Room outline whose back wall stays clear of the "you" label at the field's ring scale: you stand deeper in the
+      room when it has space; when the talker stands near the far wall the outline is drawn a little deeper behind you
+      (at most ~22 %, a 5 m room with the talker at 4 m; rings and the talker keep their true distances). */
+  function layout(size, dist) {
+    var k = K(), box = k.roomBox(size, dist), nice = ES.ui && ES.ui.field && ES.ui.field.niceRings;
+    if (typeof nice !== 'function') return box;
+    for (var i = 0; i < 6; i++) {
+      var perUnit = nice(maxDistOf(box, dist)).outer / FIELD_R, need = CLEAR * perUnit, ahead = DOT * perUnit;
+      if (box.back >= need - 1e-6 && box.far - dist >= ahead - 1e-6) break;
+      box = k.roomBox(size, dist, need, ahead);
+    }
+    return box;
+  }
   function picture(t) {
     var k = K(), base = k.clone(t.picture) || { voices: [] }, r = room(t) || {}, dist = distOf(t);
     var tv = (base.voices || []).filter(function (v) { return v.role === 'target'; })[0] || { id: 'v0', role: 'target', az: 0 };
     tv = k.clone(tv);
     tv.dist = dist;
     tv.label = fmtM(dist);
-    var box = k.roomBox(r.size, dist);
-    return { voices: [tv], room: { w: box.w, d: box.d, cx: box.cx, cy: box.cy }, maxDist: Math.max(dist * 1.1, box.far * 0.9),
+    var box = layout(r.size, dist);
+    return { voices: [tv], room: { w: box.w, d: box.d, cx: box.cx, cy: box.cy }, maxDist: maxDistOf(box, dist),
       title: 'A talker ' + fmtM(dist) + ' ahead in ' + (SIZE_WORD[r.size] || 'a room') + (r.rt60 ? ' with ' + r.rt60 + ' s of echo' : '') };
   }
   M.prepare = function (t) {
@@ -113,7 +130,7 @@
     return [
       { kind: 'caption', minMs: 3000, then: 'tap',
         text: 'Someone in a room says two phrases. The first lets you hear the room. Then tap what you heard in the second.' },
-      { kind: 'demo', force: { dials: { dist: 1, rt60: 0, noise: 30 } }, notes: { neighbour: 'sounds alike', random: 'not in the phrase' },
+      { kind: 'demo', force: { dials: { dist: 1, rt60: 0, noise: 30 } }, notes: { neighbour: 'sounds alike', number: 'another number', random: 'not in the phrase' },
         text: 'An example first: a talker ' + lv('dist', 1, '1.5 m') + ' away in a small room.' },
       { kind: 'practice', force: { dials: { dist: 1, rt60: 0, noise: 30 }, answerAt: [1, 3] },
         text: 'Your turn. Listen to the room, then catch the second phrase.' },

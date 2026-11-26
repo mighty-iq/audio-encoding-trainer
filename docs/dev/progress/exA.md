@@ -87,3 +87,25 @@ Next: rerun ex_a_tutorial.py --miss once the shell fix lands; then final report.
 - Commit hygiene: the git index is shared by all builders; commit with explicit paths
   (`TZ=UTC git commit -m … -- <own paths>`). f5f401f accidentally carried the game's staged deletion of
   js/game/fallback.js (reported in requests.md; history not rewritten).
+
+## 2026-11-26 20:38 UTC — fix round 1 (docs/dev/reviews/FIX-ROUND-1.md)
+- C12 fixed: Strange adapts to the families the build can play (accent only with accented voices, judged like the
+  engine: adapt.isNative). Without them the last practice is "a voice through a wall", Help hides the accent row,
+  Home/map copy drops "Accents", the goal lists only playable kinds, and the accent strategy card is skipped.
+- C16 fixed: borrowed-words card and tip say "many", "reported in a review", "one same-sex voice"; no "heard clearly"
+  (also the intrusion line now reads "Real words, from the wrong voice").
+- C18 fixed: call-sign card keeps pitch and pace, continuity (+ ~10-point cost of a move); the 10–40 figure moved to
+  the headphones card; "place" in Crowd tips and why only "with headphones".
+- C21 fixed: "glimpses of most words"; transfer "from one kind of gap (silent or noise-filled) to the other" (card +
+  Repair why).  C22 fixed: room adaptation "most of all with headphones" (card + Far tip).
+- C36 fixed: without Repair sentences, Help hides the Context row and the context sentence; the context tip, the bet's
+  context half and the repair.wait card are hidden too; gate text says "phrase".  C39 fixed: "Our bet: …".
+- Far room vs "you" fixed: the outline is laid out at the field's ring scale so the back wall sits ≥ 20 units below
+  "you" (clear of the label) and the far wall ≥ 9 units beyond the talker's dot; the true room size is kept, except
+  near the far wall where it is drawn up to 22 % deeper behind you (5 m room, talker at 4 m).
+- Foil types (CONTRACTS §5): 'number' gets a plain "it was X, not Y" (never "sounds like"); 'similar' "is a close
+  one"; examples annotate number foils ("another number").
+- Tests: ex_a_layout.py review_checks (10 checks) — on the pre-fix files (git show HEAD) 8 failed, after 10/10 pass.
+  New `--head` flag tests exA's working copy against everyone else's last commit (the shell's uncommitted
+  session.js — persist() undefined — broke a working-tree run). Head mode, fixtures: tutorial 76/76, layout 91/91;
+  real starter pack: tutorial 68/68, layout --quick 35/35.

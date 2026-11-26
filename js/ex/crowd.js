@@ -21,8 +21,8 @@
     view: 'keyword', feedback: 'standard',
     strategies: ['crowd.lock-on', 'crowd.borrowed', 'crowd.space'],
     tips: [
-      'The call sign comes first. Lock on to that voice, its pitch, pace and place, and let it lead you to the words.',
-      'A wrong word that another voice said means you heard well and followed the wrong talker. In a classic study most mistakes against a same-sex voice were of this kind.',
+      'The call sign comes first. Lock on to that voice, its pitch and pace (with headphones, its place too), and let it lead you to the words.',
+      'A wrong word that another voice said is a real word from the wrong talker. In a classic study, reported in a review, most errors against one same-sex voice were of this kind.',
       'The closer two voices are in pitch, size and place, the harder it gets; pitch and size differences together help more than either alone. With headphones, even 10 to 15° between voices helps a lot.'
     ],
     helpData: function () {
@@ -34,7 +34,7 @@
           similar: 'How alike the other voices sound, from the other sex to a near-twin of your voice.',
           space: 'How far apart the voices stand around you. Unlocks once the headphone check passes.'
         },
-        why: 'Most of the difficulty in a crowd is choosing which talker to follow, not hearing the words. Crowd trains that choice with call signs, voices and places. In one study, gains from practice in babble did not carry over to babble in another language, so the crowd here keeps changing: voices, sexes, numbers of talkers and backgrounds.'
+        why: 'Most of the difficulty in a crowd is choosing which talker to follow, not hearing the words. Crowd trains that choice with call signs and voices, and with headphones, places. In one study, gains from practice in babble did not carry over to babble in another language, so the crowd here keeps changing: voices, sexes, numbers of talkers and backgrounds.'
       };
     }
   };
@@ -141,7 +141,7 @@
         k.q(rs.map(function (r) { return r.answer; }).join(', ')) + '.');
     });
     lines = lines.concat(other);
-    if (borrowed.length) lines.push(cueOf(t) === 'callsign' ? 'You heard them right, from the wrong voice: lock on at the call sign.' : 'You heard them right, from the wrong voice: stay with yours from its first word.');
+    if (borrowed.length) lines.push(cueOf(t) === 'callsign' ? 'Real words, from the wrong voice: lock on at the call sign.' : 'Real words, from the wrong voice: stay with yours from its first word.');
     if (result.correct) lines.push(k.cap(who) + ' said ' + k.q(result.slots.map(function (r) { return r.answer; }).join(', ')) + '.');
     return { text: lines.join(' '), words: null, auto: result.correct ? [] : [0, 1] };
   };
@@ -155,7 +155,7 @@
     { kind: 'caption', minMs: 3000, then: 'tap',
       text: 'One voice says a call sign, then a word and a number. It is the red dot. Follow it and tap what it says.' },
     { kind: 'demo', force: { dials: { tmr: 12, talkers: 0, similar: 0 } },
-      notes: { masker: 'the blue voice said this', neighbour: 'sounds alike', random: 'not said' },
+      notes: { masker: 'the blue voice said this', neighbour: 'sounds alike', number: 'another number', random: 'not said' },
       text: 'An example first. The blue voice talks quietly over the red one.' },
     { kind: 'practice', force: { dials: { tmr: 12, talkers: 0, similar: 0 }, answerAt: [2, 0] },
       text: 'Your turn. Listen for the call sign, then tap what that voice says.' },

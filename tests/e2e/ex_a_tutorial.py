@@ -5,7 +5,7 @@ every practice trial correctly (except one deliberate miss on the first practice
 that a wrong answer does not advance), listens to automatic replays after a miss, then plays the set's trials.
 Checks: the tutorial ends (Chimera link shown) within 120 s of simulated play; every practice and set trial gets
 the right answer accepted; trials need no scrolling at 360×640 while answering and in feedback; no page errors.
-Run:  tools/with-browser.sh python3 tests/e2e/ex_a_tutorial.py [crowd far ...] [--miss] [--real]
+Run:  tools/with-browser.sh python3 tests/e2e/ex_a_tutorial.py [crowd far ...] [--miss] [--real] [--head]
 Outputs: tests/out/exa/ (screenshots, ex_a_tutorial.json). MIT licence."""
 import pathlib
 import sys
@@ -130,7 +130,7 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     exs = args or C.EXERCISES
     miss = '--miss' in sys.argv
-    url, missing = C.build_page(real='--real' in sys.argv)
+    url, missing = C.build_page(real='--real' in sys.argv, head='--head' in sys.argv)
     rep = C.Report('ex_a_tutorial')
     if missing:
         print('note: index.html does not list', missing, '- the test page adds them')

@@ -112,12 +112,16 @@
     });
     return trial;
   }
-  /** Generic line for a wrong slot: "Word: “cap” sounds like “cup”." / "Number: it was “seven”." */
+  /** Line for a wrong slot by foil type: neighbour "Word: “cap” sounds like “cup”."; context "“bowl” fits the
+      sentence, but the sound was “cup”."; similar "“X” is a close one; it was “Y”."; number and random
+      "Number: it was “seven”, not “nine”." (never "sounds like" for numbers). */
   function missLine(trial, i, r, who) {
     var s = slotsOf(trial)[i] || {}, lab = slotsOf(trial).length > 1 && s.label ? s.label + ': ' : '';
     if (r.picked == null) return lab + (who || 'It') + ' said ' + q(r.answer) + '.';
     if (r.foil === 'neighbour') return lab + q(r.picked) + ' sounds like ' + q(r.answer) + '.';
     if (r.foil === 'context') return lab + q(r.picked) + ' fits the sentence, but the sound was ' + q(r.answer) + '.';
+    if (r.foil === 'similar') return lab + q(r.picked) + ' is a close one; it was ' + q(r.answer) + '.';
+    // 'number' (another number of the set; numbers are not sound-alikes), 'random' and anything new: plain words
     return lab + (who ? who + ' said ' : 'it was ') + q(r.answer) + ', not ' + q(r.picked) + '.';
   }
   function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
@@ -158,19 +162,21 @@
   /* ---- picture helpers (ES.ui.field model; static while sound plays) ---- */
   // Room sizes as the renderer builds them (CONTRACTS §12 R1): [length, width] in m; a number = length, width 0.7×.
   var ROOM_M = { small: [5, 4], medium: [10, 7], large: [22, 15], hall: [38, 24] };
-  /** The room outline for the field: you stand near the back wall facing the talker, who stands inside the room
-      (the engine keeps dist ≤ 0.8 × length). Returns {w, d, cx, cy, far} in metres (cy = centre ahead of you). */
-  function roomBox(size, dist) {
+  /** The room outline for the field: you stand inside the room facing the talker, who stands inside it too (the
+      engine keeps dist ≤ 0.8 × length); minBack (m) keeps the back wall that far behind you, ahead (m, ≥ 0.3) the far
+      wall that far beyond the talker. Returns
+      {w, d, cx, cy, far, back} in metres (cy = centre ahead of you, far = wall ahead, back = wall behind). */
+  function roomBox(size, dist, minBack, ahead) {
     var w, d, m = ROOM_M[size];
     if (m) { d = m[0]; w = m[1]; }
     else if (size && size.length === 3) { d = +size[0]; w = +size[1]; }
     else if (size && size.length === 2) { w = +size[0]; d = +size[1]; }
     else { d = typeof size === 'number' && size > 0 ? size : 8; w = 0.7 * d; }
     dist = dist || 0;
-    var back = Math.min(1.5, 0.15 * d);
-    if (dist > d - back - 0.3) back = Math.max(0.3, d - dist - 0.3);
-    if (dist > d - back - 0.3) d = dist + back + 0.3;   // last resort: never draw the talker outside the walls
-    return { w: round(w, 1), d: round(d, 1), cx: 0, cy: round(d / 2 - back, 2), far: round(d - back, 2) };
+    var gap = Math.max(0.3, ahead || 0), floor = Math.max(0.3, minBack || 0), back = Math.max(Math.min(1.5, 0.15 * d), floor);
+    if (dist + back + gap > d) back = Math.max(floor, Math.min(back, d - dist - gap));   // prefer the true room size
+    if (dist + back + gap > d) d = Math.ceil((dist + back + gap) * 10) / 10;   // else draw it a little deeper behind you
+    return { w: round(w, 1), d: round(d, 1), cx: 0, cy: round(d / 2 - back, 2), far: round(d - back, 2), back: round(back, 2) };
   }
   /** Voices that share a place (no direction cue, or the same azimuth) are drawn as a small group at one
       distance, 32° apart, the voice to follow in the middle: every dot and the call-sign label stay visible, and
@@ -232,16 +238,16 @@
      (interrupted-speech practice carried across gap types and lasted ~3 months). */
   var CARDS = [
     { id: 'crowd.lock-on', ex: 'crowd', dial: 'talkers', title: 'Lock on at the call sign',
-      text: 'The call sign is your anchor. From the moment you hear it, stay with that voice: its pitch, its pace, where it sits. In lab studies, knowing where to listen was worth 10 to 40 points, and attention kept building while the voice stayed put.',
+      text: 'The call sign is your anchor. From the call sign on, stay with that voice: its pitch and its pace. In lab studies attention kept building while the voice to follow stayed the same, and recall fell by about 10 points when it moved.',
       tryIt: 'Next set: listen only for the call sign at first, then follow that one voice and let the others go.' },
     { id: 'crowd.borrowed', ex: 'crowd', dial: 'similar', title: 'Wrong voice, not wrong ears',
-      text: 'Most crowd mistakes are borrowed words: a real word, heard clearly, from the wrong talker. In a classic study most errors against a same-sex voice were that voice’s words. When feedback says a word came from another voice, your hearing worked and your attention slipped.',
+      text: 'Many crowd mistakes are borrowed words: a real word from the wrong talker. In a classic study, reported in a review, most errors against one same-sex voice were that voice’s words. When feedback says a word came from another voice, the slip was in which voice you followed.',
       tryIt: 'Next set: after a miss, play your voice alone, then the mix, and listen for the moment the two voices cross.' },
     { id: 'crowd.space', ex: 'crowd', dial: 'space', requires: 'headphones', title: 'Listen toward the red dot',
-      text: 'With headphones, where a voice stands is one of the strongest cues. Even 10 to 15 degrees between voices releases much of the confusion when the others are talking.',
+      text: 'With headphones, where a voice stands is one of the strongest cues. In lab studies, knowing where the voice would be was worth 10 to 40 points over knowing only its call sign, and even 10 to 15 degrees between voices released much of the confusion.',
       tryIt: 'Next set: glance at the red dot before every sound and keep your listening on that side.' },
     { id: 'far.tune-in', ex: 'far', dial: 'rt60', title: 'Let the room tune you in',
-      text: 'The first phrase is there so you can hear the room. Listeners adjust to a room within about half a second to three seconds, and speech in it then gets easier to catch.',
+      text: 'The first phrase is there so you can hear the room. Listeners adjust to a room within about half a second to three seconds, and speech in it then gets easier to catch, most of all with headphones.',
       tryIt: 'Next set: during the first phrase, notice how long the room rings after each word.' },
     { id: 'far.starts', ex: 'far', dial: 'dist', title: 'Catch the start of each word',
       text: 'Echo smears the ends of words. In two very echoey halls, final consonants were heard right 56 to 62 % of the time, against 88 % without echo. Hold on to each word’s first sound and its vowel, and let the phrase fill in the end.',
@@ -255,26 +261,33 @@
     { id: 'strange.few', ex: 'strange', title: 'Give a new voice three tries',
       text: 'Getting used to a new kind of voice is fast and front-loaded: in one study half of the gain over 30 sentences came within the first three. The first few of a new kind are warm-ups and do not move your level.',
       tryIt: 'Next set: when a new kind of voice appears, stay relaxed through the first three and notice when it clicks.' },
-    { id: 'strange.noise', ex: 'strange', dial: 'accent', title: 'Accents show up in noise',
+    { id: 'strange.noise', ex: 'strange', dial: 'accent', needs: 'accent', title: 'Accents show up in noise',
       text: 'In quiet most accents are easy; in noise the differences open up. In one study English listeners in noise scored about 80 % with their own accent and 46 to 58 % with others, so accent trials run in babble.',
       tryIt: 'Next set: on accent trials, notice which sounds this voice changes; the same change tends to come back in new words.' },
-    { id: 'repair.wait', ex: 'repair', dial: 'context', title: 'Wait for the end of the sentence',
+    { id: 'repair.wait', ex: 'repair', dial: 'context', needs: 'sentences', title: 'Wait for the end of the sentence',
       text: 'The words after a gap can repair it. In one study context helped even more when it came after the unclear word than before it. Hold the whole sentence, then choose.',
       tryIt: 'Next set: do not decide at the gap; run the end of the sentence back in your head first.' },
     { id: 'repair.fill', ex: 'repair', dial: 'fill', title: 'Let the noise do the filling',
       text: 'When noise covers a gap, hearing tends to fill in what should be there; in silence the cut is obvious. Filling the gaps with noise raised scores by about 9 points in one study.',
       tryIt: 'Next set: on noisy gaps, go with the word you seem to hear, even if it feels like a guess.' },
     { id: 'repair.glimpse', ex: 'repair', dial: 'gate', title: 'Listen through the gaps',
-      text: 'Chopped-up speech keeps its rhythm and gives glimpses of every word. Practice with interrupted sentences carried over to other kinds of gaps and lasted about three months in one study.',
+      text: 'Chopped-up speech keeps its rhythm and gives glimpses of most words. In one study, practice with one kind of gap (silent or noise-filled) carried over to the other and lasted about three months.',
       tryIt: 'Next set: follow the beat of the sentence through the cuts instead of waiting for whole words.' }
   ];
   function card(id) { for (var i = 0; i < CARDS.length; i++) if (CARDS[i].id === id) return clone(CARDS[i]); return null; }
-  function forEx(ex) { return CARDS.filter(function (c) { return c.ex === ex; }).map(clone); }
+  function forEx(ex) { return CARDS.filter(function (c) { return c.ex === ex && playable(c); }).map(clone); }
+  /** Whether this build can play what a card talks about (accented voices; Repair sentences with context). */
+  function playable(c) {
+    var M = ES.ex[c.ex];
+    if (c.needs === 'accent') return !(M && typeof M.families === 'function') || M.families().indexOf('accent') >= 0;
+    if (c.needs === 'sentences') return !(M && typeof M.hasSentences === 'function') || M.hasSentences();
+    return true;
+  }
   /** The card to show at a plateau: one for the stalled dial if there is one, else the first not yet seen. */
   function pick(ex, opts) {
     opts = opts || {};
     var seen = opts.seen || [];
-    var ok = CARDS.filter(function (c) { return c.ex === ex && (!c.requires || (c.requires === 'headphones' && opts.headphones)); });
+    var ok = CARDS.filter(function (c) { return c.ex === ex && (!c.requires || (c.requires === 'headphones' && opts.headphones)) && playable(c); });
     var fresh = ok.filter(function (c) { return seen.indexOf(c.id) < 0; });
     var pool = fresh.length ? fresh : ok;
     var hit = opts.dial ? pool.filter(function (c) { return c.dial === opts.dial; })[0] : null;

@@ -19,26 +19,22 @@
     short: 'Rebuild words lost under bursts of noise.',
     card: { trains: 'Words vanish under bursts of noise. Rebuild them from what came before and after.',
       bet: 'a general strategy: hold the sentence, then repair it' },
-    bet: 'A general strategy, hold the sentence and then repair it, plus listening in the gaps.',
     betNew: false,
     view: 'keyword', feedback: 'standard',
     strategies: ['repair.wait', 'repair.fill', 'repair.glimpse'],
-    tips: [
-      'Wait for the end: the words after a gap can repair it, sometimes better than the words before it.',
-      'When noise fills a gap, your hearing tends to fill in the missing sound. Trust what the sound and the sentence suggest together.',
-      'Chopped-up speech keeps its rhythm. Follow the beat of the sentence through the cuts.'
-    ],
     helpData: function () {
+      var full = sentences();
       return {
         goal: sentences() ? 'One word in each sentence is lost under a burst of noise or a gap. Hold the whole sentence in mind, then tap the word that was there.'
           : 'A voice says a name, a word and a number, and one word is lost under a burst of noise or a gap. Listen to the whole phrase, then tap the word that was there.',
         dials: {
           gap: 'How much of the lost word is covered.',
-          context: 'How strongly the rest of the sentence points to the word.',
-          gate: 'The whole sentence switches on and off; less of it is kept.',
+          context: full ? 'How strongly the rest of the sentence points to the word.' : false,   // no context in call-sign phrases
+          gate: 'The whole ' + (full ? 'sentence' : 'phrase') + ' switches on and off; less of it is kept.',
           fill: 'Noise lets your hearing fill in; silence makes the cuts obvious.'
         },
-        why: 'Holding a sentence in mind and repairing it from context is a general listening strategy, and listening in the gaps of a fluctuating noise improves quickly with practice. In one study, practice with interrupted sentences carried over to a different kind of gap and lasted about three months.'
+        why: (full ? 'Holding a sentence in mind and repairing it from context is a general listening strategy, and listening' : 'Listening') +
+          ' in the gaps of a fluctuating noise improves quickly with practice. In one study, practice with one kind of gap (silent or noise-filled) carried over to the other and lasted about three months.'
       };
     }
   };
@@ -49,6 +45,21 @@
     if (!A || typeof A.voicesWith !== 'function' || typeof A.repairItems !== 'function') return true;
     try { return A.voicesWith(A.repairItems()).length > 0; } catch (e) { return true; }
   }
+  // Bet line and tips follow the build: the context half needs sentences (call-sign phrases carry no context).
+  Object.defineProperty(M, 'bet', { enumerable: true, get: function () {
+    return sentences() ? 'A general strategy, hold the sentence and then repair it, plus listening in the gaps.'
+      : 'Listening in the gaps: catching a word through bursts of noise and cuts.';
+  } });
+  Object.defineProperty(M, 'tips', { enumerable: true, get: function () {
+    var t = [
+      'When noise fills a gap, your hearing tends to fill in the missing sound. Trust what the sound ' + (sentences() ? 'and the sentence suggest together.' : 'suggests.'),
+      'Chopped-up speech keeps its rhythm. Follow its beat through the cuts.'
+    ];
+    if (sentences()) t.unshift('Wait for the end: the words after a gap can repair it, sometimes better than the words before it.');
+    return t;
+  } });
+  M.hasSentences = sentences;
+
   function lostWord(t) { var m = t.meta || {}; return m.items && m.items[0] ? String(m.items[0]) : null; }
   /** "she poured the milk into a [cup]": the generator's version when it gives one, else built from meta.text. */
   function marked(t) {

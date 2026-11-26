@@ -11,6 +11,8 @@ player). Run every browser test in a browser slot: tools/with-browser.sh python3
 import json
 import pathlib
 import re
+import shutil
+import subprocess
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -62,11 +64,21 @@ HOOK = r"""<script>
 </script>"""
 
 
-def build_page(name='page.html', head_extra='', real=False):
+def build_page(name='page.html', head_extra='', real=False, head=False):
     """Write the test page and return (file:// URL, exA files the index lacked). real=False (default): the real
     data/ and audio/ packs are left out and the fixtures stand in (all four exercises, deterministic); real=True:
-    index.html's own data and packs (whatever the stimuli pipeline has built so far)."""
-    html = (ROOT / 'index.html').read_text(encoding='utf-8')
+    index.html's own data and packs (whatever the stimuli pipeline has built so far). head=True: every other owner's
+    code (index.html, css, fonts, js except js/ex/{crowd,far,repair,strange,strategies}.js) comes from the last commit
+    (git archive HEAD into tests/out/exa/head/), so exA's working copy is tested apart from others' unfinished edits."""
+    base = ROOT
+    if head:
+        hd = OUT / 'head'
+        shutil.rmtree(hd, ignore_errors=True)
+        hd.mkdir(parents=True)
+        arc = subprocess.run(['git', 'archive', 'HEAD', 'index.html', 'css', 'fonts', 'js'], cwd=ROOT, capture_output=True, check=True)
+        subprocess.run(['tar', '-x', '-C', str(hd)], input=arc.stdout, check=True)
+        base = hd
+    html = (base / 'index.html').read_text(encoding='utf-8')
     a, b = html.index('<!-- scripts:begin -->'), html.index('<!-- scripts:end -->')
     srcs = re.findall(r'<script src="([^"]+)"></script>', html[a:b])
     if not real:   # generated packs may be mid-rebuild: keep only data/ltas.js, and only when it exists
@@ -80,17 +92,19 @@ def build_page(name='page.html', head_extra='', real=False):
         srcs = srcs[:at] + ex_all + srcs[at:]
     first_audio = next(i for i, s in enumerate(srcs) if not s.startswith('js/core/'))
     up = '../../../'
+    def src_of(s):   # exA files, fixtures and generated packs from the working tree; the rest from base
+        return up + s if (not head or s in EXA or s.startswith(('data/', 'audio/', 'tests/'))) else 'head/' + s
     tags = []
     for i, s in enumerate(srcs):
         if i == first_audio and not real:
-            tags += ['<script src="%s%s"></script>' % (up, f) for f in FIXTURES]
+            tags += ['<script src="%s"></script>' % src_of(f) for f in FIXTURES]
             tags.append(ALIAS)
         if s == 'js/app.js':
             tags.append(HOOK)
-        tags.append('<script src="%s%s"></script>' % (up, s))
-    head = html[:a].replace('href="css/', 'href="%scss/' % up)
-    head = head.replace('<head>', '<head>\n<script>window.ES_CONFIG = { testBuild: false };</script>' + head_extra, 1)
-    page = head + '<!-- scripts:begin -->\n' + '\n'.join(tags) + '\n' + html[b:]
+        tags.append('<script src="%s"></script>' % src_of(s))
+    head_html = html[:a].replace('href="css/', 'href="%scss/' % ('head/' if head else up))
+    head_html = head_html.replace('<head>', '<head>\n<script>window.ES_CONFIG = { testBuild: false };</script>' + head_extra, 1)
+    page = head_html + '<!-- scripts:begin -->\n' + '\n'.join(tags) + '\n' + html[b:]
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / name
     path.write_text(page, encoding='utf-8')
