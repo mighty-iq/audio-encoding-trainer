@@ -108,8 +108,8 @@ export function checkSpec(ES, X, spec) {
       g.forEach((p) => said(p).forEach((t) => { if (t === norm(tWord) || (askedNum && t === norm(tNum)) || t === norm(tName)) E('masker says a target word ' + t); }));
       if (Math.abs(g[0].db + dset.tmr) > 1e-9) E('masker level ' + g[0].db + ' does not match tmr ' + dset.tmr);
     });
-    const wantMaskers = val(ES, 'crowd', 'talkers', dset.talkers);
-    if (groups.length !== wantMaskers) E('masker count ' + groups.length + ' vs talkers ' + wantMaskers);
+    const wantMaskers = val(ES, 'crowd', 'talkers', dset.talkers), lone = (spec.meta.relaxed || []).includes('no other talker');
+    if (lone ? groups.length !== 0 || !spec.setting.noUpdate : groups.length !== wantMaskers) E('masker count ' + groups.length + ' vs talkers ' + wantMaskers);
     if (spec.meta.cue === 'callsign' && !norm(spec.question.prompt).includes(norm(tName))) E('prompt lacks the call sign');
     const nums = new Set(ES.data.vocab.numbers.map(norm)), allW = maskers.flatMap(said).filter((w) => askedNum || !nums.has(w));
     if (new Set(allW).size !== allW.length) E('two maskers say the same word');
@@ -161,7 +161,18 @@ export function checkSpec(ES, X, spec) {
   }
   if (ex === 'echo') {
     const t = target[0], text = textOf(t), item = X.echoByText.get(norm(text));
-    if (!item) { E('echo message not in vocab'); return err; }
+    if (!item) {
+      // a message made from a call-sign phrase: every answer is a word of it, no foil is, one slot per word
+      if (!(spec.meta.relaxed || []).includes('call-sign phrases')) { E('echo message not in vocab'); return err; }
+      const w = (C[t.clip].words || []).map(norm);
+      slots.forEach((sl, i) => {
+        if (!w.includes(norm(sl.answer))) E('fallback answer not in the phrase');
+        sl.options.forEach((o) => { if (norm(o) !== norm(sl.answer) && w.includes(norm(o))) E('fallback foil in the phrase'); });
+      });
+      if (new Set(slots.map((s) => norm(s.answer))).size !== slots.length) E('two questions with one answer');
+      if (slots.length - 2 !== dset.details && !(slots.length < 2)) E('details dial vs questions');
+      return err;
+    }
     if (item.facts.length - 2 !== dset.details) E('details dial ' + dset.details + ' vs ' + item.facts.length + ' facts');
     slots.forEach((sl, i) => {
       const facts = item.facts.filter((f) => f.q === sl.label);

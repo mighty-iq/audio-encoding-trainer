@@ -26,7 +26,10 @@
       return it.keys.length >= 2 && it.keys.every(function (k) { return answers.indexOf(C.norm(it.words[k])) >= 0; });
     }));
     var hit = X.itemVoice(rng, ok, 'any', pool, C.recentOf(ctx));
-    if (!hit) throw new Error('far: no phrase available');
+    // relaxation: all voices with material, recency dropped (meta.relaxed)
+    var relaxed = [];
+    if (!hit) { hit = X.itemVoice(rng, ok, 'any', Object.keys(withMat), []); if (hit) relaxed.push('all voices'); }
+    if (!hit) throw new Error('far: no speech material in this build');
     // carrier: another sentence by the same voice in the same room
     var carriers = X.kindsOf(hit.voice, 'sentence').concat(X.kindsOf(hit.voice, 'phrase')).filter(function (id) { return id !== hit.clip; });
     var carrier = C.pick(rng, carriers);
@@ -75,7 +78,7 @@
       feedback: { text: '“' + hit.item.text + '”, from ' + distM + ' m in a ' + size + ' room (' + rt + ' s echo).',
         replays: [{ label: 'Up close', audio: near }, { label: 'Again from ' + distM + ' m', audio: audio }] },
       picture: { voices: [{ id: 'v0', role: 'target', az: az, dist: distM, label: '' }], room: { size: size, rt60: rt } },
-      meta: { items: [k1, k2], voices: [hit.voice], family: null, probe: false, ctxKey: 'far', cond: 'room:' + size,
+      meta: { items: slots.map(function (sl) { return sl.answer; }), voices: [hit.voice], family: null, probe: false, ctxKey: 'far', cond: 'room:' + size, relaxed: relaxed,
         room: room, offsetDb: (c && c.diff) || 0, text: hit.item.text }
     };
   }

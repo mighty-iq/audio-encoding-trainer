@@ -17,7 +17,14 @@
     var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var g = val('gap', dials.gap || 0), pred = val('context', dials.context || 0), gate = val('gate', dials.gate || 0), fill = val('fill', dials.fill || 0);
-    var A = I.adapt, all = A.repairItems().filter(function (it) { return it.key >= 0 && it.words && it.words[it.key]; }), withMat = {};
+    // Relaxation (meta.relaxed): (1) all voices with material; (2) the build's call-sign phrases with word times,
+    // losing their word (little context: recorded as context level 'lo').
+    var A = I.adapt, all = A.repairItems().filter(function (it) { return it.key >= 0 && it.words && it.words[it.key]; }), withMat = {}, relaxed = [];
+    var timed = function (list) { return list.filter(function (it) { return A.clipsOf(it).some(function (id) { var c = X.clip(id); return c.wt && c.wt[it.key]; }); }); };
+    if (!timed(all).length) {
+      all = A.fallbackItems().map(function (it) { return { id: it.id, text: it.text, words: it.words, key: it.keys[0], pred: 'lo', alts: [], foils: null, kind: it.kind }; });
+      relaxed.push('call-sign phrases');
+    }
     A.voicesWith(all).forEach(function (v) { withMat[v] = 1; });
     var answers = X.keyPool('repair', all, function (it) { return [it.words[it.key]].concat(it.alts || []); });
     var pool = X.voicePool({ filter: function (vo, v) { return withMat[v]; }, breadth: breadth, order: ctx.playerSeed || 'p', minN: 4, avoid: ctx.avoidVoices });
@@ -35,7 +42,9 @@
       else if (h) withTimes = withTimes.filter(function (it) { return it !== h.item; });
       if (!withTimes.length) break;
     }
-    if (!hit) throw new Error('repair: no sentence with word times');
+    if (!hit) { var hb = X.itemVoice(rng, timed(cand.length ? cand : all), 'any', Object.keys(withMat), []); if (hb && X.clip(hb.clip).wt && X.clip(hb.clip).wt[hb.item.key]) { hit = hb; relaxed.push('all voices'); } }
+    if (!hit) throw new Error('repair: no timed speech in this build');
+    dials.context = PRED.indexOf(hit.item.pred) >= 0 ? PRED.indexOf(hit.item.pred) : dials.context;
     var c = X.clip(hit.clip), wt = c.wt[hit.item.key], w0 = wt[0], w1 = wt[1], lost = (w1 - w0) * g;
     var t0 = w0 + (w1 - w0 - lost) / 2, t1 = t0 + lost;
     var fx = [{ type: 'mask', t0: Math.round(t0 * 1000) / 1000, t1: Math.round(t1 * 1000) / 1000, fill: fill.fill, db: fill.db !== undefined ? fill.db : null }];
@@ -59,7 +68,7 @@
       question: { prompt: 'Which word was lost?', slots: [s1] },
       feedback: { text: shown, replays: [{ label: 'The whole sentence', audio: clear }, { label: 'Again with the gap', audio: audio, showText: true }] },
       picture: { voices: [{ id: 'v0', role: 'target', az: 0, dist: 1, label: '' }] },
-      meta: { items: [key], voices: [hit.voice], family: null, probe: false, ctxKey: 'repair', cond: 'base', pred: hit.item.pred, key: hit.item.key,
+      meta: { items: [key], voices: [hit.voice], family: null, probe: false, ctxKey: 'repair', cond: 'base', pred: hit.item.pred, key: hit.item.key, relaxed: relaxed,
         ctx: hit.item.key >= hit.item.words.length / 2 ? 'before' : 'after',
         keyPos: hit.item.key / Math.max(1, hit.item.words.length - 1), offsetDb: c.diff || 0, text: hit.item.text }
     };

@@ -4,7 +4,12 @@
    (breadth) widens the voice pool, bed kinds, cue types (call sign, voice preview, location) and onset jitter.
    Material: separate name/word/number clips, or whole call-sign phrases ("Daisy, dish, three.") when the build
    has those only (items/adapt.js). Bet: attention control and voice/spatial cue use against informational
-   masking; masker variety for generality (R3 §1). */
+   masking; masker variety for generality (R3 §1).
+   Small voice pools never make it throw; constraints relax in this order (each recorded in meta.relaxed, and the
+   dials report what was delivered): (1) all voices instead of the variety-limited pool, recency and avoid lists
+   dropped; (2) masker similarity one level easier at a time (items/data.js maskers); (3) fewer other talkers;
+   (4) the number is not asked; (5) one voice only: the other talker is the target's own voice pitch-shifted;
+   (6) no other talker at all: the target in babble only, a trial that does not move thresholds. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -33,11 +38,12 @@
     var tmr = typeof dials.tmr === 'number' ? dials.tmr : 6, nMask = dialVal('talkers', dials.talkers || 0), simLevel = Math.round(dials.similar || 0);
     var hp = !!ctx.headphones && dials.space !== undefined && dials.space !== null;
     var has3 = function (v) { return phrase ? A.callsignBy(v).length > 0 : (X.kindsOf(v, 'name').length && X.kindsOf(v, 'word').length && X.kindsOf(v, 'number').length); };
+    var relaxed = [], allVoices = X.voicePool({ filter: function (vo, v) { return has3(v); } });
     var pool = X.voicePool({ filter: function (vo, v) { return has3(v); }, breadth: breadth, order: ctx.playerSeed || 'p', minN: phrase ? 4 : 6, avoid: ctx.avoidVoices });
-    if (pool.length < 2) throw new Error('crowd: not enough voices');
+    if (pool.length < 2) { pool = allVoices.slice(); relaxed.push('all voices'); }
+    if (!pool.length) throw new Error('crowd: no voice material in this build');
     var recent = C.recentOf(ctx), tPool = pool.filter(function (v) { return recent.indexOf(v) < 0; });
     var target = C.pick(rng, tPool.length ? tPool : pool);
-    var allVoices = X.voicePool({ filter: function (vo, v) { return has3(v); }, avoid: ctx.avoidVoices });
     var names = X.pool('name', V.names || [], 2), nouns = X.pool('word', V.nouns || [], 2), nums = X.pool('number', V.numbers || [], 2);
     var pc = X.idx().poolCache = X.idx().poolCache || {};
     var dist = phrase ? pc['crowd:dist'] || (pc['crowd:dist'] = [C.answerDist(A.callsign(), function (p) { return p.word; }), C.answerDist(A.callsign(), function (p) { return p.number; })]) : null;
@@ -77,8 +83,17 @@
       used.n.push(e.name); used.w.push(e.word); used.k.push(e.num); tal.push(e);
     });
     if (twinLost && !tal.some(function (t) { return t.v === target; })) dials.similar = Math.min(dials.similar, 2);
-    if (!tal.length) throw new Error('crowd: no masker phrase available');
-    if (tal.length < nMask) dials.talkers = Math.max(0, tal.length - 1);
+    if (!tal.length) {
+      // (5) the target's own voice, pitch-shifted, saying something else
+      var tw0 = null;
+      if (phrase) { var tp2 = phraseFor(rng, target, used, askNum); if (tp2) tw0 = { name: tp2.name, word: tp2.word, num: tp2.number, clips: [tp2.clip] }; }
+      else { var n2 = wordFor(rng, target, 'name', names, used.n), w2 = wordFor(rng, target, 'word', nouns, used.w), k2 = wordFor(rng, target, 'number', nums, used.k);
+        if (n2 && w2 && k2) tw0 = { name: n2, word: w2, num: k2, clips: [X.clipFor(target, 'name', n2), X.clipFor(target, 'word', w2), X.clipFor(target, 'number', k2)] }; }
+      if (tw0) { tw0.v = target; tw0.fx = [{ type: 'resample', ratio: 1.06 }]; tal.push(tw0); dials.similar = 3; relaxed.push('near-twin (one voice)'); }
+      else relaxed.push('no other talker');
+    }
+    if (tal.length && tal.length < nMask) { dials.talkers = Math.max(0, tal.length - 1); relaxed.push('fewer talkers'); }
+    if (!askNum) relaxed.push('number not asked');
     var sep = hp ? dialVal('space', dials.space) : 0, cue = 'callsign';
     if (breadth >= 0.5 && C.chance(rng, 0.2)) cue = 'preview';
     if (hp && sep >= 15 && breadth >= 0.4 && C.chance(rng, 0.15)) cue = 'location';
@@ -119,7 +134,7 @@
     var ctxKey = E.lrOf(ctx.learner).ctxKey('crowd', hp);
     return {
       id: 'crowd-' + C.seedOf(rng).toString(36), ex: 'crowd', seed: setting.seed || null,
-      setting: { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup },
+      setting: { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup, noUpdate: !tal.length || undefined },
       audio: audio,
       question: { prompt: prompt, slots: askNum ? [s1, s2] : [s1] },
       feedback: { text: (cue === 'callsign' ? CS : 'Your voice') + ' said “' + T.word + ', ' + T.num + '”. ' + (others ? 'The others said ' + others + '.' : ''),
@@ -128,7 +143,7 @@
       picture: { voices: [{ id: 'v0', role: 'target', az: tAz, dist: 1, label: cue === 'callsign' ? CS : '' }].concat(tal.map(function (m, i) {
         return { id: 'v' + (i + 1), role: 'other', az: hp ? m.az : 0, dist: 1, label: '' }; })), reveal: cue === 'location' },
       meta: { items: [T.name, T.word, T.num], voices: [target].concat(tal.map(function (m) { return m.v; })), family: null, probe: false,
-        cue: cue, ctxKey: ctxKey, cond: hp ? 'hp' : 'base', offsetDb: offsetDb, text: T.text, callSign: CS, said: said, phrase: phrase,
+        cue: cue, ctxKey: ctxKey, cond: hp ? 'hp' : 'base', offsetDb: offsetDb, text: T.text, callSign: CS, said: said, phrase: phrase, relaxed: relaxed,
         maskers: tal.map(function (m) { return { voice: m.v, name: m.name, word: m.word, num: m.num, near: !!m.fx }; }) }
     };
   }

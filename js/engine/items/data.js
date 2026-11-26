@@ -130,7 +130,8 @@
       if (pickV !== target) { cand = cand.filter(function (v) { return v !== pickV; }); extra = extra.filter(function (v) { return v !== pickV; }); }
       out.push({ v: pickV, fx: fx, level: lvl });
     }
-    var used = out.length ? Math.min.apply(null, out.map(function (o) { return o.level; })) : level;
+    // the trial's similarity is that of its most similar masker (it drives the informational masking)
+    var used = out.length ? Math.max.apply(null, out.map(function (o) { return o.level; })) : level;
     return { list: out, level: Math.min(level, used) };
   }
 

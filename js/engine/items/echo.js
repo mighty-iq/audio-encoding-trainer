@@ -26,6 +26,25 @@
     idx.poolCache['echo:cats'] = out;
     return out;
   }
+  function cap(w) { w = String(w || ''); return w.charAt(0).toUpperCase() + w.slice(1); }
+  function fallbackMessages() {
+    var idx = X.idx(); idx.poolCache = idx.poolCache || {};
+    if (idx.poolCache['echo:fb']) return idx.poolCache['echo:fb'];
+    var nums = {}; I.adapt.callsign().forEach(function (p) { nums[p.number] = 1; });
+    var withNum = Object.keys(nums).length >= 3;
+    var out = I.adapt.fallbackItems().map(function (it) {
+      var f = [{ cat: 'caller', value: cap(it.words[0]), q: 'Who was calling?' }, { cat: 'word', value: it.words[1], q: 'Which word did they say?' }];
+      if (withNum) f.push({ cat: 'number', value: it.words[2], q: 'Which number?' });
+      return { id: it.id, text: it.text, words: it.words, facts: f, kind: it.kind };
+    });
+    idx.poolCache['echo:fb'] = out;
+    return out;
+  }
+  function catPoolsOf(items) {
+    var out = {}, seen = {};
+    items.forEach(function (it) { it.facts.forEach(function (f) { var k = f.cat + '|' + C.norm(f.value); if (!seen[k]) { seen[k] = 1; (out[f.cat] = out[f.cat] || []).push(f.value); } }); });
+    return out;
+  }
   function contains(text, phrase) { return (' ' + C.norm(text) + ' ').indexOf(' ' + C.norm(phrase) + ' ') >= 0; }
 
   function make(rng, setting, ctx) {
@@ -34,13 +53,17 @@
     var dials = JSON.parse(JSON.stringify(setting.dials || {}));
     var snr = dials.snr !== undefined ? dials.snr : 10, nDet = val('details', dials.details || 0), rate = val('rate', dials.rate || 0), delay = val('delay', dials.delay || 0);
     var cats = catPools(V);
-    var A = I.adapt, all = A.echoItems(), withMat = {};
+    // Relaxation (meta.relaxed): (1) all voices with material; (2) the build's call-sign phrases as two- or
+    // three-detail messages (who called, which word, which number when the build has ≥ 3 numbers).
+    var A = I.adapt, all = A.echoItems(), withMat = {}, relaxed = [];
+    if (!A.voicesWith(all).length) { all = fallbackMessages(); relaxed.push('call-sign phrases'); cats = catPoolsOf(all); }
     A.voicesWith(all).forEach(function (v) { withMat[v] = 1; });
     var cand = [];
     for (var off = 0; off < 4 && !cand.length; off++) cand = all.filter(function (it) { return Math.abs(it.facts.length - nDet) === off; });
     var pool = X.voicePool({ filter: function (vo, v) { return withMat[v]; }, breadth: breadth, order: ctx.playerSeed || 'p', minN: 4, avoid: ctx.avoidVoices });
     var hit = X.itemVoice(rng, cand, 'any', pool, C.recentOf(ctx));
-    if (!hit) throw new Error('echo: no message');
+    if (!hit) { hit = X.itemVoice(rng, cand, 'any', Object.keys(withMat), []); if (hit) relaxed.push('all voices'); }
+    if (!hit) throw new Error('echo: no speech material in this build');
     var it = hit.item, actual = it.facts.length;
     dials.details = Math.max(0, Math.min(3, actual - 2));
     var fx = rate > 1.001 ? [{ type: 'wsola', rate: rate }] : null;
@@ -69,7 +92,7 @@
       question: { prompt: 'Questions about the message', delayMs: Math.round(delay * 1000), slots: slots },
       feedback: { text: '“' + it.text + '”', replays: [{ label: 'Hear it again', audio: audio, showText: true }] },
       picture: { voices: [{ id: 'v0', role: 'target', az: 0, dist: 1, label: '' }] },
-      meta: { items: facts.map(function (f) { return f.value; }), voices: [hit.voice], family: null, probe: false, ctxKey: 'echo', cond: 'base',
+      meta: { items: facts.map(function (f) { return f.value; }), voices: [hit.voice], family: null, probe: false, ctxKey: 'echo', cond: 'base', relaxed: relaxed,
         offsetDb: c.diff || 0, text: it.text, facts: it.facts }
     };
   }

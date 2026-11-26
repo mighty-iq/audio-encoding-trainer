@@ -49,6 +49,11 @@
     var met = (ctx.met || Object.keys((lr.state && lr.state.cast) || {})).filter(function (v) { return cast.indexOf(v) >= 0; });
     var meta = X.clip, nouns = X.pool('word', V.nouns || [], 2);
     var task = ctx.task || (met.length < Math.max(2, k) ? 'meet' : breadth >= 0.4 && C.chance(rng, 0.25) ? 'find' : 'who');
+    // small casts: 'who' needs two met voices, else 'meet'; 'meet' needs two cast names, else 'find' (meta.relaxed)
+    var relaxed = [];
+    if (task === 'who' && met.length < 2) { task = 'meet'; relaxed.push('who → meet'); }
+    if (task === 'meet' && cast.length < 2) { task = 'find'; relaxed.push('meet → find'); }
+    if (task === 'find' && !met.length) met = cast.slice(0, 1);
     var parts = [], beds = [], slots, target, prompt, fb, others = [], setOut = { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup };
     if (task === 'meet') {
       var order = C.shuffle(ES.core.rng('cast:' + (ctx.playerSeed || 'p')), cast);
@@ -99,7 +104,7 @@
       prompt = 'Find ' + nameOf(target) + ' in the crowd.';
       fb = nameOf(target) + ' said “' + tw + '”.';
     }
-    if (task === 'who' && snr < 30) {
+    if ((task === 'who' || (task === 'find' && !others.length)) && snr < 30) {
       var b = X.bed(rng, ['babble', 'cafe']);
       beds.push(b ? { kind: b.kind === 'babble' ? 'babble' : 'ambience', bed: b.id, db: -snr } : { kind: 'pink', db: -snr });
     }
@@ -115,7 +120,7 @@
       feedback: { text: fb, replays: task === 'meet' ? [] : [{ label: nameOf(target) + ' alone', audio: { out: audio.out, dur: audio.dur, spatial: 'mono', parts: tparts, beds: [], room: null } }] },
       picture: { voices: [{ id: 'v0', role: 'target', az: 0, dist: 1, label: task === 'who' ? '' : nameOf(target) }] },
       meta: { items: [slots[0].answer], voices: [target].concat(others), family: null, probe: false, ctxKey: 'voices', cond: task, task: task,
-        cast: [target].concat(task === 'who' ? others : []), newVoice: task === 'meet' ? target : null, offsetDb: 0 }
+        cast: [target].concat(task === 'who' ? others : []), newVoice: task === 'meet' ? target : null, offsetDb: 0, relaxed: relaxed }
     };
   }
   I.voices = { make: make, cast: castVoices, nameOf: nameOf, ready: function () { return I.adapt.ready('voices'); } };

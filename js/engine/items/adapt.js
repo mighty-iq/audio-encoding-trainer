@@ -93,6 +93,9 @@
       }).filter(function (it) { return it.facts.length >= 2; });
     });
   }
+  // Fallback material when an exercise's own sentences are missing: the call-sign phrases as items (word = key 1).
+  function fallbackItems() { return farItems().filter(function (it) { return it.kind === 'phrase'; }).length ? farItems().filter(function (it) { return it.kind === 'phrase'; })
+    : memo('fb', function () { var seen = {}, out = []; callsign().forEach(function (p) { var k = C.norm(p.text); if (!seen[k]) { seen[k] = 1; out.push({ id: 'cs:' + k, text: p.text, words: p.words, keys: [1, 2], kind: 'phrase' }); } }); return out; }); }
   // Clips for an item's text, in any of the kinds a build may use for sentences.
   var SENT = ['sentence', 'phrase'];
   function clipsOf(it) {
@@ -110,18 +113,20 @@
   function ready(ex) {
     return memo('ready:' + ex, function () {
       var x = X.idx();
-      if (ex === 'crowd') return phraseMode() ? voicesCount(callsign()) >= 2 : x.voices.filter(function (v) { return X.kindsOf(v, 'word').length && X.kindsOf(v, 'number').length && X.kindsOf(v, 'name').length; }).length >= 2;
+      // an exercise is ready when its own material or the call-sign fallback exists (generators never throw then)
+      var fb = voicesCount(callsign()) >= 1;
+      if (ex === 'crowd') return phraseMode() ? fb : x.voices.filter(function (v) { return X.kindsOf(v, 'word').length && X.kindsOf(v, 'number').length && X.kindsOf(v, 'name').length; }).length >= 1 || fb;
       if (ex === 'far') return voicesWith(farItems()).length >= 1;
-      if (ex === 'strange') return voicesWith(susItems()).length >= 1;
-      if (ex === 'repair') return repairItems().some(function (it) { return clipsOf(it).some(function (id) { var c = x.man[id]; return c.wt && c.wt[it.key]; }); });
-      if (ex === 'echo') return voicesWith(echoItems()).length >= 1;
-      if (ex === 'seek') return phraseMode() ? voicesCount(callsign()) >= 2 : x.voices.filter(function (v) { return X.kindsOf(v, 'word').length; }).length >= 2;
-      if (ex === 'voices') return x.voices.filter(function (v) { var vo = x.vdat[v]; return vo.cast && vo.cast.name && anyClips(v); }).length >= 2;
+      if (ex === 'strange') return voicesWith(susItems()).length >= 1 || fb;
+      if (ex === 'repair') return fb || repairItems().some(function (it) { return clipsOf(it).some(function (id) { var c = x.man[id]; return c.wt && c.wt[it.key]; }); });
+      if (ex === 'echo') return voicesWith(echoItems()).length >= 1 || fb;
+      if (ex === 'seek') return phraseMode() ? fb : x.voices.filter(function (v) { return X.kindsOf(v, 'word').length; }).length >= 1;
+      if (ex === 'voices') return x.voices.filter(function (v) { var vo = x.vdat[v]; return vo.cast && vo.cast.name && anyClips(v); }).length >= 1;
       return false;
     });
   }
   function voicesCount(list) { var s = {}; list.forEach(function (p) { s[p.voice] = 1; }); return Object.keys(s).length; }
 
-  I.adapt = { isNative: isNative, callsign: callsign, callsignBy: callsignBy, phraseMode: phraseMode, farItems: farItems, susItems: susItems,
+  I.adapt = { fallbackItems: fallbackItems, isNative: isNative, callsign: callsign, callsignBy: callsignBy, phraseMode: phraseMode, farItems: farItems, susItems: susItems,
     repairItems: repairItems, echoItems: echoItems, clipsOf: clipsOf, voicesWith: voicesWith, ready: ready, anyClips: anyClips, words: words };
 })(typeof window !== 'undefined' ? window : globalThis);
