@@ -69,8 +69,8 @@ def build_page(name='page.html', head_extra='', real=False):
     html = (ROOT / 'index.html').read_text(encoding='utf-8')
     a, b = html.index('<!-- scripts:begin -->'), html.index('<!-- scripts:end -->')
     srcs = re.findall(r'<script src="([^"]+)"></script>', html[a:b])
-    if not real:
-        srcs = [s for s in srcs if not (s.startswith('audio/') or (s.startswith('data/') and s != 'data/ltas.js'))]
+    if not real:   # generated packs may be mid-rebuild: keep only data/ltas.js, and only when it exists
+        srcs = [s for s in srcs if not (s.startswith('audio/') or (s.startswith('data/') and not (s == 'data/ltas.js' and (ROOT / s).exists())))]
     missing = [s for s in EXA if s not in srcs]
     if missing:   # the shell's index lags behind new files: put them where js/ex/* belongs (before js/ui/)
         present = [s for s in srcs if s.startswith('js/ex/')]
