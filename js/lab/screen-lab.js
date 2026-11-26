@@ -53,7 +53,7 @@
     if (!d) {
       var extra = sch.extra && sch.extra[0];
       return u.el('section', { class: 'card lab-next', 'data-lab-due': 'none' }, [
-        u.el('p', { class: 'eyebrow mono' }, sch.phase === 'start' ? 'Baseline' : sch.phase === 'baseline' ? 'Baseline' : 'Weekly check-ins'),
+        u.el('p', { class: 'eyebrow mono' }, sch.phase === 'waiting' ? 'Check-ins' : sch.phase === 'start' || sch.phase === 'baseline' ? 'Baseline' : 'Weekly check-ins'),
         u.el('p', null, sch.next ? sch.next.text : 'Nothing is due.'),
         extra ? u.el('p', { class: 'hint' }, extra.why) : null,
         extra ? ES.ui.button('One more ' + L.probes[extra.probe].name + ' run · ' + extra.minutes + ' min', { attrs: { 'data-lab-extra': extra.probe }, onClick: function () { L.runner.start([{ probe: extra.probe }], 'extra'); } }) : null
@@ -106,7 +106,7 @@
         u.el('p', { class: 'lead' }, 'Short check-ins with voices, rooms and formats you never train with. Each shows your trend against your own baseline, with an honest margin.')
       ]),
       dueCard(sch),
-      sch.baseline && sch.baseline.total ? u.el('p', { class: 'facts mono' }, 'Baseline ' + sch.baseline.done + ' of ' + sch.baseline.total + ' runs') : null,
+      sch.baseline && sch.baseline.total && sch.phase !== 'waiting' ? u.el('p', { class: 'facts mono' }, 'Baseline ' + sch.baseline.done + ' of ' + sch.baseline.total + ' runs') : null,
       u.el('div', { class: 'lab-row' }, [u.el('span', { class: 'row-text' }, [u.el('strong', null, 'Headphone check'), hpLine]),
         ES.ui.button('Check', { small: true, attrs: { 'data-lab-hpcheck': '' }, onClick: function () { L.hpcheck.open({ onClose: function () { hpLine.textContent = L.hpcheck.status(); } }); } })]),
       focusRow(),

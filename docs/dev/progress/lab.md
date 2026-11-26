@@ -88,3 +88,24 @@ Reading: on the Matrix a true 1.5 dB gain reads "clear" by the 4th weekly check-
 needs larger gains or more weeks; Two voices (σ ≈ 1.9 dB, like published speech-on-speech tests) detects only gains
 of ~5 dB within 4 weeks and is for longer trends and pooled data. The 56 % is near the information limit of one
 20-sentence run a week (gain SD ≈ 0.7 dB at week 4).
+
+## 2026-11-26 19:10 UTC — done (brief complete); how to resume
+Status: every probe runs end to end on fixtures (unit: all seven through make/next/record/finish; browser: all seven
+through the real screens with real rendering); statistics and simulation checks pass; exports and imports round-trip;
+30 unit tests and 89 browser checks pass. In the real app without probe materials the Lab says so per probe
+("later build") and offers only the diary (schedule phase 'waiting').
+Commands:
+- Unit: `node tests/unit/run.mjs lab` (≈ 30 s; LAB_SIM_N=200 for a bigger simulation inside the test).
+- Simulation rates: `node tests/unit/lab-simreport.mjs 400 matrix,digits,twovoices` (≈ 6 min; table above).
+- Browser: `tools/with-browser.sh python3 tests/e2e/lab_e2e.py [overview baseline probes fit hpcheck export report diary blocked]`
+  (≈ 2.5 min; screenshots in tests/out/lab/). Audio fixture: `python3 tests/e2e/lab_fixture_build.py`.
+Public API: ES.lab.{probes, probeOrder, schedule, stats, procedures, materials, records, exporter (json, csv, pooled,
+importJson, showValue, showGain), exportUi (open, importSheet, deliver), hpcheck.open/status, runner.start(items, kind),
+context(), forPlanner(), weakest(), homeCard(), afterSession(el), logEvent(ev), diaryOptions}; screens lab, probe,
+report, diary; hooks emitted: lab:run, hpcheck, export; listens to results:done.
+Open (other owners; see requests.md): shell — Settings › Headphone check should call ES.lab.hpcheck.open(); Home
+could append ES.lab.homeCard(); emit results:done on the session-done screen. Stimuli — probe materials (probe
+voices with matrix words, recorded digit talkers, two-voices sentences + labels, story clips + probe café bed); the
+Lab picks them up with no code change (materials.js reads the requested shapes; story answers by index work).
+Lead — decide whether the second Matrix run per check-in becomes the default (79 % vs 56 % detection, +3 min);
+the design decisions above are ready for DECISIONS.md. Exercise views/Missions may log diary events via ES.lab.logEvent.

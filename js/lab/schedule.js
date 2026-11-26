@@ -53,6 +53,19 @@
     out.baseline = { done: doneN, total: total, complete: total > 0 && doneN >= total, steps: steps, block: firstOpen, blocks: BLOCKS.length };
     out.todayDone = blockToday;
 
+    // no listening probe has its materials yet: offer only this week's diary, and say why
+    var listening = steps.some(function (x) { return x.available && x.probe !== 'diary'; });
+    if (!listening) {
+      out.phase = 'waiting';
+      var wkNow = weekKey(now), answered = diary.some(function (e) { return e.week === wkNow || weekKey(e.at) === wkNow; });
+      if (!answered && avail('diary')) {
+        out.due = { kind: 'weekly', title: 'This week’s diary', items: [{ probe: 'diary', role: 'measured', minutes: minutes('diary') }], minutes: minutes('diary'),
+          note: 'The listening check-ins arrive with their probe voices in a later build; the diary works now.' };
+      } else {
+        out.next = { kind: 'waiting', text: 'The listening check-ins arrive with their probe voices in a later build. ' + (answered ? 'This week’s diary is done.' : '') };
+      }
+      return out;
+    }
     if (!sessions.length && !runs.length) {
       out.next = { kind: 'baseline', text: 'Your baseline starts after your first training session: one short block a day, five blocks in all.' };
       return out;

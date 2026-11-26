@@ -64,6 +64,17 @@ export const tests = {
     }
     assert.deepEqual(rot, ['digits', 'rooms', 'newvoice', 'story', 'digits']);
   },
+  'before any probe materials exist, only this week’s diary is offered, with the reason'(ES, assert) {
+    const st = { runs: [], diary: { entries: [] }, sessions: [{ start: T0, end: T0 + 900e3, activeMs: 900e3 }], now: T0, available: (id) => id === 'diary' };
+    const s = ES.lab.schedule(st);
+    assert.equal(s.phase, 'waiting');
+    assert.deepEqual(s.due.items.map((i) => i.probe), ['diary']);
+    assert.ok(/later build/.test(s.due.note));
+    st.diary.entries.push({ week: 'w', at: T0, items: [] });
+    const s2 = ES.lab.schedule(st);
+    assert.equal(s2.due, null);
+    assert.ok(/diary is done/.test(s2.next.text));
+  },
   'after 14 days away the check-in is a retention check, never a penalty'(ES, assert) {
     const st = { runs: [], diary: { entries: [] }, sessions: [{ start: T0, end: T0 + 900e3, activeMs: 900e3 }] };
     for (let d = 0; d < 5; d++) doDue(ES, st, d);
