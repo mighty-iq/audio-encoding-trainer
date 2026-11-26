@@ -96,6 +96,9 @@ def main(argv):
         cid = r['id']
         data, y, m = encode(cid, cache, 'bed' if r['kind'] == 'bed' else 'speech')
         key = f'{cid}.{wav_hash(cid)}'
+        rule = 'closed' if ('matrix' in (r.get('tags') or []) and r['kind'] == 'word') else 'open'
+        if m is not None and rule == 'closed' and m.get('rule') != 'closed':
+            m = None                  # measured before matrix words had their closed-set rule: check again
         if m is None or (check_asr and 'asr' not in m):
             if y is None:
                 y = mp3_decode(data)
@@ -107,7 +110,10 @@ def main(argv):
                 heard, _ = rec.run(y)
                 sc = asr.score(r.get('asr_text', r['text']), heard, r.get('keywords'))
                 ok = sc['ok'] or (r.get('wer_max', 0) >= sc['wer'] and sc['kw_ok'])
-                m.update({'asr': bool(ok), 'heard': heard, 'wer': sc['wer']})
+                if 'matrix' in (r.get('tags') or []) and r['kind'] == 'word':
+                    import cut_matrix          # the probe is closed-set: same rule as when the word was cut
+                    ok = cut_matrix.closed_ok(r['text'], heard)
+                m.update({'asr': bool(ok), 'heard': heard, 'wer': sc['wer'], 'rule': rule})
             meas.put(m)
         if check_asr and m.get('asr') is False:
             rejects.append({'id': cid, 'db': r['_db'], 'heard': m.get('heard'), 'text': r['text']})

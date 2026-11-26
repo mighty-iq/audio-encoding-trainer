@@ -78,5 +78,35 @@
   "accent": "US English (actor)",
   "ageBand": "20s",
   "sex": "m"
+ },
+ "librivox.r02767": {
+  "accent": "English (volunteer reader)",
+  "f0": 86.5,
+  "sex": "m"
+ },
+ "librivox.r04055": {
+  "accent": "English (volunteer reader)",
+  "f0": 222.2,
+  "sex": "f"
+ },
+ "librivox.r05362": {
+  "accent": "English (volunteer reader)",
+  "f0": 192.8,
+  "sex": "f"
+ },
+ "librivox.r05734": {
+  "accent": "English (volunteer reader)",
+  "f0": 222.2,
+  "sex": "f"
+ },
+ "librivox.r10715": {
+  "accent": "English (volunteer reader)",
+  "f0": 202.5,
+  "sex": "f"
+ },
+ "librivox.r11216": {
+  "accent": "English (volunteer reader)",
+  "f0": 83.8,
+  "sex": "m"
  }
 }
