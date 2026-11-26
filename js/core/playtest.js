@@ -32,10 +32,11 @@
   function rate(exId, r) {
     r = r || {};
     add('ratings', { ex: String(exId || ''), fun: r.fun | 0, clarity: r.clarity | 0, difficulty: r.difficulty | 0, set: r.set });
+    ES.hooks.emit('playtest:changed', { kind: 'rating' });
   }
   function note(screenId, text) {
     text = String(text || '').trim().slice(0, 4000);
-    if (text) add('notes', { screen: String(screenId || ''), text: text });
+    if (text) { add('notes', { screen: String(screenId || ''), text: text }); ES.hooks.emit('playtest:changed', { kind: 'note' }); }
   }
   var lastErr = { msg: '', at: 0 };
   function error(e) {
@@ -194,10 +195,94 @@
   }
   function unmountFloating() { var b = win.document && win.document.getElementById('pt-float'); if (b) b.parentNode.removeChild(b); }
 
+  // ---- Saved for the developer: in a test build running as a claude.ai artifact, the report object goes to the
+  // artifact's database as doc playtest/<deviceId>. Debounced; one write at a time; only off the trial and
+  // tutorial screens, between sets, never while a stimulus plays. A failure leaves one playtest error entry and
+  // waits 30 s; "Copy playtest report" keeps working either way.
+  var DB = { db: null, state: 'idle', lastOk: 0, lastErr: '', lastFail: 0, inFlight: false, again: false, timer: null, id: '' };
+  var DEVICE_KEY = 'earshot.v1.$device';
+  function deviceId() {
+    if (DB.id) return DB.id;
+    var id = '';
+    try { id = win.localStorage.getItem(DEVICE_KEY) || ''; } catch (e) { id = ''; }
+    if (!/^[A-Za-z0-9_-]{6,48}$/.test(id)) {
+      id = U.uid('dev');
+      try { win.localStorage.setItem(DEVICE_KEY, id); } catch (e) { /* storage blocked: one id per page load */ }
+    }
+    return (DB.id = id);
+  }
+  function reportObject() {
+    var s = store(), rec = s ? s.peek('playtest') : {}, log = s ? s.peek('log') : { sessions: [] };
+    var sessions = log.sessions || [], cur = ES.core.router && ES.core.router.current();
+    return { v: 1, app: 'Earshot', version: ES.VERSION, testBuild: !!ES.TEST_BUILD, deviceId: deviceId(), at: U.isoUtc(),
+      device: device(), audio: ES.ui.sound && ES.ui.sound.info ? ES.ui.sound.info() : null, storage: s ? s.status() : null,
+      time: { activeMs: U.sum(sessions.map(function (x) { return x.activeMs || 0; })), sessions: sessions.length, firstAt: rec.firstAt || 0 },
+      ratings: (rec.ratings || []).slice(-80), notes: (rec.notes || []).slice(-100), errors: (rec.errors || []).slice(-40).concat(mem.errors.slice(-10)),
+      frames: (rec.frames || []).slice(-20), sets: (rec.sets || []).slice(-80), screens: (rec.screens || []).slice(-60),
+      lastScreen: cur ? cur.name : '', text: reportText() };
+  }
+  function canWrite() {
+    if (ES.ui.isQuiet && ES.ui.isQuiet()) return false;               // a stimulus is playing
+    if (ES.ui.inSet) return false;                                    // only between sets
+    var cur = ES.core.router && ES.core.router.current();
+    return !(cur && (cur.name === 'play' || cur.name === 'tutorial'));
+  }
+  function schedule(ms) {
+    if (!DB.db) return;
+    if (DB.timer) clearTimeout(DB.timer);
+    DB.timer = setTimeout(flushDb, ms == null ? 1500 : ms);
+  }
+  function flushDb() {
+    DB.timer = null;
+    if (!DB.db) return;
+    if (!canWrite()) { schedule(4000); return; }
+    if (DB.inFlight) { DB.again = true; return; }
+    var wait = DB.lastFail ? 30000 - (Date.now() - DB.lastFail) : 0;
+    if (wait > 0) { schedule(wait); return; }
+    var obj;
+    try { obj = JSON.parse(JSON.stringify(reportObject())); } catch (e) { return; }
+    DB.inFlight = true;
+    function done(ok, err) {
+      DB.inFlight = false;
+      if (ok) { DB.lastOk = Date.now(); DB.lastErr = ''; DB.lastFail = 0; ES.hooks.emit('playtest:saved', { at: DB.lastOk }); }
+      else {
+        DB.lastFail = Date.now();
+        DB.lastErr = String(err && err.message || err || 'write failed').slice(0, 200);
+        error({ kind: 'db', msg: 'Saving the playtest report failed: ' + DB.lastErr });
+      }
+      if (DB.again) { DB.again = false; schedule(); }
+    }
+    try { Promise.resolve(DB.db.doc('playtest/' + deviceId()).set(obj)).then(function () { done(true); }, function (e) { done(false, e); }); }
+    catch (e) { done(false, e); }
+  }
+  /** Look for the artifact runtime (it may appear late: up to ~4 s) and open its database. Test builds only. */
+  function connect() {
+    if (!ES.TEST_BUILD || DB.state !== 'idle') return;
+    DB.state = 'waiting';
+    var t0 = Date.now();
+    (function poll() {
+      var c = win.claude;
+      if (c && typeof c.use === 'function') {
+        DB.state = 'connecting';
+        Promise.resolve().then(function () { return c.use('db'); }).then(function (db) {
+          if (db && typeof db.doc === 'function') { DB.db = db; DB.state = 'ready'; schedule(800); }
+          else DB.state = 'none';
+        }, function (e) { DB.state = 'none'; error({ kind: 'db', msg: 'Opening the developer database failed: ' + String(e && e.message || e).slice(0, 200) }); });
+        return;
+      }
+      if (Date.now() - t0 > 4000) { DB.state = 'none'; return; }
+      setTimeout(poll, 200);
+    })();
+  }
+  ['route', 'set:done', 'session:done', 'playtest:changed'].forEach(function (h) { ES.hooks.on(h, function () { schedule(); }); });
+  ES.hooks.on('app:ready', connect);
+
   ES.core.playtest = {
     enabled: enabled, rate: rate, note: note, error: error, frames: frames, setDone: setDone, screen: screen,
     sampleFrames: sampleFrames, reportText: reportText, copyReport: copyReport, device: device,
     ratingEl: ratingEl, noteButton: noteButton, openNote: openNote, mountFloating: mountFloating, unmountFloating: unmountFloating,
+    db: { status: function () { return { state: DB.state, lastOk: DB.lastOk, lastErr: DB.lastErr, id: DB.db ? deviceId() : '' }; },
+      save: function () { schedule(0); }, object: reportObject, connect: connect },
     _onError: function (rec) {
       if (inError) { mem.errors.push(rec); return; }   // an error while recording an error: keep it in memory only
       inError = true;

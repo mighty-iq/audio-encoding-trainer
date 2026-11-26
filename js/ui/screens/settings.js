@@ -66,6 +66,16 @@
     ];
   }
 
+  var offSaved = null;
+  /** "Saved for the developer" once the playtest report reached the artifact's database (test builds). */
+  function dbLine() {
+    var pt = ES.core.playtest, line = U.el('p', { class: 'hint db-status', 'data-db-status': '' });
+    function paint() { var st = pt.db ? pt.db.status() : null; line.textContent = st && st.lastOk ? 'Saved for the developer' : ''; line.hidden = !(st && st.lastOk); }
+    paint();
+    if (offSaved) offSaved();
+    offSaved = ES.hooks.on('playtest:saved', paint);
+    return line;
+  }
   function mount(root) {
     var p = prof(), s = p.settings || {};
     var nick = U.el('input', { type: 'text', class: 'text-input', maxlength: '40', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Nickname', placeholder: 'optional' });
@@ -92,6 +102,7 @@
       section('Playtest', [
         toggle('Playtest mode', ES.TEST_BUILD ? 'On in this test build: ratings after each set, a Note button on every screen.' : 'Ratings after each set and a Note button on every screen.',
           pt.enabled(), function (on) { setSetting('playtest', on); if (on) pt.mountFloating(); else if (!ES.TEST_BUILD) pt.unmountFloating(); }, { disabled: ES.TEST_BUILD, key: 'playtest' }),
+        dbLine(),
         U.el('div', { class: 'row-buttons' }, [ES.ui.button('Copy playtest report', { small: true, attrs: { 'data-copy-report': '' }, onClick: function () { pt.copyReport(); } }),
           ES.ui.button('Show report text', { small: true, kind: 'ghost', onClick: function () { ES.ui.copyBox(pt.reportText(), { title: 'Playtest report', hint: 'Select all and copy, then paste it in the chat.' }); } })])
       ], 'playtest'),
@@ -102,5 +113,5 @@
   }
 
   ES.ui.settingsParts = { section: section, seg: seg, toggle: toggle, MODES: MODES, LENGTHS: LENGTHS };
-  if (!ES.ui.screens.settings) ES.ui.screens.settings = { mount: mount, unmount: function () {} };
+  if (!ES.ui.screens.settings) ES.ui.screens.settings = { mount: mount, unmount: function () { if (offSaved) { offSaved(); offSaved = null; } } };
 })(window.ES, window);
