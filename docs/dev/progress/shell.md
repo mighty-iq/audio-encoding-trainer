@@ -124,6 +124,7 @@ all failing before). Status per finding:
   Seek sets out of its planner run; refused imports say why (damaged / newer version) and change nothing.
 - M11 detail: headless Chromium under heavy CPU load sometimes dropped a page's localStorage writes across a reload
   (the record was there before, gone at the next document start; sessionStorage kept). The running session is
-  therefore also kept in this tab's sessionStorage, which a reload restores from. Separately the test browser
-  sometimes never commits the reload navigation (about 1 in 4 under load); shell_round1's M11 case repeats once
-  with a warning when that happens.
+  therefore also kept in this tab's sessionStorage, which a reload restores from (case m11_drop removes the shared
+  record before a reload; a real drop happened in one run and the session came back). Separately the test browser
+  sometimes never commits the reload navigation (an idle new renderer; about 1 in 4 under load): the M11 cases
+  repeat, up to three attempts, with a warning. Last run: shell_round1 117/117 (8d79e75 + test changes).

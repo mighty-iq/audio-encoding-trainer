@@ -2,6 +2,7 @@
 written to fail on the snapshot before the fixes and to pass after them. Demo sessions cover the trial-view and
 session rules; real sessions (need data/ and audio/, skipped otherwise) cover the wiring to ES.engine.flow."""
 import json
+import time
 
 from harness import ROOT, Checks, new_tab, file_url, wait_ready, close_sheets, wait_state, answer_current, shot, preset
 
@@ -177,17 +178,18 @@ def m6(h, c, real=False):
 
 # ---- M11: a session survives a reload; "End set" with fewer than half answered is partial
 # Read at the start of every document: did the stored session reach this page? Under heavy CPU load the headless
-# browser has, rarely, lost a page's storage writes across a reload or hung the reload itself; that is the test
-# browser, not the app (the record is in localStorage before the reload, and only Delete everything removes keys),
-# so such an attempt is repeated once with a warning.
+# browser has lost a page's localStorage writes across a reload (the record was there before; only Delete everything
+# removes keys): the session must then come back from the tab's own sessionStorage copy, and a warning says so. It
+# has also hung the reload itself (an idle new renderer that never commits): such an attempt is repeated, up to
+# three attempts, with a warning.
 PRE = "window.__pre = (function () { try { return localStorage.getItem('earshot.v1.session') ? 'kept' : 'none'; } catch (e) { return 'blocked'; } })();"
 
 
-def m11(h, c, real=False):
-    for attempt in (1, 2):
+def m11(h, c, real=False, drop=False):
+    for attempt in (1, 2, 3):
         sub = Checks(c.suite if hasattr(c, 'suite') else 'round1')
         try:
-            out = m11_once(h, sub, real, last=attempt == 2)
+            out = m11_once(h, sub, real, last=attempt == 3, drop=drop)
         except Exception as e:
             sub.ok(False, f'm11 {"real" if real else "demo"} crashed', repr(e)[:300])
             out = None
@@ -199,8 +201,13 @@ def m11(h, c, real=False):
         return
 
 
-def m11_once(h, c, real=False, last=True):
-    tag = 'M11 real' if real else 'M11 demo'
+def m11_drop(h, c):
+    """The browser loses the page's last localStorage writes across a reload: the tab's own copy restores it."""
+    m11(h, c, drop=True)
+
+
+def m11_once(h, c, real=False, last=True, drop=False):
+    tag = ('M11 real' if real else 'M11 demo') + (' (localStorage lost)' if drop else '')
     tab, pg = page(h, real=real, init=PRE)
     if real:
         start_sets(pg, [{'exId': 'crowd', 'trials': 8}])
@@ -211,19 +218,19 @@ def m11_once(h, c, real=False, last=True):
     wait_state(pg, ['loading', 'listen', 'answer'], 20000)
     sid = pg.evaluate("ES.ui.session.state().id")
     c.ok(pg.evaluate("!!localStorage.getItem('earshot.v1.session')"), f'{tag}: the session is stored before the reload')
+    if drop:
+        pg.evaluate("() => { localStorage.removeItem('earshot.v1.session'); }")
     try:
         pg.reload(wait_until='domcontentloaded', timeout=60000)
         wait_ready(pg, 60000)
     except Exception as e:
         if not last:
-            c.warn(f'{tag}: the test browser did not finish the reload ({repr(e)[:80]}); repeated once')
+            c.warn(f'{tag}: the test browser did not finish the reload ({repr(e)[:80]}); repeated')
             pg.context.close()
             return 'retry'
         raise
-    if pg.evaluate("window.__pre") == 'none' and not last:
-        c.warn(f'{tag}: the test browser dropped the page\'s stored records across the reload; repeated once')
-        pg.context.close()
-        return 'retry'
+    if pg.evaluate("window.__pre") == 'none' and not drop:   # the tab's own copy must still bring the session back
+        c.warn(f'{tag}: the test browser dropped the page\'s localStorage writes across the reload (the tab copy is checked)')
     close_sheets(pg)
     c.eq(route(pg), 'home', f'{tag}: a reload lands on Home')
     diag = pg.evaluate("""() => { const r = ES.core.store.peek('session'); let ss = null; try { ss = sessionStorage.getItem('earshot.session'); } catch (e) {}
@@ -468,14 +475,20 @@ def c06(h, c):
     pg.wait_for_function("() => ES.ui.session.active()", timeout=8000)
     plan = pg.evaluate("ES.ui.session.state().sets.map(s => s.exId)")
     c.ok(plan and all(x == ex for x in plan), 'C06: a Free session trains the picked exercise only', plan)
-    for _ in range(3):
-        if pg.locator('[data-skip-tutorial]').count():
+    st, t_end = None, time.time() + 60          # a tutorial or a set intro may come first; renders can be slow under load
+    while time.time() < t_end:
+        st = pg.evaluate("""() => { const b = document.querySelector('.trial-body');
+          return { route: ES.core.router.current().name, state: b ? b.dataset.state : null,
+            intro: !!document.querySelector('[data-intro-start]'), tut: !!document.querySelector('[data-skip-tutorial]') }; }""")
+        if st['tut']:
             pg.click('[data-skip-tutorial]')
-        if pg.locator('[data-intro-start]').count():
+        elif st['intro']:
             pg.click('[data-intro-start]')
-        pg.wait_for_timeout(200)
-    wait_state(pg, ['answer', 'listen', 'loading'], 25000)
-    got = pg.evaluate("(id) => { const t = ES.ui.trialView.current.trial; return t.setting && t.setting.dials ? t.setting.dials[id] : null; }", d['id'])
+        elif st['state'] and st['state'] != 'done':
+            break
+        pg.wait_for_timeout(250)
+    c.ok(st and st['state'] and st['state'] != 'done', 'C06: the Free session\'s first trial starts', st)
+    got = pg.evaluate("(id) => { const v = ES.ui.trialView.current, t = v && v.trial; return t && t.setting && t.setting.dials ? t.setting.dials[id] : null; }", d['id'])
     c.ok(got is not None and abs(float(got) - float(want)) < 1e-6, 'C06: the trial plays at the hand-set dial value', [got, want])
     errors(c, tab, 'C06')
     pg.context.close()
@@ -483,7 +496,7 @@ def c06(h, c):
 
 def run(h):
     c = Checks('round1')
-    for fn in (h2_demo, m7, m6, m11, m5, l1, l2, l7, c02):
+    for fn in (h2_demo, m7, m6, m11, m11_drop, m5, l1, l2, l7, c02):
         print('  round1:', fn.__name__, flush=True)
         try:
             fn(h, c)
