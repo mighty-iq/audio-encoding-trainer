@@ -42,7 +42,7 @@
           muffled: 'A voice through a wall: everything above a cut-off frequency is lost.',
           vocoded: 'A robot voice made of noise bands: the fewer bands, the less detail.'
         },
-        why: 'The bet: practising many kinds of unusual voice teaches the skill of adapting itself. A large replication found the benefit of variety smaller than earlier studies suggested, so the Lab’s New voice check measures it with a kind of voice you never train on.'
+        why: 'Practising many kinds of unusual voice should train the skill of adapting itself. A large replication found the benefit of variety smaller than earlier studies suggested, so the Lab’s New voice check measures it with a kind of voice you never train on.'
       };
     }
   };

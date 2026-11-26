@@ -36,9 +36,9 @@
           gap: 'How much of the lost word is covered.',
           context: 'How strongly the rest of the sentence points to the word.',
           gate: 'The whole sentence switches on and off; less of it is kept.',
-          fill: 'What fills the gaps. Noise lets your hearing fill in; silence makes the cuts obvious.'
+          fill: 'Noise lets your hearing fill in; silence makes the cuts obvious.'
         },
-        why: 'The bet: holding a sentence in mind and repairing it from context is a general listening strategy, and listening in the gaps of a fluctuating noise improves quickly with practice. In one study, practice with interrupted sentences carried over to a different kind of gap and lasted about three months.'
+        why: 'Holding a sentence in mind and repairing it from context is a general listening strategy, and listening in the gaps of a fluctuating noise improves quickly with practice. In one study, practice with interrupted sentences carried over to a different kind of gap and lasted about three months.'
       };
     }
   };

@@ -44,3 +44,15 @@ list + fixtures (data-fixture, audio-fixture aliased so the real renderer runs; 
   strange text-first prime shows the words ≥ 1 s before the sound. Last run: all pass except a transient Far
   render error seen once while other builders were editing (passed on rerun).
 Open: Help sheet styles/adoption (shell); index.html lacks far/strange/repair until the shell reruns build-index.
+
+## 2026-11-26 18:29 UTC — after the restart
+- Real starter pack landed (data/*, audio/pack-starter.js: 133 phrase clips, 8 voices; covers crowd, far, seek,
+  voices). In phrase mode the generators ask for one word, so every exA caption, prompt and Help goal is now
+  slot-count agnostic (Far builds its prompt from the slot labels: "two words" / "the word and the number" /
+  "the word"); Far says "phrase". Node check of both data worlds: /tmp scripts only (not committed).
+- Tests: default = fixture world (real data/ and audio/ scripts dropped from the test page, data/ltas.js kept);
+  `--real` = index.html's own data and packs (Crowd and Far only for now).
+- Copy review against the notes: claims narrowed to their sources (same-sex study, 30-sentence block, implicit
+  multi-room result, babble language); Help sheets de-duplicated; Crowd tips trimmed to three.
+- Browser lock is shared by every builder (shell run_all, audio, lead play-tests); queue long runs in the
+  background with a long flock wait (e.g. timeout 3400 flock …) — a 600 s wait timed out once.

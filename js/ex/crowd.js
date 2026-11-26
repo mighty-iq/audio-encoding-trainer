@@ -24,8 +24,7 @@
     tips: [
       'The call sign comes first. Lock on to that voice, its pitch, pace and place, and let it lead you to the words.',
       'A wrong word that another voice said means you heard well and followed the wrong talker. In a classic study most mistakes against a same-sex voice were of this kind.',
-      'A voice of the other sex is easiest to tell apart; the closer two voices are in pitch and size, the harder it gets. Differences in both help more than either alone.',
-      'With headphones, place matters: even 10 to 15° between voices helps a lot when the others are talking.'
+      'The closer two voices are in pitch, size and place, the harder it gets; pitch and size differences together help more than either alone. With headphones, even 10 to 15° between voices helps a lot.'
     ],
     helpData: function () {
       return {

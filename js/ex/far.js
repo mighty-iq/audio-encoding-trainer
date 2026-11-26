@@ -32,7 +32,7 @@
         goal: 'Someone in a room says two phrases. The first lets you hear the room; then tap what you heard in the second.',
         dials: {
           dist: 'How far away the talker stands. Each doubling of distance makes the direct sound 6 dB weaker against the room’s echo.',
-          rt60: 'How long the room rings after a sound (reverberation time): about 0.35 s in an office, 0.6 s in a cafeteria, 2.5 to 3 s in a very echoey hall.',
+          rt60: 'How long the room rings after a sound: about 0.35 s in an office, 0.6 s in a cafeteria, 2.5 to 3 s in a very echoey hall.',
           noise: 'How loud the voice is against the room’s own noise, from a quiet room to noise louder than the voice.'
         },
         why: 'Ears adjust to a room within seconds, but to that room. In one study, practice spread over three rooms carried over to rooms never trained. So Far keeps changing rooms as you improve, and the Lab checks you in rooms you never trained in.'
