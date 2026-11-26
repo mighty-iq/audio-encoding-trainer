@@ -160,7 +160,12 @@
       if (!on || !prompt.parentNode) return;
       clearCaption();
       var m = trial.meta || {}, said = m.text || (m.items && m.items.length ? m.items.join(' · ') : '(no text for this trial)');
-      prompt.parentNode.appendChild(U.el('p', { class: 'trial-caption', 'data-caption': '' }, 'Test aid · said: ' + said));
+      var who = '';
+      try {
+        var vid = m.voices && m.voices.length === 1 ? m.voices[0] : null, vo = vid && ES.data && ES.data.voices && ES.data.voices[vid];
+        if (vid) who = ' · voice: ' + ((vo && vo.cast && vo.cast.name) || vid);
+      } catch (e) { who = ''; }
+      prompt.parentNode.appendChild(U.el('p', { class: 'trial-caption', 'data-caption': '' }, 'Test aid · said: ' + said + who));
     }
     function clearCaption() {
       try { var old = prompt.parentNode && prompt.parentNode.querySelectorAll('.trial-caption'); for (var i = 0; old && i < old.length; i++) old[i].parentNode.removeChild(old[i]); } catch (e) { /* ignore */ }
