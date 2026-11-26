@@ -1,10 +1,13 @@
 /* Earshot engine — plateau detection from the log (PLAN §7). Per exercise: no personal best for ≥ 4 sessions and a
-   flat trend over the last 6 sessions with the exercise: Bayesian linear regression of the session index
-   (dB-equivalent, focus-weighted over a fixed dial set) on session number, slope prior N(0, 0.5²); flat = the 80 %
-   interval of the slope lies below +0.15 dB per session (a falling trend is a stall too), for 3 windows in a row;
-   operating point and its simulated error rates in docs/dev/progress/engine.md. Breakers, in order, each with a player-facing reason: widen variety; switch the
-   focus dial; more anchors and pop-out feedback; a strategy card; sleep after same-day runs; switch exercise.
-   check() has no side effects; apply() changes the learner state; at most one breaker per 3 sessions. */
+   flat trend over the last 10 sessions with the exercise: Bayesian linear regression of the session index
+   (dB-equivalent, focus-weighted over a fixed dial set) on session number, slope prior N(0, 0.5²); flat = the
+   one-sided 80 % bound of the slope lies below +0.15 dB per session (a falling trend is a stall too), for 4
+   windows in a row (so the earliest call comes at the 13th session with the exercise; later for Seek, whose short
+   sets need more sessions to fill a window). Operating point and its
+   simulated error rates in docs/dev/progress/engine.md. Breakers, in order, each with a player-facing reason:
+   widen variety; switch the focus dial; more anchors and pop-out feedback; a strategy card; sleep after same-day
+   runs; switch exercise. check() has no side effects; apply() changes the learner state; at most one breaker per
+   3 sessions. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -21,9 +24,12 @@
     voices: 'Give each voice one feature you can name: pitch, pace, accent, or how its sentences end.'
   };
   var Z80 = 1.2816;
-  // Operating point tuned on simulated learners (tests/sim; docs/dev/progress/engine.md): the trend must look flat
-  // for 3 consecutive windows; residual SD floored at 0.35 dB-eq; ≥ 80 scored trials per window.
-  var DEFAULTS = { window: 6, band: 0.15, minSigma: 0.35, priorSd: 0.5, minTrials: 80, persist: 3, pbSessions: 4, twoSided: false };
+  // Operating point tuned on simulated learners (tests/sim; docs/dev/progress/engine.md): 10-session windows, the
+  // trend must look flat for 4 consecutive windows; residual SD floored at 0.35 dB-eq; each window holds ≥ 80 scored
+  // trials, or six sets' worth for short-set exercises (Seek), widening up to 16 sessions to get them.
+  // Optional: z (bound, default 80 % one-sided), maxSlope (cap on the slope estimate), twoSided.
+  var DEFAULTS = { window: 10, band: 0.15, minSigma: 0.35, priorSd: 0.5, minTrials: 80, setsMin: 6, maxWindow: 16, persist: 4, pbSessions: 4,
+    twoSided: false };
 
   function sessionsWith(log, ex) {
     var out = [];
@@ -53,14 +59,14 @@
     });
   }
   // Slope posterior (dB-eq per session) from points y_i at x_i = 0…k−1 with noise σ.
-  function trend(ys, sigma, priorSd) {
+  function trend(ys, sigma, priorSd, z) {
     var k = ys.length, xm = (k - 1) / 2, sxx = 0, sxy = 0, ym = 0, i;
     for (i = 0; i < k; i++) ym += ys[i];
     ym /= k;
     for (i = 0; i < k; i++) { sxx += (i - xm) * (i - xm); sxy += (i - xm) * (ys[i] - ym); }
     var prec = sxx / (sigma * sigma) + 1 / (priorSd * priorSd);
-    var mean = (sxy / (sigma * sigma)) / prec, sd = Math.sqrt(1 / prec);
-    return { slope: mean, sd: sd, lo: mean - Z80 * sd, hi: mean + Z80 * sd };
+    var mean = (sxy / (sigma * sigma)) / prec, sd = Math.sqrt(1 / prec), zz = z || Z80;
+    return { slope: mean, sd: sd, lo: mean - zz * sd, hi: mean + zz * sd };
   }
   function residualSd(ys) {
     var k = ys.length, xm = (k - 1) / 2, ym = 0, sxx = 0, sxy = 0, i;
@@ -72,17 +78,19 @@
     return Math.sqrt(ss / Math.max(1, k - 2));
   }
   // Flatness of the trend over the window of `win` sessions ending at index `end` (exclusive) of `ss`; the window
-  // widens (up to 12 sessions) until it holds ≥ 80 scored trials.
+  // widens (up to maxWindow sessions) until it holds the trial minimum.
   function flatAt(ex, ss, end, win, band, cfg) {
-    var minT = cfg.minTrials || 80, w = ss.slice(Math.max(0, end - win), end);
+    var minT = cfg.minTrials || 80, st = (E.dialMeta[ex] || {}).setTrials;
+    if (cfg.setsMin && st) minT = Math.min(minT, cfg.setsMin * st); // short-set exercises (Seek: 6 trials a set)
+    var w = ss.slice(Math.max(0, end - win), end), cap = Math.max(cfg.maxWindow || 12, win);
     if (w.length < win) return null;
     var cnt = function (a) { return a.reduce(function (t, x) { return t + (x.trials || 0); }, 0); };
-    while (cnt(w) < minT && w.length < 12 && end - w.length > 0) w = ss.slice(end - w.length - 1, end);
+    while (cnt(w) < minT && w.length < cap && end - w.length > 0) w = ss.slice(end - w.length - 1, end);
     if (cnt(w) < minT) return null;
     var ys = windowIndex(ex, w);
     if (!ys) return null;
-    var sig = Math.max(cfg.minSigma || 0.25, residualSd(ys)), t = trend(ys, sig, cfg.priorSd || 0.5);
-    t.flat = cfg.twoSided ? (t.hi < band && t.lo > -band) : t.hi < band;
+    var sig = Math.max(cfg.minSigma || 0.25, residualSd(ys)), t = trend(ys, sig, cfg.priorSd || 0.5, cfg.z);
+    t.flat = (cfg.twoSided ? (t.hi < band && t.lo > -band) : t.hi < band) && !(cfg.maxSlope !== undefined && t.slope >= cfg.maxSlope);
     t.win = w; t.ys = ys;
     return t;
   }
@@ -117,7 +125,7 @@
     var name = NAMES[ex] || ex, focusDial = leastFocused(all, lr, ex, opts.headphones);
     win = lastN.length;
     var unit = (E.dialMeta[ex] && E.dialMeta[ex].primary) ? ' dB' : ' points';
-    var reason = name + ' has held near the same level for ' + win + ' sessions (trend ' + fmt(t.slope) + unit + ' per session) with no new best in 4.';
+    var reason = name + ' has held near the same level for ' + win + ' sessions (trend ' + fmt(t.slope) + unit + ' per session) with no new best in ' + (cfg.pbSessions || 4) + '.';
     var text = {
       variety: 'Next sets bring in more voices, rooms and noises. Wider variety makes a skill more general, and a fresh mix often breaks a stall.',
       focus: 'The next sets push a different dial (' + (focusDial ? E.dialDef(ex, focusDial).label.toLowerCase() : 'another dial') + ') to its edge while the rest sit at comfort.',

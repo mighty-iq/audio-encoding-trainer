@@ -55,6 +55,15 @@ export const tests = [
     assert.equal(lr.est('crowd', 'similar').n, 0);
     assert.ok(lr.est('crowd', 'tmr').n >= 20);
   } },
+  { name: 'learner: noteMet counts voices met outside trials, and Voices asks about them', fn(ES, assert) {
+    const E = ES.engine, lr = E.learner.create(null, () => T0), cast = E.items.voices.cast();
+    assert.deepEqual(lr.met(), []);
+    lr.noteMet(cast[0]); lr.noteMet([cast[1], cast[2]]); lr.noteMet(cast[0]); lr.noteMet(null);
+    assert.deepEqual(lr.met().sort(), cast.slice(0, 3).sort()); assert.equal(lr.state.cast[cast[0]], 2);
+    const sp = E.items.voices.make(ES.core.rng('met'), { dials: { cast: 0, similar: 0, snr: 30, length: 0 } }, { learner: lr, task: 'who', playerSeed: 'm' });
+    assert.equal(sp.meta.task, 'who');
+    sp.question.slots[0].options.forEach((o) => assert.ok(cast.slice(0, 3).map(E.items.voices.nameOf).includes(o), o));
+  } },
   { name: 'learner: state survives a JSON round trip', fn(ES, assert) {
     const E = ES.engine, lr = seasoned(E.learner.create(null, () => T0));
     for (let i = 0; i < 30; i++) { const t = crowdTrial(ES, { tmr: -2, talkers: 0, similar: 0 }, 'tmr', i % 3 ? 1 : 0); lr.update(t.trial, t.result); }

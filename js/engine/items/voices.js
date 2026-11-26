@@ -37,7 +37,7 @@
     if (len === 'word' && words.length) return [C.pick(rng, words)];
     if (len === 'phrase' && words.length >= 2) return C.sample(rng, words, 2);
     if (sents.length) return [C.pick(rng, sents)];
-    return [C.pick(rng, words)];
+    return [C.pick(rng, words.length ? words : X.kindsOf(v, 'intro'))];
   }
 
   function make(rng, setting, ctx) {
@@ -53,7 +53,16 @@
     var relaxed = [];
     if (task === 'who' && met.length < 2) { task = 'meet'; relaxed.push('who → meet'); }
     if (task === 'meet' && cast.length < 2) { task = 'find'; relaxed.push('meet → find'); }
-    if (task === 'find' && !met.length) met = cast.slice(0, 1);
+    // 'find' needs a friend with call-sign phrases (or word clips): a met one, else the first cast voice that has
+    // them; with none, 'who' (two met voices) or 'meet' (with stand-in names when the cast has one voice)
+    var A = I.adapt, phr = A.phraseMode();
+    function findable(v) { return phr ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }
+    if (task === 'find' && !met.some(findable)) {
+      var fc = cast.filter(findable);
+      if (fc.length) { if (met.length) relaxed.push('find: a voice not met yet'); met = fc.slice(0, 1); }
+      else if (met.length >= 2) { task = 'who'; relaxed.push('find → who'); }
+      else { task = 'meet'; relaxed.push('find → meet'); }
+    }
     var parts = [], beds = [], slots, target, prompt, fb, others = [], setOut = { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup };
     if (task === 'meet') {
       var order = C.shuffle(ES.core.rng('cast:' + (ctx.playerSeed || 'p')), cast);
@@ -61,6 +70,10 @@
       var intro = X.kindsOf(target, 'intro'), clip0 = intro.length ? intro[0] : utterance(rng, target, 'sentence', nouns)[0];
       parts.push({ clip: clip0, at: 0.3, db: 0, role: 'target' });
       var namesPool = cast.map(nameOf);
+      if (namesPool.length < 2) {
+        namesPool = namesPool.concat((V.names || []).map(function (n) { return n.charAt(0).toUpperCase() + n.slice(1); }).filter(function (n) { return C.norm(n) !== C.norm(nameOf(target)); }).slice(0, 3));
+        relaxed.push('meet with stand-in names');
+      }
       slots = [C.slot(rng, { label: 'Who was that?', answer: nameOf(target), pool: namesPool, neighbours: function () { return []; } })];
       prompt = 'Meet a new voice.';
       fb = 'That was ' + nameOf(target) + '. You will hear this voice again.';
@@ -74,13 +87,13 @@
       var seq = C.sequence(utterance(rng, target, len, nouns), meta, 0.35, 0.15, { db: 0, role: 'target' });
       parts = seq.parts;
       var opts = [target].concat(others), foils = {};
-      others.forEach(function (v) { foils[nameOf(v)] = similarTo(target, v) ? 'neighbour' : 'random'; });
+      // 'similar': a voice close to the talker's (same sex, < 2 semitones apart), not a sound-alike word
+      others.forEach(function (v) { foils[nameOf(v)] = similarTo(target, v) ? 'similar' : 'random'; });
       slots = [{ label: 'Who is talking?', options: C.shuffle(rng, opts.map(nameOf)), answer: nameOf(target), foils: foils }];
       prompt = 'Who is talking?';
       fb = 'That was ' + nameOf(target) + '.';
     } else {
-      var A = I.adapt, phr = A.phraseMode();
-      target = C.pick(rng, met.filter(function (v) { return phr ? A.callsignBy(v).length : X.kindsOf(v, 'word').length; })) || C.pick(rng, met);
+      target = C.pick(rng, met.filter(findable)) || C.pick(rng, met);
       var nOther = Math.max(1, Math.min(3, k - 1)), used = [];
       var tw = null, tclip = null;
       if (phr) { var tp = C.pick(rng, A.callsignBy(target)); if (tp) { tw = tp.word; tclip = tp.clip; } }

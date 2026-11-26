@@ -3,7 +3,11 @@
    −1…1 on both axes; the listener starts at the bottom centre. Dials: snr (voice vs bed up close), decoys
    (other voices calling other words), size (how close counts as found), gap (pause between calls). With
    headphones and wider variety the scene adds the head-turn view (turning toward the talker improves the better
-   ear). Bet: sound-guided movement (audiomotor loop) and head-turn practice — under-tested (R3 §3, §9). */
+   ear). Bet: sound-guided movement (audiomotor loop) and head-turn practice — under-tested (R3 §3, §9).
+   audio.live (read by ES.audio.live.scene): bed, target, decoys, found (field units: how close counts as found; the
+   locate slot's r), spatial, seed, start, headTurn; `radius` (metres per field unit) is left to the scene's default.
+   meta.preview: another clip by the target voice whose words are none of the scene's (relaxed: not its called
+   words), so the player knows whom to seek; its words are never options. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -18,6 +22,22 @@
       if (avoid.every(function (q) { return dist(p, q) >= minD; })) return p;
     }
     return null;
+  }
+
+  function wordsOf(id) { var c = X.clip(id) || {}; return (c.words && c.words.length ? c.words : C.norm(c.text).split(' ')).map(C.norm).filter(Boolean); }
+  // Preview clip: same voice, none of the scene's words (target and decoys); relaxed: none of the called words.
+  function previewOf(rng, v, scene, called) {
+    var bad = {}, hot = {};
+    scene.forEach(function (id) { wordsOf(id).forEach(function (w) { bad[w] = 1; }); });
+    called.forEach(function (w) { hot[C.norm(w)] = 1; });
+    var kinds = ['phrase', 'sentence', 'word'], loose = null;
+    for (var i = 0; i < kinds.length; i++) {
+      var cand = X.kindsOf(v, kinds[i]).filter(function (id) { return scene.indexOf(id) < 0; });
+      var ok = cand.filter(function (id) { return !wordsOf(id).some(function (w) { return bad[w]; }); });
+      if (ok.length) return { clip: C.pick(rng, ok), relaxed: false };
+      if (!loose) { var lo = cand.filter(function (id) { return !wordsOf(id).some(function (w) { return hot[w]; }); }); if (lo.length) loose = lo; }
+    }
+    return loose ? { clip: C.pick(rng, loose), relaxed: true } : null;
   }
 
   function make(rng, setting, ctx) {
@@ -55,23 +75,27 @@
     if (decoys.length < nDec) dials.decoys = decoys.length;
     C.remember(ctx, tv, null);
     var b = X.bed(rng, breadth < 0.4 ? ['babble'] : ['babble', 'party', 'cafe', 'station']);
-    var hp = !!ctx.headphones;
+    var hp = !!ctx.headphones, relaxed = [];
+    var pv = previewOf(rng, tv, [target.clip].concat(decoys.map(function (d) { return d.clip; })), [tw].concat(decoys.map(function (d) { return d.word; })));
+    if (!pv) relaxed.push('no preview'); else if (pv.relaxed) relaxed.push('preview shares a name or number');
+    var sid = C.seedOf(rng), spatial = hp ? 'hrtf' : 'ild';
     var live = { bed: b ? { kind: b.kind === 'babble' ? 'babble' : 'ambience', bed: b.id, db: 0 } : { kind: 'pink', db: 0 },
       target: target, decoys: decoys.map(function (d) { return { clip: d.clip, x: d.x, y: d.y, db: d.db, gapMs: d.gapMs }; }),
-      radius: r, start: start, headTurn: hp && breadth >= 0.5 };
-    var audio = { out: { db: -20 }, spatial: hp ? 'hrtf' : 'ild', parts: [], beds: [], room: null, live: live };
+      found: r, spatial: spatial, seed: setting.seed != null ? String(setting.seed) : 'seek-' + sid.toString(36), start: start, headTurn: hp && breadth >= 0.5 };
+    var audio = { out: { db: -20 }, spatial: spatial, parts: [], beds: [], room: null, live: live };
     var pc = X.idx().poolCache = X.idx().poolCache || {}, dist = phrase ? pc['seek:dist'] || (pc['seek:dist'] = C.answerDist(A.callsign(), function (p) { return p.word; })) : null;
-    var w2 = C.slot(rng, { label: 'Which word was it calling?', answer: tw, spoken: decoys.map(function (d) { return d.word; }), pool: dist ? dist.support : nouns, draw: dist && dist.draw, freq: dist && dist.freq, neighbours: X.neighbours });
+    var w2 = C.slot(rng, { label: 'Which word was it calling?', answer: tw, spoken: decoys.map(function (d) { return d.word; }), pool: dist ? dist.support : nouns, draw: dist && dist.draw, freq: dist && dist.freq, neighbours: X.neighbours, avoid: pv ? wordsOf(pv.clip) : [] });
     var loc = { label: 'Find the voice', kind: 'locate', answer: { x: tpos.x, y: tpos.y, r: r }, gamma: Math.round(Math.PI * r * r / 4 * 1000) / 1000, options: [], foils: {} };
     return {
-      id: 'seek-' + C.seedOf(rng).toString(36), ex: 'seek', seed: setting.seed || null,
+      id: 'seek-' + sid.toString(36), ex: 'seek', seed: setting.seed || null,
       setting: { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup },
       audio: audio,
       question: { prompt: 'Find the voice that keeps calling one word, then name the word.', slots: [loc, w2] },
       feedback: { text: 'It was calling “' + tw + '”.', replays: [] },
       picture: { voices: [{ id: 'v0', role: 'target', x: tpos.x, y: tpos.y, label: '' }].concat(decoys.map(function (d, i) { return { id: 'v' + (i + 1), role: 'other', x: d.x, y: d.y, label: '' }; })), reveal: false },
       meta: { items: [tw], voices: [tv].concat(decoys.map(function (d) { return d.voice; })), family: null, probe: false, ctxKey: 'seek', cond: hp ? 'hp' : 'base',
-        decoyWords: decoys.map(function (d) { return d.word; }), offsetDb: (X.clip(target.clip) || {}).diff || 0 }
+        decoyWords: decoys.map(function (d) { return d.word; }), offsetDb: (X.clip(target.clip) || {}).diff || 0,
+        preview: pv ? pv.clip : null, relaxed: relaxed }
     };
   }
   I.seek = { make: make, ready: function () { return I.adapt.ready('seek'); } };

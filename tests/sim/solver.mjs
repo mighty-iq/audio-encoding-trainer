@@ -10,6 +10,9 @@ export const norm = (t) => String(t ?? '').toLowerCase().replace(/[^a-z0-9' ]+/g
 function homophone(a, b) { a = norm(a); b = norm(b); return a === b || HOMO.some((g) => g.includes(a) && g.includes(b)); }
 const has = (text, w) => (' ' + norm(text) + ' ').includes(' ' + norm(w) + ' ');
 const ROOM_LEN = { small: 5, medium: 10, large: 22, hall: 38 };
+const NUMW = new Set(('zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen ' +
+  'seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred').split(' '));
+const isNum = (w) => NUMW.has(norm(w)) || /^[0-9]+$/.test(norm(w));
 
 export function buildIndex(ES) {
   const D = ES.data, clips = D.manifest.clips, voices = D.voices, V = D.vocab;
@@ -36,6 +39,7 @@ function allClips(spec) {
   };
   walk(spec.audio, 'audio');
   (spec.feedback.replays || []).forEach((r, i) => walk(r.audio, 'replay' + i));
+  if (spec.meta && spec.meta.preview) out.push([spec.meta.preview, 'preview']);
   return out;
 }
 
@@ -79,7 +83,12 @@ export function checkSpec(ES, X, spec) {
   const target = parts.filter((p) => p.role === 'target'), maskers = parts.filter((p) => p.role === 'masker');
   const spoken = new Set(maskers.flatMap((p) => (C[p.clip] && C[p.clip].kind === 'phrase' ? (C[p.clip].words || []) : [textOf(p)]).map(norm)));
   const labelCheck = (sl, i, extra = {}) => {
+    // a number slot (answer and every foil numbers): foils are 'masker', 'context' or 'number', never sound-alikes
+    const numSlot = isNum(sl.answer) && Object.keys(sl.foils || {}).every(isNum);
     for (const [f, type] of Object.entries(sl.foils || {})) {
+      if (type === 'number' && !(isNum(sl.answer) && isNum(f))) E('slot ' + i + ' foil ' + f + ' labelled number but is not one');
+      if (numSlot && !['masker', 'context', 'number'].includes(type)) E('slot ' + i + ' number foil ' + f + ' labelled ' + type);
+      if (!['masker', 'neighbour', 'context', 'number', 'random'].includes(type)) E('slot ' + i + ' unknown foil type ' + type);
       const k = norm(f), isMask = spoken.has(k) || (extra.decoys && extra.decoys.has(k));
       const isNb = (X.nb[norm(sl.answer)] || new Set()).has(k);
       const isCtx = extra.context ? extra.context(k) : false;
@@ -100,6 +109,12 @@ export function checkSpec(ES, X, spec) {
     if (slots[1] && norm(slots[1].answer) !== norm(tNum)) E('number answer is not the target number');
     const tv = C[target[0].clip].voice;
     if (target.some((p) => C[p.clip].voice !== tv)) E('target parts from several voices');
+    const cueP = parts.find((p) => p.role === 'cue');
+    if (cueP) {
+      const cc = C[cueP.clip], cw = (cc.words && cc.words.length ? cc.words : [cc.text]).map(norm);
+      if (cc.voice !== tv) E('cue from another voice');
+      slots.forEach((sl) => sl.options.forEach((o) => { if (cw.includes(norm(o))) E('option ' + o + ' is said in the cue'); }));
+    }
     const mv = {};
     maskers.forEach((p) => { const key = C[p.clip].voice + '|' + JSON.stringify(p.fx || null) + '|' + p.az; (mv[key] = mv[key] || []).push(p); });
     const groups = Object.values(mv);
@@ -195,6 +210,24 @@ export function checkSpec(ES, X, spec) {
     L.decoys.forEach((d) => { if (Math.hypot(d.x - L.target.x, d.y - L.target.y) < 2 * loc.answer.r) E('decoy inside the target zone'); });
     [L.target, ...L.decoys].forEach((p) => { if (Math.abs(p.x) > 1 || Math.abs(p.y) > 1) E('position outside the field'); });
     if (Math.abs(L.target.db - dset.snr) > 1e-9) E('target level vs snr dial');
+    if (L.radius !== undefined) E('live.radius set (the scene reads it as metres per field unit)');
+    if (!(Math.abs(L.found - loc.answer.r) < 1e-9)) E('live.found vs locate radius');
+    if (L.spatial !== spec.audio.spatial || !['hrtf', 'ild'].includes(L.spatial)) E('live.spatial missing or different');
+    if (L.seed === undefined || L.seed === null || L.seed === '') E('live without seed');
+    const pv = spec.meta.preview, rel = spec.meta.relaxed || [];
+    if (!pv) { if (!rel.includes('no preview')) E('no preview and not relaxed'); }
+    else {
+      const pc = C[pv], scene = [L.target.clip, ...L.decoys.map((d) => d.clip)];
+      const wordsOf = (id) => ((C[id].words && C[id].words.length) ? C[id].words : norm(C[id].text).split(' ')).map(norm);
+      if (!pc || pc.voice !== C[L.target.clip].voice) E('preview not by the target voice');
+      else {
+        if (scene.includes(pv)) E('preview is a scene clip');
+        const pw = new Set(wordsOf(pv)), called = [tw, ...dw];
+        if (called.some((w) => pw.has(w))) E('preview says a called word');
+        if (!rel.includes('preview shares a name or number') && scene.some((id) => wordsOf(id).some((w) => pw.has(w)))) E('preview shares a scene word');
+        ws.options.forEach((o) => { if (pw.has(norm(o))) E('option ' + o + ' is said in the preview'); });
+      }
+    }
     labelCheck(ws, 1, { decoys: dw });
   }
   if (ex === 'voices') {
@@ -210,7 +243,7 @@ export function checkSpec(ES, X, spec) {
       for (const [f, type] of Object.entries(sl.foils)) {
         const v = castByName[norm(f)], a = X.voices[tv], b = X.voices[v];
         const close = a.sex === b.sex && Math.abs(12 * Math.log2(a.f0 / b.f0)) < 2;
-        if ((type === 'neighbour') !== close) E('who: voice foil label ' + type + ' for ' + f);
+        if ((type === 'similar') !== close || !['similar', 'random'].includes(type)) E('who: voice foil label ' + type + ' for ' + f);
       }
     } else if (task === 'meet') {
       const tv = C[target[0].clip].voice;

@@ -53,6 +53,17 @@ export const tests = [
     assert.ok(new Set(out.map((s) => s.setting.dials.tmr)).size > 2);
     assert.equal(ES.engine.controller.supports.pin, true);
   } },
+  { name: 'a venue set on Strange voices keeps its family (focus dial or family), in Edge and Path', fn(ES, assert) {
+    const E = ES.engine;
+    for (const mode of ['edge', 'path', 'variety']) {
+      const { out } = runSet(ES, 'strange', { trials: 24, mode, focus: 'phone', pin: {}, kind: 'venue' });
+      assert.ok(out.every((s) => s.meta.family === 'phone' && Object.keys(s.setting.dials).join() === 'phone'), mode + ': ' + out.map((s) => s.meta.family).join(','));
+      const r2 = runSet(ES, 'strange', { trials: 12, mode, family: 'muffled', seed: 'fam' });
+      assert.ok(r2.out.every((s) => s.meta.family === 'muffled'), mode + ' family: ' + r2.out.map((s) => s.meta.family).join(','));
+    }
+    const lr = E.learner.create(null, () => T0), set = { exId: 'strange', kind: 'venue', focus: 'whisper' };
+    for (let i = 0; i < 6; i++) assert.equal(E.controller.next('strange', { learner: lr, rng: ES.core.rng('d' + i), set, index: i, prev: [] }).family, 'whisper');
+  } },
   { name: 'direct calls with a plain set object, index and prev work (shell style)', fn(ES, assert) {
     const E = ES.engine, lr = E.learner.create(null, () => T0), set = { exId: 'crowd', trials: 20, kind: 'normal' }, prev = [], res = [];
     lr.state.cond['crowd:base'] = { n: 50, acc: 0.7, at: 0 }; // a condition the player knows

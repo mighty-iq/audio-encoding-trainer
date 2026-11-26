@@ -31,6 +31,18 @@
     return C.pick(rng, ok);
   }
 
+  // Preview cue (phrase mode): another phrase by the target voice with none of the trial's words; else one whose
+  // word and number differ from every talker's (sharing a name only); else none (the cue falls back to the call sign).
+  function previewPhrase(rng, v, T, tal) {
+    var words = {};
+    [T].concat(tal).forEach(function (t) { [t.name, t.word, t.num].forEach(function (w) { words[C.norm(w)] = 1; }); });
+    var cand = I.adapt.callsignBy(v).filter(function (p) { return p.clip !== T.clips[0]; });
+    var strict = cand.filter(function (p) { return !p.words.some(function (w) { return words[w]; }); });
+    var loose = cand.filter(function (p) { return !words[p.word] && !words[p.number]; });
+    var p = C.pick(rng, strict.length ? strict : loose);
+    return p ? p.clip : null;
+  }
+
   function make(rng, setting, ctx) {
     ctx = ctx || {};
     var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx), A = I.adapt, phrase = A.phraseMode();
@@ -98,8 +110,13 @@
     if (breadth >= 0.5 && C.chance(rng, 0.2)) cue = 'preview';
     if (hp && sep >= 15 && breadth >= 0.4 && C.chance(rng, 0.15)) cue = 'location';
     var meta = X.clip, gap = 0.12, t0 = 0.45, parts = [], targetParts = [];
+    var cueWords = [];
     if (cue === 'preview') {
-      var pv = phrase ? (C.pick(rng, A.callsignBy(target).filter(function (p) { return p.clip !== T.clips[0]; })) || {}).clip : X.clipFor(target, 'name', T.name);
+      // the cue is another phrase by the target voice that says none of the trial's words (else it would give away
+      // the answer unmasked or put a word in the target voice that the options call another voice's); relaxed:
+      // a different word and number from every talker's; its words are never options
+      var pv = phrase ? previewPhrase(rng, target, T, tal) : X.clipFor(target, 'name', T.name);
+      if (pv && phrase) cueWords = (X.clip(pv).words || []).map(C.norm);
       if (pv) { parts.push({ clip: pv, at: 0.25, db: 0, role: 'cue' }); t0 = 0.25 + ((meta(pv) && meta(pv).dur) || 0.5) + 0.7; } else cue = 'callsign';
     }
     var rot = hp && breadth >= 0.5 ? Math.round(rng.next() * 60 - 30) : 0, tAz = hp ? rot : 0;
@@ -124,8 +141,8 @@
     var audio = { out: { db: -20 }, dur: Math.round((end + 0.6) * 100) / 100, spatial: hp ? 'hrtf' : 'mono', parts: parts, beds: beds, room: room };
     var side = tAz < -10 ? 'on your left' : tAz > 10 ? 'on your right' : 'in front of you', CS = cap(T.name);
     var prompt = cue === 'preview' ? 'What did the voice you heard first say next?' : cue === 'location' ? 'What did the voice ' + side + ' say?' : 'What did ' + CS + ' say?';
-    var s1 = C.slot(rng, { label: 'Word', answer: T.word, spoken: tal.map(function (m) { return m.word; }), pool: dist ? dist[0].support : nouns, draw: dist && dist[0].draw, freq: dist && dist[0].freq, neighbours: X.neighbours });
-    var s2 = C.slot(rng, { label: 'Number', answer: T.num, spoken: tal.map(function (m) { return m.num; }), pool: dist ? dist[1].support : nums, draw: dist && dist[1].draw, freq: dist && dist[1].freq, neighbours: X.neighbours });
+    var s1 = C.slot(rng, { label: 'Word', answer: T.word, spoken: tal.map(function (m) { return m.word; }), pool: dist ? dist[0].support : nouns, draw: dist && dist[0].draw, freq: dist && dist[0].freq, neighbours: X.neighbours, avoid: cueWords });
+    var s2 = C.slot(rng, { label: 'Number', answer: T.num, spoken: tal.map(function (m) { return m.num; }), pool: dist ? dist[1].support : nums, draw: dist && dist[1].draw, freq: dist && dist[1].freq, neighbours: X.neighbours, avoid: cueWords, type: 'number' });
     var others = tal.map(function (m) { return '“' + m.word + ', ' + m.num + '”'; }).join(' and '), said = { v0: [T.name, T.word, T.num] };
     tal.forEach(function (m, i) { said['v' + (i + 1)] = [m.name, m.word, m.num]; });
     var offs = targetParts.map(function (p) { var c = meta(p.clip); return (c && c.diff) || 0; });

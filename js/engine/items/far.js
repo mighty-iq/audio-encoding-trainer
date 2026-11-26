@@ -61,7 +61,7 @@
     }));
     var cs = hit.item.kind === 'phrase';
     var s1 = C.slot(rng, { label: cs ? 'Word' : 'First word', answer: k1, pool: dist[0].support, draw: dist[0].draw, freq: dist[0].freq, neighbours: X.neighbours, avoid: avoid1 });
-    var s2 = C.slot(rng, { label: cs ? 'Number' : 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, freq: dist[1].freq, neighbours: X.neighbours, avoid: avoid2 });
+    var s2 = C.slot(rng, { label: cs ? 'Number' : 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, freq: dist[1].freq, neighbours: X.neighbours, avoid: avoid2, type: cs ? 'number' : undefined });
     // a slot needs three or more possible answers in this build; else it is not asked
     var slots = [s1, s2].filter(function (sl, j) { return dist[j].support.length >= 3 && sl.options.length >= 2; });
     if (!slots.length) slots = [s1];

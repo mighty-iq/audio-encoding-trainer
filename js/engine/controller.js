@@ -99,10 +99,19 @@
     });
     return { n: n, acc: w ? acc / w : 0.5 };
   }
+  // A venue set holds its condition: set.family, or the family of its focus dial (flow.start(ex, {focus:'phone'})).
+  function setFamily(ex, set) {
+    if (set && typeof set.family === 'string') return set.family;
+    var d = set && typeof set.focus === 'string' ? E.dialDef(ex, set.focus) : null;
+    return d && d.family ? d.family : null;
+  }
+  function pinnedSet(set) { return !!(set && ((set.pin && Object.keys(set.pin).length) || typeof set.family === 'string' || typeof set.focus === 'string')); }
   function chooseFamily(ex, ctx, mode) {
     var lr = lrOf(ctx), rng = rnd(ctx), set = ctx.set || {}, fams = E.dials[ex].filter(function (d) { return d.family; }).map(function (d) { return d.family; });
     var order = FAMILY_ORDER.filter(function (f) { return fams.indexOf(f) >= 0; });
     if (ctx.family && fams.indexOf(ctx.family) >= 0) return ctx.family;
+    var sf = setFamily(ex, set);
+    if (sf && fams.indexOf(sf) >= 0) return sf;
     if (set.block && set.block.left > 0 && fams.indexOf(set.block.family) >= 0) { set.block.left--; return set.block.family; }
     var acquired = order.filter(function (f) { var s = famStats(lr, ex, f); return s.n >= 8 && s.acc >= 0.62; });
     var fresh = order.filter(function (f) { return acquired.indexOf(f) < 0; });
@@ -162,6 +171,8 @@
     for (var k = prev.length - 1; k >= 0; k--) { if ((+prev[k].prop || 0) < 0.5) misses++; else break; }
     m.i = idx; m.sinceAnchor = idx - m.lastAnchor - 1; m.misses = misses;
     m.kind = (raw && raw.kind) || m.kind || 'normal'; m.hint = (raw && raw.hint) || m.hint || null;
+    m.pin = (raw && raw.pin) || null; m.focus = raw && typeof raw.focus === 'string' ? raw.focus : null;
+    m.family = raw && typeof raw.family === 'string' ? raw.family : null;
     return m;
   }
   function effBreadth(lr, ex, mode, ctx) {
@@ -173,7 +184,8 @@
   function nextRaw(ex, ctx) {
     var lr = lrOf(ctx), rng = rnd(ctx), md = M(), mode = ctx.mode || 'edge';
     var set = setView(ctx, lr, ex), meta = E.dialMeta[ex] || {};
-    if (mode === 'path' && E.path && E.path.next) return E.path.next(ex, ctx);
+    // Path's staged steps run normal sets; a venue set (pins, focus dial or family) keeps its condition at the edge
+    if (mode === 'path' && E.path && E.path.next && !pinnedSet(set)) return E.path.next(ex, ctx);
     var ck = lr.ctxKey(ex, !!ctx.headphones), zs = lr.zStar(ex, ck), breadth = effBreadth(lr, ex, mode, ctx);
     var family = meta.families ? chooseFamily(ex, { learner: lr, rng: rng, set: set, breadth: breadth, family: ctx.family, lab: ctx.lab }, mode) : null;
     var out0 = decide(ex, ctx, lr, rng, md, set, mode, meta, ck, zs, family);

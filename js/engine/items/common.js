@@ -7,7 +7,9 @@
      spoken words. So "pick the most typical / most different option" has no edge;
    - positions are shuffled; homophones of the answer are never options.
    Foil labels are relative to the answer: 'masker' (spoken by another voice in this trial), 'neighbour'
-   (phonetic neighbour of the answer), 'context' (fits the sentence's meaning), 'random' (none of these). */
+   (phonetic neighbour of the answer), 'context' (fits the sentence's meaning, or said in the message for another
+   question), 'number' (another number of the closed set: numbers are not sound-alikes, so a number foil is never
+   'neighbour'), 'random' (none of these). Voices uses 'similar' for a voice close in pitch (items/voices.js). */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -42,6 +44,10 @@
     ['seen', 'scene'], ['berry', 'bury'], ['rain', 'reign'], ['sight', 'site', 'cite'], ['whine', 'wine'], ['hair', 'hare']];
   var homoIndex = {};
   HOMO.forEach(function (g) { g.forEach(function (w) { homoIndex[w] = g; }); });
+  var NUMW = {};
+  ('zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen ' +
+    'eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred').split(' ').forEach(function (w) { NUMW[w] = 1; });
+  function isNum(w) { var k = norm(w); return !!k && (!!NUMW[k] || /^[0-9]+$/.test(k)); }
   function homophones(a, b) {
     a = norm(a); b = norm(b);
     if (a === b) return true;
@@ -51,7 +57,8 @@
 
   /* Build one answer slot.
      o = { answer, spoken:[masker words], pool:[possible answers], draw:fn(rng)→word from this slot's answer
-           distribution, neighbours:fn(w)→[w], context:[words fitting the sentence], avoid:[words never to show], n:4, label }
+           distribution, neighbours:fn(w)→[w], context:[words fitting the sentence], avoid:[words never to show], n:4, label,
+           type:'number' (a number slot; also inferred when the answer and every foil are numbers) }
      Returns { label, options, answer, foils:{option:type} }. */
   function slot(rng, o) {
     var n = o.n || 4, T = o.answer, used = {}, out = [T];
@@ -109,10 +116,10 @@
     while (out.length < n && guard++ < 50) { if (!add(randomOne())) { var any = shuffle(rng, (o.pool || []).filter(ok))[0]; if (!add(any)) break; } }
     var spokenSet = {}; spoken.forEach(function (w) { spokenSet[norm(w)] = 1; });
     var ctxSet = {}; ctx.forEach(function (w) { ctxSet[norm(w)] = 1; });
-    var foils = {};
+    var foils = {}, numSlot = o.type === 'number' || (!o.type && isNum(T) && out.length > 1 && out.slice(1).every(isNum));
     out.slice(1).forEach(function (w) {
       var k = norm(w);
-      foils[w] = spokenSet[k] ? 'masker' : nbTset[k] ? 'neighbour' : ctxSet[k] ? 'context' : 'random';
+      foils[w] = spokenSet[k] ? 'masker' : numSlot ? (ctxSet[k] ? 'context' : 'number') : nbTset[k] ? 'neighbour' : ctxSet[k] ? 'context' : 'random';
     });
     return { label: o.label || '', options: shuffle(rng, out), answer: T, foils: foils };
   }
@@ -163,6 +170,6 @@
   function seedOf(rng) { return Math.floor(rng.next() * 4294967296); }
 
   ES.engine.items.common = { ri: ri, pick: pick, shuffle: shuffle, sample: sample, chance: chance, weighted: weighted,
-    norm: norm, slug: slug, uniq: uniq, homophones: homophones, slot: slot, answerDist: answerDist, memo: memo, remember: remember,
+    norm: norm, slug: slug, uniq: uniq, homophones: homophones, isNum: isNum, slot: slot, answerDist: answerDist, memo: memo, remember: remember,
     recentOf: recentOf, breadthOf: breadthOf, sequence: sequence, seedOf: seedOf };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -29,6 +29,33 @@ export const tests = [
       assert.equal(errs.length, 0, errs.join('; '));
     }
   } },
+  { name: 'foil types: number foils are never sound-alikes; similar voices are typed similar', fn(ES, assert) {
+    const num = (w) => ES.engine.items.common.isNum(w);
+    for (const ex of ['crowd', 'far', 'strange', 'echo']) for (const sp of specs(ES, ex, 200)) sp.question.slots.forEach((sl) => {
+      const fs = Object.entries(sl.foils || {});
+      if (num(sl.answer) && fs.every(([f]) => num(f))) fs.forEach(([f, t]) => assert.ok(['masker', 'context', 'number'].includes(t), ex + ' ' + f + ' typed ' + t));
+    });
+    const crowd = specs(ES, 'crowd', 100).filter((sp) => sp.question.slots[1]);
+    assert.ok(crowd.length > 20 && crowd.every((sp) => Object.values(sp.question.slots[1].foils).every((t) => t === 'masker' || t === 'number')));
+    specs(ES, 'voices', 150).filter((sp) => sp.meta.task === 'who').forEach((sp) => Object.values(sp.question.slots[0].foils).forEach((t) => assert.ok(t === 'similar' || t === 'random', t)));
+  } },
+  { name: 'seek: live scene fields (found, spatial, seed) and a preview clip by the target voice', fn(ES, assert) {
+    const C = ES.data.manifest.clips, words = (id) => (C[id].words && C[id].words.length ? C[id].words : C[id].text.toLowerCase().split(/[^a-z']+/)).filter(Boolean);
+    let withPreview = 0;
+    for (const sp of specs(ES, 'seek', 120)) {
+      const L = sp.audio.live, loc = sp.question.slots[0], ws = sp.question.slots[1];
+      assert.equal(L.radius, undefined); assert.equal(L.found, loc.answer.r);
+      assert.equal(L.spatial, sp.audio.spatial); assert.ok(typeof L.seed === 'string' && L.seed.length > 0);
+      if (!sp.meta.preview) { assert.ok(sp.meta.relaxed.includes('no preview')); continue; }
+      withPreview++;
+      const pv = sp.meta.preview, scene = [L.target.clip].concat(L.decoys.map((d) => d.clip));
+      assert.equal(C[pv].voice, C[L.target.clip].voice); assert.ok(!scene.includes(pv));
+      const pw = new Set(words(pv));
+      [sp.meta.items[0]].concat(sp.meta.decoyWords).forEach((w) => assert.ok(!pw.has(String(w).toLowerCase()), 'preview says ' + w));
+      ws.options.forEach((o) => assert.ok(!pw.has(String(o).toLowerCase()), 'option ' + o + ' is in the preview'));
+    }
+    assert.ok(withPreview > 100, 'previews ' + withPreview);
+  } },
   { name: 'generators are deterministic by seed', fn(ES, assert) {
     for (const ex of ES.engine.exercises) assert.deepEqual(specs(ES, ex, 3), specs(ES, ex, 3));
   } },
@@ -70,13 +97,15 @@ export const tests = [
   { name: 'plateau: silent without enough sessions; fires on a flat log; quiet on a climbing one', fn(ES, assert) {
     const E = ES.engine, lr = E.learner.create(null, () => T0);
     assert.equal(E.plateau.check('crowd', { learner: lr, log: log('crowd', 4, 0) }), null);
-    const flat = E.plateau.check('crowd', { learner: lr, log: log('crowd', 10, 0) });
+    const D = E.plateau.DEFAULTS, need = D.window + D.persist - 1; // earliest call: persist full windows, one session apart
+    assert.equal(E.plateau.check('crowd', { learner: lr, log: log('crowd', need - 1, 0) }), null);
+    const flat = E.plateau.check('crowd', { learner: lr, log: log('crowd', need, 0) });
     assert.ok(flat && flat.breaker.kind === 'variety' && /held/.test(flat.reason) && flat.breaker.text.length > 20);
-    assert.equal(E.plateau.check('crowd', { learner: lr, log: log('crowd', 10, 0.6) }), null);
+    assert.equal(E.plateau.check('crowd', { learner: lr, log: log('crowd', need + 4, 0.6) }), null);
   } },
   { name: 'plateau: breakers go in order and wait 3 sessions', fn(ES, assert) {
     const E = ES.engine, lr = E.learner.create(null, () => T0), kinds = [];
-    for (let k = 9; k <= 24; k++) {
+    for (let k = 9; k <= 30; k++) {
       const L = log('crowd', k, 0), r = E.plateau.check('crowd', { learner: lr, log: L, now: T0 + k * DAY });
       if (r) { kinds.push(r.breaker.kind); E.plateau.apply('crowd', r, { learner: lr, log: L }); }
     }

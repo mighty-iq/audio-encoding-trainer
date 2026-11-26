@@ -30,7 +30,8 @@
       playerSeed: opts.playerSeed || (lr.state.seed = lr.state.seed || ('p' + ES.core.hash(String(lr.clock())))),
       met: opts.met, avoidVoices: opts.avoidVoices || null, breadth: opts.breadth, kind: opts.kind || 'normal',
       set: { __flow: true, i: 0, sinceAnchor: 0, anchorGap: 3 + (ES.core.hash(String(seed)) % 2), misses: 0, block: null, lastFamily: null,
-        kind: opts.kind || 'normal', hint: opts.hint || null, pin: opts.pin || null, focus: opts.focus || null },
+        kind: opts.kind || 'normal', hint: opts.hint || null, pin: opts.pin || null, focus: typeof opts.focus === 'string' ? opts.focus : null,
+        family: typeof opts.family === 'string' ? opts.family : null },
       synth: opts.synth || null, avgS: {}, avgN: {}, recentVoices: [], lastRoom: null, results: [], voices: {}, startIdx: index(lr, ex, lr.ctxKey(ex, !!opts.headphones)), pending: null };
     if (sc.kind === 'fresh') sc.fresh = { before: sc.startIdx, daysAway: opts.daysAway || null };
     return sc;

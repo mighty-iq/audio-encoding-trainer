@@ -325,6 +325,18 @@
     self.update = update;
     self.summary = summary;
     self.familyOf = familyOf;
+    // Voices met outside a scored trial (the Voices tutorial's meet steps) count as met, so 'who' trials can ask
+    // about them. Takes one id or a list; returns the learner. The app's learner saves at once (a tutorial can be
+    // the last thing in a visit); other instances leave saving to their owner.
+    self.noteMet = function (v) {
+      sync();
+      var st = self.state, n = 0;
+      st.cast = st.cast || {};
+      (Array.isArray(v) ? v : [v]).forEach(function (id) { if (typeof id === 'string' && id) { st.cast[id] = (st.cast[id] || 0) + 1; n++; } });
+      if (n && self._default) save();
+      return self;
+    };
+    self.met = function () { sync(); return Object.keys(self.state.cast || {}); };
     self.ability = function (ex, id, ck) { var d = dialDef(ex, id), p = post(ex, d, ck || ex); return d.dir * d.slope * p.m; };
     return self;
   }

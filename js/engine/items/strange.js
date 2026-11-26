@@ -87,7 +87,7 @@
       return C.answerDist(ok, function (it) { return C.norm(it.words[it.keys[j]]); });
     }));
     var s1 = C.slot(rng, { label: fb ? 'Word' : 'First word', answer: k1, pool: dist[0].support, draw: dist[0].draw, freq: dist[0].freq, neighbours: X.neighbours, avoid: [k2] });
-    var s2 = C.slot(rng, { label: fb ? 'Number' : 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, freq: dist[1].freq, neighbours: X.neighbours, avoid: [k1] });
+    var s2 = C.slot(rng, { label: fb ? 'Number' : 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, freq: dist[1].freq, neighbours: X.neighbours, avoid: [k1], type: fb ? 'number' : undefined });
     var slots = [s1, s2].filter(function (sl, j) { return dist[j].support.length >= 3 && sl.options.length >= 2; });
     if (!slots.length) slots = [s1];
     var vo = X.voice(hit.voice), c = meta(hit.clip);
