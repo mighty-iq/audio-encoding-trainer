@@ -164,7 +164,7 @@
     return { w: round(w, 1), d: round(d, 1), cx: 0, cy: round(d / 2 - back, 2), far: round(d - back, 2) };
   }
   /** Voices that share a place (no direction cue, or the same azimuth) are drawn as a small group at one
-      distance, 24° apart, the voice to follow in the middle: every dot and the call-sign label stay visible, and
+      distance, 32° apart, the voice to follow in the middle: every dot and the call-sign label stay visible, and
       nobody looks nearer or farther (which would suggest a level difference). Mutates and returns voices. */
   function clusterSamePlace(voices, dist) {
     var groups = [];
@@ -179,7 +179,7 @@
       var az0 = g[0].az || 0;
       g.forEach(function (v, i) {
         v.dist = dist || v.dist || 1.5;
-        v.az = az0 + (i === 0 ? 0 : (i % 2 ? 1 : -1) * 24 * Math.ceil(i / 2));
+        v.az = az0 + (i === 0 ? 0 : (i % 2 ? 1 : -1) * 32 * Math.ceil(i / 2));
       });
     });
     return voices;

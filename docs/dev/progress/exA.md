@@ -34,7 +34,7 @@ ES.ex.strategies.pick. Help: the shell's Play sheet still uses short/tips/bet; h
 Engine TrialSpecs read: crowd meta.cue/items/maskers (who said a borrowed word), far audio.room {rt60, dist,
 size word} + meta.text, strange meta.family/text/synthetic, repair meta.items/keyPos + bracketed feedback.text.
 Rooms drawn from CONTRACTS §12 R1 sizes; rings fitted to the far wall. Crowd: voices without a direction cue
-are drawn as a group at one distance, 24° apart (no fake level difference).
+are drawn as a group at one distance, 32° apart (no fake level difference).
 Tests (Playwright, under flock): tests/e2e/ex_a_common.py builds tests/out/exa/page.html from index.html's script
 list + fixtures (data-fixture, audio-fixture aliased so the real renderer runs; adds js/ex files the index lacks).
 - ex_a_tutorial.py [--miss]: fresh profile → Home plan → tutorial → set. Last run: 76/76 pass; tutorial time of
