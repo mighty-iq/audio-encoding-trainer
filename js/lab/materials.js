@@ -40,9 +40,11 @@
     X.beds.sort(); X.rirs.sort();
 
     // Matrix: probe voices with a clip for every word of every slot.
-    var mx = vocab.matrix || {}, slots = SLOTS.filter(function (s) { return Array.isArray(mx[s]) && mx[s].length >= 4; });
+    var mx = vocab.matrix || {}, ALIAS = { num: ['num', 'number'], adj: ['adj', 'adjective'], obj: ['obj', 'object'] };
+    var listOf = function (s) { var keys = ALIAS[s] || [s]; for (var q = 0; q < keys.length; q++) if (Array.isArray(mx[keys[q]])) return mx[keys[q]]; return null; };
+    var slots = SLOTS.filter(function (s) { var l = listOf(s); return l && l.length >= 4; });
     X.matrix = { slots: slots, words: {}, voices: [] };
-    slots.forEach(function (s) { X.matrix.words[s] = mx[s].map(String); });
+    slots.forEach(function (s) { X.matrix.words[s] = listOf(s).map(String); });
     if (slots.length === SLOTS.length) {
       X.matrix.voices = X.probeVoices.filter(function (v) {
         return slots.every(function (s) { return X.matrix.words[s].every(function (w) { return !!X.byVKT[v + '|word|' + norm(w)]; }); });

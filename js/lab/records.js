@@ -118,4 +118,6 @@
     try { return R.weakestFrom(R.summary(), R.focus()); } catch (e) { return { weakest: null, why: 'unavailable' }; }
   };
   L.weakest = function () { return L.context().weakest; };
+  /** What the planner reads (shell request 18:13 UTC): {weakest} or null. */
+  L.forPlanner = function () { var c = L.context(); return c && c.weakest ? { weakest: c.weakest } : null; };
 })(typeof window !== 'undefined' ? window : globalThis);
