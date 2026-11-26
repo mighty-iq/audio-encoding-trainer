@@ -2,8 +2,11 @@
    Baseline: after the first training session, one block a day (≈ 6–9 min) over five blocks: every probe's first run
    is a practice run; the core probes (Matrix, Digits, Two voices) then get two measured runs, the others one.
    Weekly check-in (≈ 8–9 min) once ≥ 6.5 days have passed since the last one: Matrix and Two voices every week, one
-   rotating probe (Digits → Rooms → New voice → Story) and the Diary. After 14 days or more away, the next check-in
-   is a retention check. Nothing here ever blocks training: due items are suggestions, reminders carry no penalty.
+   rotating probe (Digits → Rooms → New voice → Story) and the Diary. While the Matrix verdict is not yet "clear", for
+   at most the first 8 check-ins, the check-in holds a second Matrix run (≈ 11–12 min; lead decision 2026-11-26: in
+   the simulation it lifts a true 1.5 dB gain from 56 % to ~79 % "clear" by the 4th check-in); afterwards the second
+   run is an optional extra. After 14 days or more away, the next check-in is a retention check. Nothing here ever
+   blocks training: due items are suggestions, reminders carry no penalty.
    state = {runs:[lab runs], diary:{entries}, sessions:[log sessions], now, dayKey(ms), weekKey(ms), available(id),
             trend(id)?} — dayKey/weekKey default to UTC keys when absent (Node tests pass their own). MIT licence. */
 (function (root) {
@@ -20,6 +23,7 @@
   ];
   var ROTATION = ['digits', 'rooms', 'newvoice', 'story'];
   var EVERY_WEEK = ['matrix', 'twovoices'];
+  var DOUBLE_WEEKS = 8;   // the second Matrix run is part of the first 8 check-ins while its verdict is not clear
 
   function utcDay(ms) { return new Date(ms).toISOString().slice(0, 10); }
   function utcWeek(ms) { var d = new Date(ms), t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); return 'w' + Math.floor((t / DAY + 3) / 7); }
@@ -96,15 +100,22 @@
     var since = (now - lastCheck) / DAY;
     out.todayDone = checkToday || blockToday;
     if (since >= 6.5 && !checkToday) {
+      var mTrend = typeof st.trend === 'function' && avail('matrix') ? st.trend('matrix') : null;
+      var twice = avail('matrix') && wIndex < DOUBLE_WEEKS && !(mTrend && mTrend.verdict === 'clear');
       var list = EVERY_WEEK.slice();
+      if (twice) list.push('matrix:2');
       for (var j = 0; j < ROTATION.length; j++) { var cand = ROTATION[(wIndex + j) % ROTATION.length]; if (avail(cand)) { list.push(cand); break; } }
       var thisWeek = weekKey(now), diaryDone = diary.some(function (e) { return e.week === thisWeek || weekKey(e.at) === thisWeek; });
       if (!diaryDone) list.push('diary');
-      var its = list.filter(avail).map(function (id) { return { probe: id, role: (count[id] || 0) ? 'measured' : 'practice', minutes: minutes(id) }; });
+      var its = list.filter(function (id) { return avail(id.split(':')[0]); }).map(function (id) {
+        if (id === 'matrix:2') return { probe: 'matrix', role: 'measured', minutes: minutes('matrix'), second: true };
+        return { probe: id, role: (count[id] || 0) ? 'measured' : 'practice', minutes: minutes(id) };
+      });
       var away = (now - lastActive) / DAY >= 14 || since >= 21;
       out.due = { kind: away ? 'retention' : 'weekly', title: away ? 'Welcome back: a retention check' : 'Weekly check-in ' + (wIndex + 1),
-        items: its, minutes: its.reduce(function (a, it) { return a + it.minutes; }, 0),
-        note: away ? 'A check after a break shows how much of your gain held. There is nothing to catch up on.' : 'Same voices you never train with, new sentences every time.' };
+        items: its, minutes: its.reduce(function (a, it) { return a + it.minutes; }, 0), twice: twice,
+        note: (away ? 'A check after a break shows how much of your gain held. There is nothing to catch up on.' : 'Same voices you never train with, new sentences every time.') +
+          (twice ? ' The Matrix runs twice until its trend reads clear (at most for your first ' + DOUBLE_WEEKS + ' check-ins): two runs steady each check-in, so a real gain shows weeks sooner.' : '') };
       return out;
     }
     var inDays = Math.max(1, Math.ceil(6.5 - since));
@@ -124,4 +135,5 @@
   L.schedule.BLOCKS = BLOCKS;
   L.schedule.ROTATION = ROTATION;
   L.schedule.EVERY_WEEK = EVERY_WEEK;
+  L.schedule.DOUBLE_WEEKS = DOUBLE_WEEKS;
 })(typeof window !== 'undefined' ? window : globalThis);

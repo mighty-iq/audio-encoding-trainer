@@ -7,7 +7,8 @@
 // effect (SD 0.6 dB) so words of one sentence co-vary; day-to-day variation 0.3 dB; practice deficit 1.77 × 0.35^(r−1) dB
 // (≈ +1.15 dB from run 1 to 2 and +0.4 dB from run 2 to 3, like matrix tests); a training gain that grows linearly
 // from the end of the baseline to the fourth weekly check-in (shape 'ramp'; also 'exp' with a 10-day time constant,
-// and 'step': present from the first weekly check-in on). MIT licence.
+// and 'step': present from the first weekly check-in on). Matrix check-ins follow the Lab's default (two runs while
+// the verdict is not clear, ≤ 8 check-ins) unless cfg.policy says 'single' or 'double'. MIT licence.
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -30,7 +31,9 @@ export function loadLab(extra = []) {
 function gauss(r) { let u = 0, v = 0; while (u === 0) u = r.next(); v = r.next(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 const F = (x, th, s) => 1 / (1 + Math.exp(-4 * s * (x - th)));
 
-/** One simulated player through the schedule; returns the verdict after each weekly check-in (and the runs). */
+/** One simulated player through the schedule; returns the verdict after each weekly check-in (and the runs).
+    cfg.policy: 'default' (the Lab's schedule: the Matrix runs twice at a check-in while its verdict is not clear,
+    for at most 8 check-ins; other probes once), 'single' (one run per check-in) or 'double' (always two). */
 export function simulatePlayer(ES, probeId, cfg) {
   const L = ES.lab, P = L.probes[probeId], S = L.stats, rng = ES.core.rng('sim:' + probeId + ':' + cfg.seed + ':' + cfg.player);
   const base = { matrix: -6, digits: -10, twovoices: -2 }[probeId];
@@ -38,10 +41,12 @@ export function simulatePlayer(ES, probeId, cfg) {
   const th0 = base + between * gauss(rng), s = { matrix: 0.11 + 0.09 * rng.next(), digits: 0.11 + 0.09 * rng.next(), twovoices: 0.05 + 0.05 * rng.next() }[probeId];
   const wordOff = {};
   const offOf = (w) => { if (wordOff[w] === undefined) wordOff[w] = (cfg.wordSd ?? 1.0) * gauss(ES.core.rng('word:' + w)); return wordOff[w]; };
-  const days = cfg.days || SCHEDULE_DAYS, gainEnd = days[days.length - 1], gainStart = days[2];
+  const gainStart = SCHEDULE_DAYS[2], gainEnd = SCHEDULE_DAYS[SCHEDULE_DAYS.length - 1];
+  const policy = cfg.policy || (probeId === 'matrix' ? 'default' : 'single');
   const runs = [], verdicts = [];
-  let prevEst;
-  days.forEach((day, r) => {
+  let prevEst, r = 0;
+  const trendNow = () => S.trend(runs, { better: P.better, sigmaX: P.sigmaX, practice: P.practice });
+  function doRun(day) {
     const deficit = (cfg.practice ?? 1.77) * Math.pow(0.35, r);
     const frac = Math.max(0, Math.min(1, (day - gainStart) / (gainEnd - gainStart)));
     const g = cfg.gain * (cfg.shape === 'step' ? (day > gainStart ? 1 : 0) : cfg.shape === 'exp' ? (day > gainStart ? (1 - Math.exp(-(day - gainStart) / 10)) / (1 - Math.exp(-(gainEnd - gainStart) / 10)) : 0) : frac);
@@ -67,23 +72,27 @@ export function simulatePlayer(ES, probeId, cfg) {
     const f = run.finish();
     prevEst = f.est.m;
     runs.push({ t: day, y: f.est.m, s: f.est.s, r: r + 1, practice: r === 0, truth: thDay });
-    if (r >= 3) {
-      const tr = S.trend(runs, { better: P.better, sigmaX: P.sigmaX, practice: P.practice });
-      verdicts.push({ week: r - 2, verdict: tr.verdict, gain: tr.gain, sd: tr.sd, lo90: tr.lo90, hi90: tr.hi90, sdc: tr.sdc });
-    }
+    r++;
+  }
+  SCHEDULE_DAYS.slice(0, 3).forEach(doRun);                       // practice, baseline 1, baseline 2
+  let last = null;
+  SCHEDULE_DAYS.slice(3).forEach((day, c) => {                    // weekly check-ins 1–4
+    const twice = policy === 'double' || (policy === 'default' && c < 8 && !(last && last.verdict === 'clear'));
+    doRun(day);
+    if (twice) doRun(day + 0.02);
+    const tr = trendNow();
+    last = { week: c + 1, runs: twice ? 2 : 1, verdict: tr.verdict, gain: tr.gain, sd: tr.sd, lo90: tr.lo90, hi90: tr.hi90, sdc: tr.sdc };
+    verdicts.push(last);
   });
   return { runs, verdicts, th0 };
 }
 
 /** Rates over n players: share with "clear" at check-in k, ever "clear" by check-in k, and the interval's coverage. */
-export const DOUBLE_DAYS = [0, 1, 2, 9, 9.02, 16, 16.02, 23, 23.02, 30, 30.02];   // with the optional second Matrix run
-export function runSim(ES, probeId, { n = 200, gain = 1.5, seed = 1, double = false, ...rest } = {}) {
+export function runSim(ES, probeId, { n = 200, gain = 1.5, seed = 1, ...rest } = {}) {
   const weeks = 4, clearAt = Array(weeks).fill(0), everBy = Array(weeks).fill(0), likelyOrClear = Array(weeks).fill(0), lowerBy = Array(weeks).fill(0);
-  let cover = 0, gains = [], runErr = [], runSd = [];
-  if (double) rest.days = DOUBLE_DAYS;
+  let cover = 0, gains = [], runErr = [], runSd = [], runsPer = 0;
   for (let p = 0; p < n; p++) {
     const sim = simulatePlayer(ES, probeId, { ...rest, gain, seed, player: p });
-    if (double) sim.verdicts = sim.verdicts.filter((v, k) => k % 2 === 1);   // after the second run of each check-in
     let ever = false, low = false;
     sim.verdicts.forEach((v, k) => {
       if (v.verdict === 'clear') clearAt[k]++;
@@ -98,13 +107,13 @@ export function runSim(ES, probeId, { n = 200, gain = 1.5, seed = 1, double = fa
     gains.push(last.gain);
     // within-player error of each run estimate around that run's true threshold (player offsets removed)
     const errs = sim.runs.map((r) => r.y - r.truth), me = errs.reduce((x, y) => x + y, 0) / errs.length;
-    errs.forEach((e) => runErr.push(e - me));
+    errs.forEach((e) => runErr.push((e - me) * Math.sqrt(errs.length / (errs.length - 1))));
+    runsPer += sim.runs.length / n;
     sim.runs.forEach((r) => runSd.push(r.s));
   }
   const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
-  const k = (double ? DOUBLE_DAYS : SCHEDULE_DAYS).length;
-  const pooledSd = Math.sqrt(runErr.reduce((x, y) => x + y * y, 0) / (runErr.length * (k - 1) / k));
+  const pooledSd = Math.sqrt(runErr.reduce((x, y) => x + y * y, 0) / runErr.length);
   return { probe: probeId, n, gain, clearAt: clearAt.map((c) => c / n), everClearBy: everBy.map((c) => c / n),
     likelyOrClear: likelyOrClear.map((c) => c / n), everLowerBy: lowerBy.map((c) => c / n), coverage90: cover / n,
-    meanGainEst: mean(gains), runErrorSd: pooledSd, meanReportedRunSd: mean(runSd) };
+    meanGainEst: mean(gains), runErrorSd: pooledSd, meanReportedRunSd: mean(runSd), runsPerPlayer: runsPer };
 }

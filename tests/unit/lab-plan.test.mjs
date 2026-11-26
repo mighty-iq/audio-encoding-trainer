@@ -45,7 +45,7 @@ export const tests = {
     const minutes = kinds.map((k, i) => ES.lab.schedule.BLOCKS[i].reduce((a, s) => a + ES.lab.probes[s[0]].minutes, 0));
     assert.ok(minutes.every((m) => m <= 9), 'blocks stay short: ' + minutes.join(', '));
   },
-  'weekly check-in after 6.5 days: Matrix and Two voices every week, one rotating probe, the Diary'(ES, assert) {
+  'weekly check-in after 6.5 days: Matrix twice (not yet clear), Two voices, one rotating probe, the Diary'(ES, assert) {
     const st = { runs: [], diary: { entries: [] }, sessions: [{ start: T0, end: T0 + 900e3, activeMs: 900e3 }] };
     for (let d = 0; d < 5; d++) doDue(ES, st, d);
     assert.equal(ES.lab.schedule(Object.assign({}, st, { now: T0 + 10 * DAY })).due, null, 'not yet: 6 days after the last block');
@@ -55,14 +55,35 @@ export const tests = {
       st.sessions.push({ start: T0 + day * DAY - 3600e3, end: T0 + day * DAY - 1800e3, activeMs: 900e3 });
       const sch = doDue(ES, st, day);
       assert.ok(sch.due && sch.due.kind === 'weekly', 'weekly due on day ' + day);
-      const ids = sch.due.items.map((i) => i.probe);
-      assert.deepEqual(ids.slice(0, 2), ['matrix', 'twovoices']);
+      const items = sch.due.items, ids = items.map((i) => i.probe);
+      assert.deepEqual(ids.slice(0, 3), ['matrix', 'twovoices', 'matrix']);
+      assert.ok(items[2].second && items[2].role === 'measured' && !items[0].second, 'the third item is the second Matrix run');
+      assert.ok(sch.due.twice && /twice until its trend reads clear/.test(sch.due.note));
       assert.ok(ids.indexOf('diary') >= 0);
-      rot.push(ids[2]);
-      assert.ok(sch.due.minutes <= 10, 'about 8–9 minutes: ' + sch.due.minutes);
+      rot.push(ids.find((id) => ['matrix', 'twovoices', 'diary'].indexOf(id) < 0));
+      assert.ok(sch.due.minutes >= 11 && sch.due.minutes <= 12.5, 'about 11–12 minutes while the Matrix runs twice: ' + sch.due.minutes);
+      const after = ES.lab.schedule(Object.assign({}, st, { now: T0 + day * DAY + 3600e3 }));
+      assert.equal(after.extra.length, 0, 'no optional extra: the check-in already held two Matrix runs');
       day += 7;
     }
     assert.deepEqual(rot, ['digits', 'rooms', 'newvoice', 'story', 'digits']);
+  },
+  'the second Matrix run stops after a clear verdict and after 8 check-ins; then it is an optional extra'(ES, assert) {
+    const st = { runs: [], diary: { entries: [] }, sessions: [{ start: T0, end: T0 + 900e3, activeMs: 900e3 }] };
+    for (let d = 0; d < 5; d++) doDue(ES, st, d);
+    const clear = () => ({ ok: true, verdict: 'clear' }), unclear = () => ({ ok: true, verdict: 'unclear' });
+    const s1 = ES.lab.schedule(Object.assign({}, st, { now: T0 + 11 * DAY, trend: clear }));
+    assert.deepEqual(s1.due.items.map((i) => i.probe).filter((id) => id === 'matrix').length, 1, 'clear: one Matrix run');
+    assert.ok(!s1.due.twice && s1.due.minutes <= 9.5, 'clear: about 8–9 minutes (' + s1.due.minutes + ')');
+    let day = 11;
+    for (let w = 0; w < 8; w++) { st.sessions.push({ start: T0 + day * DAY - 3600e3, end: T0 + day * DAY - 1800e3, activeMs: 900e3 }); doDue(ES, Object.assign(st, { trend: unclear }), day); day += 7; }
+    const s9 = ES.lab.schedule(Object.assign({}, st, { now: T0 + day * DAY, trend: unclear }));
+    assert.equal(s9.due.title, 'Weekly check-in 9');
+    assert.equal(s9.due.items.filter((i) => i.probe === 'matrix').length, 1, 'check-in 9: one Matrix run');
+    doDue(ES, Object.assign(st, { trend: unclear }), day);
+    const later = ES.lab.schedule(Object.assign({}, st, { now: T0 + day * DAY + 3600e3, trend: unclear }));
+    assert.equal(later.extra.length, 1, 'after week 8 the second run is offered as an optional extra');
+    assert.equal(later.extra[0].probe, 'matrix');
   },
   'before any probe materials exist, only this week’s diary is offered, with the reason'(ES, assert) {
     const st = { runs: [], diary: { entries: [] }, sessions: [{ start: T0, end: T0 + 900e3, activeMs: 900e3 }], now: T0, available: (id) => id === 'diary' };

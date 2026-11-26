@@ -283,7 +283,35 @@ def t_blocked(browser, base, rel):
     p.context.close()
 
 
-SUITES = [('overview', t_overview), ('baseline', t_baseline_block), ('probes', t_all_probes), ('fit', t_fit), ('hpcheck', t_hpcheck),
+def t_weekly(browser, base, rel):
+    """A finished baseline 9 days ago: the weekly check-in lists the Matrix twice (not yet clear) and an honest length."""
+    now = int(time.time() * 1000) - 9 * DAY
+    steps = [('matrix', 3), ('digits', 3), ('twovoices', 3), ('rooms', 2), ('newvoice', 2), ('story', 1)]
+    runs, k = [], 0
+    for pid, n in steps:
+        for j in range(n):
+            k += 1
+            runs.append({'id': 'b%d' % k, 'probe': pid, 'at': now + k * 60000, 'end': now + k * 60000 + 30000, 'practice': j == 0, 'kind': 'baseline',
+                         'est': {'m': -6 if pid in ('matrix', 'digits', 'twovoices') else 12 if pid == 'rooms' else 60, 's': 0.6}, 'n': 10})
+    diary = {'v': 1, 'entries': [{'week': 'w0', 'at': now, 'items': [{'id': 'loud', 'v': 3}, {'id': 'far', 'v': 3}, {'id': 'memory', 'v': 3}]}], 'events': []}
+    t = tab(browser, base, rel, records={'lab': {'v': 1, 'runs': runs}, 'diary': diary, 'log': C.session_log(3, now - 3600000)})
+    p = t.page
+    C.go(p, 'lab')
+    checks.eq(p.get_attribute('[data-lab-due]', 'data-lab-due'), 'weekly', 'a weekly check-in is due after the baseline')
+    items = p.evaluate("() => [...document.querySelectorAll('[data-lab-due-item]')].map(li => li.getAttribute('data-lab-due-item'))")
+    checks.eq(items[:3], ['matrix', 'twovoices', 'matrix:2'], 'the Matrix runs twice while its verdict is not clear')
+    txt = p.inner_text('[data-lab-due]').lower()
+    checks.ok('second run' in txt and ('about 12 min' in txt or 'about 11 min' in txt), 'the card names the second run and an honest length', txt[:200])
+    shot(p, 'weekly-due')
+    p.locator('[data-lab-start-block]').click()
+    p.wait_for_selector('[data-lab-start]')
+    p.evaluate("() => ES.core.router.go('probe', { items: ES.core.router.current().params.items, kind: 'weekly', i: 2, done: [] }, { replace: true })")
+    p.wait_for_selector('[data-lab-start]')
+    checks.ok('second run' in p.inner_text('.lab-panel .eyebrow').lower(), 'the runner introduces the second Matrix run')
+    p.context.close()
+
+
+SUITES = [('overview', t_overview), ('weekly', t_weekly), ('baseline', t_baseline_block), ('probes', t_all_probes), ('fit', t_fit), ('hpcheck', t_hpcheck),
           ('export', t_export_import), ('report', t_report), ('diary', t_diary), ('blocked', t_blocked)]
 
 

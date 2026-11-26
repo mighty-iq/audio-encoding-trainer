@@ -62,7 +62,9 @@ Design decisions (for the lead's DECISIONS.md; each cheap to change, all in one 
 - Schedule: five baseline blocks (one a day, after the first session): M·D practice | M D measured + TV practice |
   M D TV measured | TV measured + Rooms, New voice practice | Rooms, New voice measured + Story practice + Diary.
   Weekly (≥ 6.5 days after the last): Matrix + Two voices + rotating (Digits → Rooms → New voice → Story) + Diary,
-  ≈ 8–9 min; retention check after ≥ 14 days away; optional second Matrix run when its trend is not clear yet.
+  ≈ 8–9 min; retention check after ≥ 14 days away. Lead decision 2026-11-26: while the Matrix verdict is not clear,
+  for at most the first 8 check-ins, a check-in holds a second Matrix run (≈ 11–12 min, shown as such); after a clear
+  verdict or check-in 8 the second run is an optional extra.
 - Provisional references for Focus mode's "weakest" (not norms): Matrix −6 ± 2 dB, Digits −9 ± 2, Two voices −2 ± 3,
   Rooms 14 ± 5 dB*, New voice 60 ± 15 %, Story 70 ± 15 %; the player's own pick in the Lab wins.
 - Headphone check: own 200 Hz tones, 1 s, 100 ms ramps, 0.5 s gaps, quiet tone −6 dB, RMS −20 dBFS, 6 rounds,
@@ -70,29 +72,34 @@ Design decisions (for the lead's DECISIONS.md; each cheap to change, all in one 
 - Chart colour: one series hue validated with the dataviz checks: light #2A56CF, dark #6F8EF0 (the dark token
   #86A6FF fails the lightness band for marks); status colours only on verdict chips with ✓ / ! glyphs + text.
 
-Simulation (real probe code and schedule; listener model in lab-simlib.mjs; n = 400 Matrix, 300 others):
+Simulation (real probe code and schedule; listener model in lab-simlib.mjs; n = 300 for the default Matrix rows,
+400 for one-run Matrix rows, 300 for Digits and Two voices). Matrix "default" = the Lab's schedule after the lead's
+decision (two runs per check-in while not clear, ≤ 8 check-ins); "one run" = one run per check-in (after week 8).
 | probe | true gain | shape | clear at check-in 1–4 | ever clear by 4 | likely or clear at 4 | 90 % covers | run SD true / reported |
 |---|---|---|---|---|---|---|---|
-| matrix | 1.5 dB | ramp | 1 · 6 · 26 · 52 % | 56 % | 80 % | 96 % | 0.51 / 0.54 dB |
-| matrix | 1.5 dB | exp (τ 10 d) | 2 · 23 · 39 · 51 % | 63 % | 82 % | 96 % | 0.50 / 0.53 dB |
-| matrix | 1.5 dB | step | 13 · 36 · 40 · 33 % | 64 % | 72 % | 96 % | 0.50 / 0.53 dB |
-| matrix | 0 dB | — | 0 · 0 · 1 · 1 % | 2 % | 8 % | 95 % | 0.51 / 0.53 dB |
+| matrix, default | 1.5 dB | ramp | 1 · 16 · 41 · 75 % | 79 % | 91 % | 91 % | 0.50 / 0.53 dB |
+| matrix, default | 1.5 dB | exp (τ 10 d) | 9 · 35 · 55 · 62 % | 80 % | 88 % | 93 % | 0.50 / 0.53 dB |
+| matrix, default | 1.5 dB | step | 39 · 44 · 43 · 36 % | 76 % | 74 % | 89 % | 0.50 / 0.53 dB |
+| matrix, default | 0 dB | — | 0 · 1 · 1 · 1 % | 2 % | 8 % | 95 % | 0.51 / 0.53 dB |
+| matrix, one run | 1.5 dB | ramp | 1 · 6 · 26 · 52 % | 56 % | 80 % | 96 % | 0.51 / 0.54 dB |
+| matrix, one run | 1.5 dB | exp (τ 10 d) | 2 · 23 · 39 · 51 % | 63 % | 82 % | 96 % | 0.50 / 0.53 dB |
+| matrix, one run | 1.5 dB | step | 13 · 36 · 40 · 33 % | 64 % | 72 % | 96 % | 0.50 / 0.53 dB |
+| matrix, one run | 0 dB | — | 0 · 0 · 1 · 1 % | 2 % | 8 % | 95 % | 0.51 / 0.53 dB |
 | digits | 1.5 dB | ramp | 0 · 6 · 17 · 34 % | 41 % | 67 % | 93 % | 0.79 / 0.80 dB |
 | digits | 0 dB | — | 0 · 2 · 2 · 3 % | 5 % | 12 % | 92 % | 0.77 / 0.80 dB |
 | two voices | 1.5 dB | ramp | 0 · 0 · 0 · 0 % | 0 % | 4 % | 99 % | 1.93 / 2.73 dB |
 | two voices | 0 dB | — | 0 % | 0 % | 2 % | 100 % | 1.93 / 2.73 dB |
-| matrix, optional 2nd run at each check-in (n 300) | 1.5 dB | ramp | 1 · 16 · 40 · 75 % | 79 % | 91 % | 91 % | 0.50 / 0.53 dB |
-| matrix, optional 2nd run at each check-in (n 300) | 0 dB | — | 0 · 1 · 0 · 1 % | 2 % | 8 % | 95 % | 0.51 / 0.53 dB |
-Reading: on the Matrix a true 1.5 dB gain reads "clear" by the 4th weekly check-in for 56 % of simulated players
-(ramp; 63–64 % when the gain comes earlier) and "likely or clear" for 80 %; a zero gain reads clear for 2 %. Digits
-needs larger gains or more weeks; Two voices (σ ≈ 1.9 dB, like published speech-on-speech tests) detects only gains
-of ~5 dB within 4 weeks and is for longer trends and pooled data. The 56 % is near the information limit of one
-20-sentence run a week (gain SD ≈ 0.7 dB at week 4).
+Reading: with the default schedule a true 1.5 dB Matrix gain reads "clear" by the 4th weekly check-in for 79 % of
+simulated players (76–80 % across gain shapes; "likely or clear" 91 %), and a zero gain reads clear for 2 %. One run
+per check-in would give 56 %. Players average 10–11 Matrix runs by check-in 4 (doubling stops once the verdict is
+clear). Digits needs larger gains or more weeks; Two voices (σ ≈ 1.9 dB, like published speech-on-speech tests)
+detects only gains of ~5 dB within 4 weeks and serves longer trends and pooled data. Reproduce: `node
+tests/unit/lab-simreport.mjs 300` (≈ 10 min).
 
 ## 2026-11-26 19:10 UTC — done (brief complete); how to resume
 Status: every probe runs end to end on fixtures (unit: all seven through make/next/record/finish; browser: all seven
 through the real screens with real rendering); statistics and simulation checks pass; exports and imports round-trip;
-30 unit tests and 89 browser checks pass. In the real app without probe materials the Lab says so per probe
+31 unit tests and 93 browser checks pass (after the lead's decision below). In the real app without probe materials the Lab says so per probe
 ("later build") and offers only the diary (schedule phase 'waiting').
 Commands:
 - Unit: `node tests/unit/run.mjs lab` (≈ 30 s; LAB_SIM_N=200 for a bigger simulation inside the test).
@@ -107,5 +114,20 @@ Open (other owners; see requests.md): shell — Settings › Headphone check sho
 could append ES.lab.homeCard(); emit results:done on the session-done screen. Stimuli — probe materials (probe
 voices with matrix words, recorded digit talkers, two-voices sentences + labels, story clips + probe café bed); the
 Lab picks them up with no code change (materials.js reads the requested shapes; story answers by index work).
-Lead — decide whether the second Matrix run per check-in becomes the default (79 % vs 56 % detection, +3 min);
-the design decisions above are ready for DECISIONS.md. Exercise views/Missions may log diary events via ES.lab.logEvent.
+Lead decided (2026-11-26): the second Matrix run is part of each check-in while the Matrix verdict is not clear, for
+at most the first 8 check-ins (schedule.js DOUBLE_WEEKS; due card says ≈ 11–12 min); see the list at the end. Exercise views/Missions may log diary events via ES.lab.logEvent.
+
+## Decisions for the lead to log (DECISIONS.md; times UTC)
+- 2026-11-26 Probe ids follow the engine's PROBE_MAP (matrix, digits, twovoices, rooms, newvoice, story, diary). Reason: Focus mode reads them.
+- 2026-11-26 Matrix: 20 sentences, Bayesian track on threshold × slope × lapse, untempered word scoring, sweet points F 0.7/0.5. Reason: simulation shows reported run SD 0.53 vs true 0.51 dB (calibrated), near BPACE precision.
+- 2026-11-26 Rooms, New voice and Matrix share the matrix vocabulary; Rooms adapts log2 distance in a held-out hall (seed 10007, rt60 1.4 s, levels 'source', noise −12 dB at 1 m) and is kept in dB* (6.02 per doubling), shown in metres. Reason: one closed-set material across three conditions, word scoring everywhere.
+- 2026-11-26 New voice = tone-vocoded (6 bands) matrix sentences from the two spare probe voices; the engine trains noise carriers only. Reason: a never-trained degradation family.
+- 2026-11-26 Two voices: fixed target talker per run with a preview, two same-sex maskers, 24 trials, 6-choice keyword. Reason: informational masking with a known voice; σ ≈ 1.9 dB accepted (longer trends, pooled data).
+- 2026-11-26 Trend = Bayesian linear model (level, slope per week, practice term with literature priors, noise scale with a scaled inverse-χ²(6) prior); clear = gain ≥ 1.96 × its SD with the 90 % interval above 0; likely = P(gain > 0) ≥ 0.9; no verdict before a measured run ≥ 5 days after the baseline. Reason: the brief's verdicts; reduces to 2.77 × σ / √k for k runs before and after.
+- 2026-11-26 Schedule: 5 baseline blocks (one a day, after the first session; core probes Matrix, Digits, Two voices get practice + 2 measured, the others practice + 1), then weekly Matrix + Two voices + rotating probe + Diary; retention check after ≥ 14 days away; never blocks training. Reason: brief; ≈ 8–9 min weeks.
+- 2026-11-26 (lead) While the Matrix verdict is not clear, for at most the first 8 check-ins, a check-in holds a second Matrix run (≈ 11–12 min, said on the card); afterwards optional. Reason: 79 % vs 56 % detection of a 1.5 dB gain by check-in 4 at an unchanged 2 % false rate.
+- 2026-11-26 Diary has no practice run and uses 1–5 plus "did not happen" on five original items. Reason: self-report, not a test; relevance screening as in established instruments, without copying their items.
+- 2026-11-26 Focus mode's "weakest" probe = the player's pick, else the lowest against provisional references (Matrix −6 ± 2 dB, Digits −9 ± 2, Two voices −2 ± 3, Rooms 14 ± 5 dB*, New voice 60 ± 15 %, Story 70 ± 15 %), labelled provisional, never called norms. Reason: units differ across probes; no norms exist for our materials.
+- 2026-11-26 Headphone check: own 200 Hz tones, anti-phase method, 6 rounds, pass ≥ 5 (chance 1.8 %), manual override with a note; owned by the Lab. Reason: lab brief; generic published method.
+- 2026-11-26 Pooled export: random pooling id, relative days and weeks, no record ids or absolute times, nickname and device facts only when ticked; trial-level arrays included for item calibration. Reason: privacy rules; pooled data must allow item-difficulty work.
+- 2026-11-26 Lab chart series colour: light #2A56CF, dark #6F8EF0 (validated; the dark token #86A6FF fails the lightness band for marks). Reason: dataviz checks.

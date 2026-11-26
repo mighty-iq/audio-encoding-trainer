@@ -47,7 +47,9 @@
       s.runs.length ? u.el('details', { class: 'lab-details' }, [u.el('summary', null, 'Show the numbers'), L.charts.table(info)]) : null,
       u.el('section', { class: 'lab-sec' }, [u.el('h2', { class: 'h-small' }, 'What it measures'),
         u.el('p', null, p.measures), u.el('p', null, p.short + ' ' + p.answerHow),
-        u.el('p', { class: 'hint' }, sigmaText(p))]),
+        u.el('p', { class: 'hint' }, sigmaText(p)),
+        id === 'matrix' ? u.el('p', { class: 'hint', 'data-lab-twice': '' }, 'Until this trend reads clear, each weekly check-in runs the Matrix twice, for at most your first ' + L.schedule.DOUBLE_WEEKS +
+          ' check-ins (about 3 extra minutes): two runs make each check-in steadier, so a real gain shows weeks sooner. After that the second run is optional.') : null]),
       notes.length ? u.el('section', { class: 'lab-sec' }, [u.el('h2', { class: 'h-small' }, 'Notes'), u.el('ul', { class: 'plain' }, notes.map(function (n) { return u.el('li', null, n); }))]) : null,
       u.el('p', { class: 'hint' }, 'Earshot’s numbers compare you with your own baseline. They are not clinical measures and are not normed; if everyday hearing worries you, an audiologist can test it properly.'),
       u.el('div', { class: 'actions' }, [

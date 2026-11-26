@@ -63,7 +63,8 @@
       u.el('p', { class: 'eyebrow mono' }, d.title + ' · about ' + Math.round(d.minutes) + ' min'),
       u.el('ul', { class: 'lab-items' }, d.items.map(function (it) {
         var p = L.probes[it.probe];
-        return u.el('li', null, [u.el('span', { class: 'lab-item-name' }, p.name), u.el('span', { class: 'lab-item-meta' }, (it.role === 'practice' ? 'practice · ' : '') + p.minutes + ' min')]);
+        return u.el('li', { 'data-lab-due-item': it.probe + (it.second ? ':2' : '') }, [u.el('span', { class: 'lab-item-name' }, p.name),
+          u.el('span', { class: 'lab-item-meta' }, (it.role === 'practice' ? 'practice · ' : it.second ? 'second run · ' : '') + p.minutes + ' min')]);
       })),
       u.el('p', { class: 'hint' }, d.note + ' Best after a training session; it never holds training back.'),
       ES.ui.button('Start check-in', { kind: 'primary', wide: true, attrs: { 'data-lab-start-block': '' }, onClick: function () {

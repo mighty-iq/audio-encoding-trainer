@@ -16,7 +16,7 @@
   var KIND = { baseline: 'baseline', weekly: 'weekly check-in', retention: 'retention check', extra: 'extra run' };
 
   RN.start = function (items, kind) {
-    var list = (items || []).filter(function (it) { return it && L.probes[it.probe]; }).map(function (it) { return { probe: it.probe }; });
+    var list = (items || []).filter(function (it) { return it && L.probes[it.probe]; }).map(function (it) { return { probe: it.probe, second: !!it.second }; });
     if (!list.length) return false;
     return ES.core.router.go('probe', { items: list, kind: kind || 'extra', i: 0, done: [] });
   };
@@ -68,7 +68,7 @@
     cur.practice = practice;
     var hp = settings().headphones;
     panel([
-      u.el('p', { class: 'eyebrow mono' }, def.distance + ' · ' + (practice ? 'practice run' : KIND[cur.kind] || 'check-in') + ' · about ' + def.minutes + ' min'),
+      u.el('p', { class: 'eyebrow mono' }, def.distance + ' · ' + (practice ? 'practice run' : (cur.items[cur.i].second ? 'second run · ' : '') + (KIND[cur.kind] || 'check-in')) + ' · about ' + def.minutes + ' min'),
       u.el('h1', { 'data-autofocus': '' }, def.name),
       u.el('p', { class: 'lead' }, def.short),
       u.el('p', null, [u.el('strong', null, 'How to answer: '), def.answerHow]),
