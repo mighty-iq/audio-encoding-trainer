@@ -42,7 +42,8 @@
       invites
     ]);
     ES.hooks.emit('results:interlude', { el: interlude, set: set.plan, exId: set.exId, index: set.index });
-    if (!interlude.childNodes.length && set.plan && set.plan.interlude) {
+    if (!interlude.childNodes.length && ES.ui.interlude) ES.ui.interlude.mount(interlude, set);
+    if (!interlude.childNodes.length && set.plan && set.plan.interlude && !set.demo) {
       interlude.appendChild(ES.ui.w.placeholderCard('Listen-only examples of the condition you just trained will play here; they arrive with the audio build.'));
     }
     if (ES.core.playtest.enabled()) wrap.appendChild(ES.core.playtest.ratingEl(set.exId, { set: set.index }));
@@ -83,5 +84,5 @@
     setSummary(root, S, set);
   }
 
-  if (!ES.ui.screens.results) ES.ui.screens.results = { mount: mount, unmount: function () {}, deepLink: false };
+  if (!ES.ui.screens.results) ES.ui.screens.results = { mount: mount, unmount: function () { if (ES.ui.interlude) ES.ui.interlude.stop(); }, deepLink: false };
 })(window.ES, window);

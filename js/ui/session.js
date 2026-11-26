@@ -174,8 +174,9 @@
     S.rows.push([Date.now(), trial.ex || set.exId, rec.focus, rec.level, rec.correct ? 1 : 0, U.round(rec.prop, 3), rec.intrusions]);
     if (trial.meta && trial.meta.demo) S.demoTmr = ES.ui.demo.nextTmr(S.demoTmr, rec.correct);
     else {
-      if (!set.sc && E().learner && typeof E().learner.update === 'function') { try { E().learner.update(trial, result); } catch (e) { report('learner', e); } }
-      saveLearner();
+      var L = E().learner;
+      if (!set.sc && L && typeof L.update === 'function') { try { L.update(trial, result); } catch (e) { report('learner', e); } }
+      if (!(L && L._bound)) saveLearner();          // a store-bound learner already saved itself after the update
     }
     ES.hooks.emit('trial:done', { trial: trial, result: result, response: resp, set: set.index, index: set.results.length - 1, demo: !!set.demo });
   }

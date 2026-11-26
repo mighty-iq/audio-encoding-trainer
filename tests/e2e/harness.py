@@ -12,6 +12,7 @@ import http.server
 import json
 import pathlib
 import re
+import signal
 import threading
 import time
 
@@ -42,17 +43,20 @@ class Checks:
 
 
 @contextlib.contextmanager
-def browser_lock(timeout=1200):
+def browser_lock(timeout=1800):
+    """Wait in the kernel's queue for the shared browser lock (a blocking flock, like the `flock` command), so
+    polling never loses the race to other waiters; give up after `timeout` seconds."""
     f = open(LOCK, 'a+')
-    t0 = time.time()
-    while True:
-        try:
-            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            break
-        except BlockingIOError:
-            if time.time() - t0 > timeout:
-                raise RuntimeError('the browser lock stayed busy')
-            time.sleep(1)
+
+    def expired(signum, frame):
+        raise TimeoutError('the browser lock stayed busy for %d s' % timeout)
+    old = signal.signal(signal.SIGALRM, expired)
+    signal.alarm(timeout)
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX)
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old)
     try:
         yield
     finally:

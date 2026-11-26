@@ -41,3 +41,11 @@ Screens looked at: home 390/1366, trial + feedback 360×640 light/dark, 640×360
 settings, pause, map placeholder. Fixed from them: landscape feedback overlap, heading focus ring, unreadable
 labels on the home picture, "?:" in feedback lines, the "you" marker, title truncation in the trial bar.
 Next: run storage/srcdoc/ui suites; look at their screenshots; final full run; commit.
+
+## 2026-11-26 18:15 UTC — resumed after a restart
+- Session runner now drives sets through ES.engine.flow (start/next/answer/end); learner load at boot, before each
+  session and after other tabs' changes; saves only where the store-bound learner does not (set end, plateau).
+- Real sessions start when planner + audio engine + voice clips exist (data/ and audio/ landed 18:10 UTC); shell
+  suites force the demo with ES_CONFIG.demo; new suite tests/e2e/shell_real.py covers real trials.
+- Pending: run storage, srcdoc, ui, real suites (the browser lock was held by another builder's test); final full
+  run; look at real-trial screenshots; commit.
