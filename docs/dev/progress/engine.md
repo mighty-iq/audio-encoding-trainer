@@ -202,6 +202,8 @@ Each finding in engine files or assigned to the engine, with its test (tests/uni
   build's first voices have sentences only), plateau retuned (tuner: replay of dumped logs; numbers above).
 - 2026-11-26 20:40 UTC — Fix round 1: M2, M3, M4, M6/M11 flow support, M8, M9 (engine part), H1 doc, C03–C05, C10,
   C19, C24, C33, L9, option-length bias; tests per finding.
+- 2026-11-26 23:06 UTC — Final set (eab5150): Echo never asks for or offers a Lab matrix word (token match; lead's
+  decision), a185d3b; test over 2,000 real seeds.
 
 ## Open issues
 - Starter pack: Strange, Repair and Echo run on the call-sign fallback until their own clips land; residual
@@ -213,3 +215,7 @@ Each finding in engine files or assigned to the engine, with its test (tests/uni
 - Real build: Voices most-frequent responder 0.30 (cast names; 1 bin of 18), single flagged bins in Strange and Seek;
   re-check when the full packs land.
 - Shell wiring of flow.skip / end({early}) / snapshot / resume (M6, M7, M11) and of learn:false (game, M8).
+- Echo on the final set: shortcut responders 'frequent' 0.39, 'seen' 0.31 (17 bins). Questions have their own answer
+  sets ("Where is the train going?" → 4 destinations) while foils come from the category; answers are skewed (Taylor
+  in 9 of 56 messages, 5 five-detail messages). Per-question foils fixed 'seen' (0.25) but not 'frequent' (0.41) in a
+  trial (/tmp variant, not committed); needs balanced content or a design call (round 2).
