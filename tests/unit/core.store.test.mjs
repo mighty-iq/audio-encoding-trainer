@@ -1,5 +1,5 @@
 // ES.core.store: persistence, blocked and full storage, newer versions, corrupt data, two tabs, import/export.
-export const scripts = ['js/core/ns.js', 'js/core/util.js', 'js/core/rng.js', 'js/core/store-schema.js', 'js/core/store.js'];
+export const scripts = ['js/core/ns.js', 'js/core/util.js', 'js/core/rng.js', 'js/core/store-schema.js', 'js/core/store-merge.js', 'js/core/store.js'];
 const P = 'earshot.v1.';
 const env1 = (env, storage) => env.spawn({ storage });
 
@@ -141,11 +141,11 @@ export const tests = {
     const S = ES.core.store;
     for (const bad of ['', 'hello', '{"records":', '[]', '42', 'null']) assert.equal(S.importAll(bad).ok, false, JSON.stringify(bad));
     assert.equal(S.importAll(null).ok, false);
-    assert.equal(S.importAll({ records: { profile: { v: 99 } } }).error, 'nothing-usable');
+    assert.equal(S.importAll({ records: { profile: { v: 99 } } }).error, 'newer-version');
     const r1 = S.importAll({ records: { profile: 'not json', log: { sessions: 'no', v: 1 } } });
-    assert.equal(r1.ok, true);
-    assert.deepEqual(r1.skipped, [{ key: 'profile', reason: 'damaged' }]);
-    assert.ok(r1.repaired >= 1);
+    assert.equal(r1.ok, false, 'a damaged backup is refused whole (fix round 1, M9)');
+    assert.equal(r1.error, 'damaged');
+    assert.deepEqual(r1.damaged.map((d) => d.key).sort(), ['log', 'profile']);
     const wrapped = 'Here is my backup:\n' + JSON.stringify({ records: { profile: { v: 1, nickname: 'Wrapped' } } }) + '\nthanks';
     assert.equal(S.importAll(wrapped).ok, true);
     assert.equal(S.peek('profile').nickname, 'Wrapped');

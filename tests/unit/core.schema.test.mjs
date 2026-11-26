@@ -1,5 +1,5 @@
 // ES.core.storeSchema: the schema guard (repairs, never throws, passes unknown fields) and the 3-way merge.
-export const scripts = ['js/core/ns.js', 'js/core/util.js', 'js/core/store-schema.js'];
+export const scripts = ['js/core/ns.js', 'js/core/util.js', 'js/core/store-schema.js', 'js/core/store-merge.js'];
 
 export const tests = {
   'defaults for every key carry v and the documented fields'(ES, assert) {

@@ -22,7 +22,9 @@
     obj: function (fields, o) { var x = mk('obj', undefined, o); x.fields = fields; return x; },
     map: function (of, o) { var x = mk('map', undefined, o); x.of = of; return x; },
     list: function (of, o) { var x = mk('list', undefined, o); x.of = of; x.id = x.id || 'id'; return x; },
-    rows: function (o) { return mk('rows', undefined, o); }
+    rows: function (o) { return mk('rows', undefined, o); },
+    /** An array of finite numbers, clamped to [min, max], newest last, capped. */
+    nums: function (o) { return mk('nums', undefined, o); }
   };
   var ANY = T.any(undefined);
 
@@ -33,7 +35,7 @@
         Object.keys(desc.fields).forEach(function (k) { var v = defaults(desc.fields[k]); if (v !== undefined) o[k] = v; });
         return o;
       case 'map': return {};
-      case 'list': case 'rows': return [];
+      case 'list': case 'rows': case 'nums': return [];
       default:
         var v = typeof desc.def === 'function' ? desc.def() : desc.def;
         return v && typeof v === 'object' ? U.copy(v) : v;
@@ -67,7 +69,7 @@
   function fits(desc, v) {
     switch (desc.t) {
       case 'obj': case 'map': return U.isObj(v);
-      case 'list': case 'rows': return Array.isArray(v);
+      case 'list': case 'rows': case 'nums': return Array.isArray(v);
       case 'num': return typeof v === 'number' && isFinite(v) || v === null && !!desc.nullable;
       case 'str': return typeof v === 'string';
       case 'bool': return typeof v === 'boolean';
@@ -89,6 +91,7 @@
   function finishList(desc, arr) {
     if (desc.sort) arr = sortBy(arr, function (x) { var v = U.isObj(x) ? +x[desc.sort] : 0; return isFinite(v) ? v : 0; });
     if (desc.cap && arr.length > desc.cap) arr = arr.slice(arr.length - desc.cap);
+    if (typeof desc.finish === 'function') arr = desc.finish(arr);
     return arr;
   }
   function okRow(desc, r) { return Array.isArray(r) && r.length >= (desc.minLen || 1) && typeof r[0] === 'number' && isFinite(r[0]); }
@@ -167,12 +170,23 @@
         var seen = new Map(), arr = [];
         val.forEach(function (item) {
           if (item === null || item === undefined || !fits(desc.of, item)) { rep.dropped++; return; }
-          var s = sanitize(desc.of, item, rep, depth + 1), id = idOf(desc, s);
+          var s = sanitize(desc.of, item, rep, depth + 1), id = desc.keepAll ? 'k:' + arr.length : idOf(desc, s);
           if (seen.has(id)) { arr[seen.get(id)] = s; rep.dropped++; return; }
           seen.set(id, arr.length);
           arr.push(s);
         });
         return finishList(desc, arr);
+      }
+      case 'nums': {
+        if (!Array.isArray(val)) { if (val !== undefined) rep.fixed++; return []; }
+        var ns = [];
+        val.forEach(function (x) {
+          if (typeof x !== 'number' || !isFinite(x)) { rep.dropped++; return; }
+          var y = desc.min != null && x < desc.min ? desc.min : desc.max != null && x > desc.max ? desc.max : x;
+          if (y !== x) rep.fixed++;
+          ns.push(y);
+        });
+        return desc.cap && ns.length > desc.cap ? ns.slice(ns.length - desc.cap) : ns;
       }
       case 'rows': {
         if (!Array.isArray(val)) { if (val !== undefined) rep.fixed++; return []; }
@@ -195,6 +209,9 @@
     if (a === undefined) return b;
     if (b === undefined) return a;
     var rule = desc.merge || 'lww';
+    if (rule === 'counter' && typeof a === 'number' && typeof b === 'number') {   // both tabs counted: add both gains
+      return typeof ctx.base === 'number' ? Math.max(a, b, a + b - ctx.base) : Math.max(a, b);
+    }
     if (rule === 'max' && typeof a === 'number' && typeof b === 'number') return Math.max(a, b);
     if (rule === 'min' && typeof a === 'number' && typeof b === 'number') return Math.min(a, b);
     if (rule === 'or') return a || b;
@@ -250,6 +267,7 @@
     if (base === undefined && ours === undefined) return theirs;
     if (U.deepEqual(base, ours)) return theirs;
     if (U.deepEqual(base, theirs)) return ours;
+    if (desc.merge === 'counter') return leaf(desc, ours, theirs, { oursNewer: ctx.oursNewer, base: base });
     if (deep(desc)) {
       if (desc.t === 'obj' && U.isObj(ours) && U.isObj(theirs)) {
         return mergeKeys(function (k) { return has(desc.fields, k) ? desc.fields[k] : ANY; }, base, ours, theirs, ctx);
@@ -263,8 +281,11 @@
     return leaf(desc, ours, theirs, ctx);
   }
 
-  // ---- v1 schemas (CONTRACTS §7). `v` is the record's schema version.
+  // ---- v1 schemas (CONTRACTS §7). `v` is the record's schema version. The learner's merge-on-save and the log's
+  // compaction live in js/core/store-merge.js (loaded right after this file; without it both are skipped).
   var now = function () { return Date.now(); };
+  var SC_ = {};
+  var setEntry = T.obj({ ex: T.str(''), n: T.int(0, { min: 0 }), correct: T.int(0, { min: 0 }) });
   var SCHEMAS = {
     profile: { v: 1, desc: T.obj({
       createdAt: T.num(now, { min: 0, merge: 'min' }),
@@ -277,30 +298,32 @@
         hpCheck: T.any(null),
         volumeSet: T.num(0, { min: 0, merge: 'max' }),
         playtest: T.bool(false),
-        captions: T.bool(false)
+        captions: T.bool(false),
+        free: T.any(null)                                       // Free mode: {exId, dials:{id: value}}
       }),
       welcomeSeen: T.num(0, { min: 0, merge: 'max' }),
       tutorials: T.map(T.any(true, { merge: 'or' })),
       cards: T.map(T.num(0, { min: 0, merge: 'min' }))          // strategy cards already shown: id → first shown
     }) },
-    learner: { v: 1, desc: T.obj({
+    learner: { v: 1, onSet: function (cur, inc) { return SC_.mergeLearner ? SC_.mergeLearner(cur, inc) : inc; }, desc: T.obj({
       dials: T.map(T.obj({ m: T.num(0), s: T.num(1, { min: 0 }), n: T.int(0, { min: 0 }), at: T.num(0, { min: 0 }) },
         { merge: 'newest', by: 'at' })),
       breadth: T.map(T.num(0, { min: 0, max: 1 })),
-      recent: T.map(T.any([])),                                   // per-trial proportions (0, 0.5, 1 …), newest last
-      cond: T.map(T.any(null, { merge: 'newest', by: 'at' })),    // engine records keyed by id: newer `at` wins
-      path: T.map(T.any(null, { merge: 'newest', by: 'at' })),
+      recent: T.map(T.nums({ min: 0, max: 1, cap: 30 })),         // per-trial proportions, newest last
+      edge: T.map(T.nums({ min: 0, max: 1, cap: 20 })),
+      cond: T.map(T.obj({ n: T.int(0, { min: 0 }), acc: T.num(0, { min: 0, max: 1 }), at: T.num(0, { min: 0 }) }, { merge: 'newest', by: 'at' })),
+      path: T.map(T.obj({ i: T.int(0, { min: 0 }), hist: T.any([]), run: T.int(0, { min: 0 }), n: T.int(0, { min: 0 }), best: T.num(0) },
+        { merge: 'newest', by: 'n' })),
       best: T.map(T.num(0, { merge: 'max' })),                    // best ability per dial (higher is better)
-      plat: T.map(T.any(null, { merge: 'newest', by: 'at' })),
-      edge: T.map(T.any(null, { merge: 'newest', by: 'at' })),
-      cast: T.map(T.any(null, { merge: 'newest', by: 'at' })),
-      n: T.int(0, { min: 0, merge: 'max' }),                      // trials the learner has seen
+      plat: T.map(T.obj({}, { merge: 'newest', by: 'n' })),
+      cast: T.map(T.num(0, { min: 0, merge: 'max' })),            // voice → times heard
+      n: T.int(0, { min: 0, merge: 'counter' }),                  // trials the learner has seen (both tabs add up)
       seed: T.str('')
     }) },
     log: { v: 1, desc: T.obj({
       sessions: T.list(T.obj({ id: T.str(''), start: T.num(0, { min: 0 }), end: T.num(0, { min: 0 }),
-        activeMs: T.num(0, { min: 0 }), mode: T.str('edge'), sets: T.any([]) }, { merge: 'newest', by: 'end' }),
-      { id: 'id', sort: 'start', cap: 3000 })
+        activeMs: T.num(0, { min: 0 }), mode: T.str('edge'), sets: T.list(setEntry, { keepAll: true }) }, { merge: 'newest', by: 'end' }),
+      { id: 'id', sort: 'start', cap: 3000, finish: function (arr) { return SC_.compactLog ? SC_.compactLog(arr) : arr; } })
     }) },
     trials: { v: 1, desc: T.obj({ rows: T.rows({ cap: 3000, minLen: 5 }) }) },
     lab: { v: 1, desc: T.obj({
@@ -308,15 +331,21 @@
         { merge: 'newest', by: 'at' }), { id: 'id', sort: 'at', cap: 2000 })
     }) },
     game: { v: 1, desc: T.obj({
-      venues: T.map(T.any(null)), cast: T.map(T.any(null)),
-      badges: T.map(T.num(0, { merge: 'min' })), pbs: T.map(T.any(null)), weekly: T.map(T.any(null))
+      venues: T.map(T.obj({})), cast: T.map(T.obj({})),
+      badges: T.map(T.num(0, { merge: 'min' })), pbs: T.map(T.num(0, { merge: 'max' })), weekly: T.map(T.obj({}))
     }) },
     diary: { v: 1, desc: T.obj({
       entries: T.list(T.obj({ week: T.str(''), at: T.num(0, { min: 0 }) }, { merge: 'newest', by: 'at' }),
         { id: 'week', sort: 'at', cap: 520 }),
-      events: T.list(T.any(null), { id: 'id', sort: 'at', cap: 2000 })
+      events: T.list(T.obj({}), { id: 'id', sort: 'at', cap: 2000 })
     }) },
-    missions: { v: 1, desc: T.obj({ weeks: T.map(T.any(null, { merge: 'newest', by: 'at' })) }) },
+    missions: { v: 1, desc: T.obj({ weeks: T.map(T.obj({}, { merge: 'newest', by: 'at' })) }) },
+    // The session in progress (RV M11): its plan and the player's place, so a reload can resume it. Never exported.
+    session: { v: 1, desc: T.obj({
+      id: T.str(''), at: T.num(0, { min: 0 }), start: T.num(0, { min: 0 }), mode: T.str('edge'), kind: T.str(''), title: T.str(''),
+      demo: T.bool(false), setIndex: T.int(0, { min: 0 }), demoTmr: T.num(6), sets: T.list(T.obj({}), { keepAll: true }),
+      log: T.any(null), notes: T.any([]), done: T.any(null)
+    }) },
     playtest: { v: 1, desc: T.obj({
       ratings: T.list(T.any(null), { id: 'id', sort: 'at', cap: 400 }),
       notes: T.list(T.any(null), { id: 'id', sort: 'at', cap: 400 }),
@@ -358,9 +387,10 @@
     return out;
   }
 
-  ES.core.storeSchema = {
+  ES.core.storeSchema = SC_;
+  Object.assign(SC_, {
     T: T, SCHEMAS: SCHEMAS, MIGRATIONS: MIGRATIONS, defaults: defaults, sanitize: sanitize, merge3: merge3,
     jsonSafe: jsonSafe, current: current, descOf: descOf, migrate: migrate, sanitizeRecord: sanitizeRecord,
     defaultRecord: defaultRecord, mergeRecord: mergeRecord
-  };
+  });
 })(window.ES);

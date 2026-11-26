@@ -28,7 +28,7 @@ export const assert = Object.assign(function (v, m) { return nodeAssert(v, m); }
   notDeepEqual: (a, b, m) => nodeAssert.notDeepStrictEqual(realm(a), realm(b), m),
   notDeepStrictEqual: (a, b, m) => nodeAssert.notDeepStrictEqual(realm(a), realm(b), m)
 });
-const CORE = ['js/core/ns.js', 'js/core/util.js', 'js/core/rng.js', 'js/core/store-schema.js', 'js/core/store.js', 'js/core/clock.js', 'js/core/router.js'];
+const CORE = ['js/core/ns.js', 'js/core/util.js', 'js/core/rng.js', 'js/core/store-schema.js', 'js/core/store-merge.js', 'js/core/store.js', 'js/core/clock.js', 'js/core/router.js'];
 
 /** A Storage-like object over a Map; quota in characters (keys + values), like browsers count. */
 export function makeStorage(opts = {}) {

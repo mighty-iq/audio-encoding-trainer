@@ -13,7 +13,7 @@
   var U = ES.core.util, SC = ES.core.storeSchema;
   var PREFIX = 'earshot.v1.';
   var KEYS = Object.keys(SC.SCHEMAS);
-  var EXPORT_KEYS = KEYS.filter(function (k) { return k !== 'playtest'; });
+  var EXPORT_KEYS = KEYS.filter(function (k) { return k !== 'playtest' && k !== 'session'; });
   var NEAR_FULL_CHARS = 3500000, PROBE_CHARS = 262144, MAX_IMPORT_CHARS = 40000000;
   var TAB = U.uid('tab');
 
@@ -46,9 +46,10 @@
   function emitStatus() { ES.hooks.emit('store:status', status()); }
   function changed(key, source) { ES.hooks.emit('store:changed', { key: key, source: source }); }
 
+  var newerRecs = {};
   function adopt(key, raw, env) {
     var m = SC.migrate(key, env.rec);
-    if (m.newer) { cache[key] = env; goNewer(); return false; }
+    if (m.newer) { newerRecs[key] = env; cache[key] = fresh(key); goNewer(); return false; }   // readers get v1 defaults
     var rec = SC.sanitizeRecord(key, m.rec);
     cache[key] = { rev: env.rev, at: env.at, by: env.by, rec: rec };
     baseRaw[key] = raw;
@@ -199,11 +200,13 @@
   function set(key, obj) {
     if (!U.isObj(obj)) return false;
     var rec = SC.sanitizeRecord(key, obj);
-    var e = entry(key);
+    var e = entry(key), sch = SC.SCHEMAS[key];
+    // A record saved from a long-lived copy (the engine's learner) merges per record with what other tabs wrote.
+    if (sch && typeof sch.onSet === 'function' && e.rev > 0) rec = SC.sanitizeRecord(key, sch.onSet(e.rec, rec));
     cache[key] = { rev: e.rev + 1, at: Date.now(), by: TAB, rec: rec };
     dirty[key] = true;
     var ok = flush(key);
-    if (ok && Object.keys(dirty).length) ok = flushAll() && ok;   // space came back: retry what failed before
+    if (ok && Object.keys(dirty).length) flushAll();              // space came back: retry what failed before (status reports it)
     if (!ls || S.readOnly) {
       try { sizes[key] = JSON.stringify(cache[key]).length * 2; } catch (e) { /* ignore */ }
       measure();
@@ -268,16 +271,18 @@
     if (a >= 0 && b > a) { try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return null; } }
     return null;
   }
-  /** Merge a backup into this device's record (nothing here is deleted). Accepts an object or JSON text,
-      damaged or partial input included; returns { ok, imported:[keys], skipped:[{key, reason}], repaired, error? }. */
+  /** Merge a backup into this device's record (nothing here is deleted). Accepts an object or JSON text. All or
+      nothing (RV M9): a record from a newer version or with damaged contents (any wrong type or out-of-range value
+      inside it) refuses the whole import and changes nothing. → { ok, imported:[keys], saved, error?, damaged?, keys? } */
   function importAll(input) {
+    var fail = function (error, extra) { var r = { ok: false, error: error, imported: [], skipped: [], repaired: 0 }; if (extra) for (var k in extra) r[k] = extra[k]; return r; };
     var obj = input;
     if (typeof input === 'string') {
-      if (input.length > MAX_IMPORT_CHARS) return { ok: false, error: 'too-large', imported: [], skipped: [], repaired: 0 };
+      if (input.length > MAX_IMPORT_CHARS) return fail('too-large');
       obj = parseLoose(input);
     }
-    if (!U.isObj(obj)) return { ok: false, error: 'not-a-backup', imported: [], skipped: [], repaired: 0 };
-    if (S.readOnly) return { ok: false, error: 'read-only', imported: [], skipped: [], repaired: 0 };
+    if (!U.isObj(obj)) return fail('not-a-backup');
+    if (S.readOnly) return fail('read-only');
     var records = U.isObj(obj.records) ? obj.records : null;
     if (!records) {
       records = {};
@@ -290,25 +295,29 @@
         records[name] = v;
       });
     }
-    var rep = { ok: true, imported: [], skipped: [], repaired: 0 };
+    var plan = [], damaged = [], newer = [];
     EXPORT_KEYS.forEach(function (key) {
       if (!has(records, key)) return;
       var rec = records[key];
       if (typeof rec === 'string') rec = parseLoose(rec);
-      if (!U.isObj(rec)) { rep.skipped.push({ key: key, reason: 'damaged' }); return; }
+      if (!U.isObj(rec)) { damaged.push({ key: key, fixed: 0, dropped: 1 }); return; }
       var m = SC.migrate(key, rec);
-      if (m.newer) { rep.skipped.push({ key: key, reason: 'newer-version' }); return; }
+      if (m.newer) { newer.push(key); return; }
       var r = { fixed: 0, dropped: 0 };
       var clean = SC.sanitizeRecord(key, m.rec, r);
-      var cur = entry(key).rec;
-      var merged = SC.mergeRecord(key, undefined, cur, clean, { oursNewer: false });
-      set(key, merged);
-      rep.imported.push(key);
-      rep.repaired += r.fixed + r.dropped;
+      if (r.fixed + r.dropped > 0) { damaged.push({ key: key, fixed: r.fixed, dropped: r.dropped }); return; }
+      plan.push({ key: key, rec: clean });
     });
-    if (!rep.imported.length) { rep.ok = false; rep.error = rep.skipped.length ? 'nothing-usable' : 'not-a-backup'; }
+    if (newer.length) return fail('newer-version', { keys: newer });
+    if (damaged.length) return fail('damaged', { damaged: damaged });
+    if (!plan.length) return fail('not-a-backup');
+    var saved = true;
+    plan.forEach(function (x) {
+      var merged = SC.mergeRecord(x.key, undefined, entry(x.key).rec, x.rec, { oursNewer: false });
+      if (!set(x.key, merged)) saved = false;
+    });
     changed('*', 'import');
-    return rep;
+    return { ok: true, imported: plan.map(function (x) { return x.key; }), skipped: [], repaired: 0, saved: saved };
   }
 
   /** Delete every Earshot record on this device (and own-voice recordings). */
