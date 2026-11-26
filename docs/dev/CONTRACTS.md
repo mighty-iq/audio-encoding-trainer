@@ -11,7 +11,7 @@
 - During a stimulus: no saves, no DOM re-renders, no observers, no decorative motion. Save between trials or sets.
 - Files ≤ ~400 lines; split when larger. Write large files in chunks of ≤400 lines per tool call.
 - Copy: confident, curious, accurate; numbers in texts match the code. No commercial trainer names in the app.
-- Commit with `TZ=UTC git commit`, author `Claude <noreply@anthropic.com>`, message ends with
+- Commit only your own paths with `TZ=UTC git commit -- <paths>` (the index is shared by all builders), author `Claude <noreply@anthropic.com>`, message ends with
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` (no session link). Only the lead pushes.
 - Repository-relative paths and UTC times in every committed file. No personal data anywhere.
 
@@ -110,7 +110,7 @@ TrialSpec (the contract between generator, renderer and views):
 
 ## 7. Store keys (v1; each record carries `v`)
 - `profile`: `{v, createdAt, nickname, settings:{theme, mode:'edge', sessionMin:15, headphones:false, hpCheck,
-  volumeSet, playtest, captions}, welcomeSeen, tutorials:{exId:true}}`
+  volumeSet, playtest, captions}, welcomeSeen, tutorials:{exId:true}, cards}` (cards: strategy cards already shown)
 - `learner`: `{v, dials:{'ex.dial':{m,s,n,at}}, breadth:{ex:0..1}, recent:{ex:[0|1 × 30]}}`
 - `log`: `{v, sessions:[{id, start, end, activeMs, mode, sets:[{ex, n, correct, focus, end:{dial:value}, pb}]}]}`
 - `trials`: ring buffer of the last 3,000 trials, compact arrays `[t, ex, focus, level, correct, prop, intrusions]`
