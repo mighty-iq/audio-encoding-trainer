@@ -102,7 +102,7 @@
 .glyph-row li.is-wrong { background: var(--surface-2); }
 .glyph-row .glyph { width: 15px; height: 15px; }
 .facts { font-size: var(--fs-1); color: var(--ink-2); }
-.interlude:empty { display: none; }
+.interlude:empty, .news:empty, .after:empty { display: none; }
 .interlude, .plateau, .rating, .invites > * { margin: 14px 0; }
 .interlude-words { min-height: 2.6em; margin: 8px 0 4px; font-size: var(--fs-3); font-weight: 600; line-height: 1.3; }
 .interlude-words:empty { min-height: 0; margin: 0; }
@@ -137,6 +137,19 @@
 .tut-next-inline { display: block; font: 400 12px/1.4 var(--mono); color: var(--ink-3); }
 .tut-trial { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .tut-bar .btn { flex: none; }
+
+.trial-answer.is-held { visibility: hidden; }
+
+/* Exercise help bodies (ES.ex[id].helpBody): goal, dials with live ranges, tips, the bet. */
+.help-h { margin: 14px 0 4px; font-size: var(--fs-2); font-weight: 600; }
+.help-dials { margin: 0; }
+.help-dials dt { font-weight: 600; }
+.help-dials dd { margin: 0 0 10px; color: var(--ink-2); }
+.help-range { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.help-edge { color: var(--ink); font-weight: 600; }
+.help-tag { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; margin-left: 4px; border-radius: 999px;
+  border: 1px solid var(--rule); background: var(--surface-2); color: var(--ink-3); font: 500 11px var(--mono); vertical-align: middle; }
+.help-why { color: var(--ink-2); font-size: var(--fs-1); }
 
 /* Placeholders, About, Volume, Help */
 .placeholder-note { margin: 16px 0; }

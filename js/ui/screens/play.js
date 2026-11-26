@@ -34,7 +34,7 @@
     var dots = U.el('ol', { class: 'dots' });
     var bar = U.el('header', { class: 'trial-bar' }, [
       U.el('button', { type: 'button', class: 'tb-btn', 'aria-label': 'Pause', 'data-pause': '', on: { click: openPause } }, pauseIcon()),
-      U.el('div', { class: 'tb-mid' }, [U.el('div', { class: 'tb-line' }, [U.el('span', { class: 'tb-title' }, info.name), level]), dots]),
+      U.el('div', { class: 'tb-mid' }, [U.el('div', { class: 'tb-line' }, [U.el('span', { class: 'tb-title' }, set.plan.title || info.name), level]), dots]),
       savedChip(),
       ES.core.playtest.enabled() ? ES.core.playtest.noteButton(function () { return 'play:' + set.exId + ':' + (set.results.length + 1); }, { cls: 'tb-note' }) : null,
       U.el('button', { type: 'button', class: 'tb-btn tb-help', 'aria-label': 'Help', 'data-help': '', on: { click: function () { openHelp(); } } }, '?')
@@ -45,7 +45,7 @@
     function onVis() {
       if (!cur || cur.aborted) return;
       if (document.hidden) { if (cur.view) cur.view.pause(); }
-      else if (cur.view && cur.view.state() === 'paused') openPause();
+      else if (cur.view && typeof cur.view.state === 'function' && cur.view.state() === 'paused') openPause();
     }
     cur.onVis = onVis;
     document.addEventListener('visibilitychange', onVis);
@@ -92,8 +92,16 @@
     function runCustom(host2, s, inf) {
       var api = { engine: ES.engine, audio: ES.audio, ui: ES.ui, set: { index: s.index, n: s.n, exId: s.exId, plan: s.plan },
         done: function (result) { if (cur && !cur.aborted) sess.finishSet(result || {}); },
-        rate: function () { return ratingSheet(s.exId, s.index); } };
-      try { inf.custom(host2, api); } catch (e) {
+        rate: function () { return ratingSheet(s.exId, s.index); },
+        /** Record an answered trial; the view's own flow (if it drives ES.engine.flow) already updated the learner. */
+        record: function (trial, result, response) { if (cur && !cur.aborted) sess.record(trial, result, response, { learned: true }); paintDots(dots, s); },
+        level: function (text) { level.textContent = text == null ? '' : String(text); },
+        progress: function () { paintDots(dots, s); },
+        flow: function (sc) { s.sc = sc || null; } };
+      try {
+        var h = inf.custom(host2, api);
+        if (h && typeof h.pause === 'function' && typeof h.resume === 'function') cur.view = h;   // Pause, Help, hidden tab, unmount
+      } catch (e) {
         reportErr(e);
         U.clear(host2);
         host2.appendChild(U.el('div', { class: 'card' }, [U.el('p', null, 'This exercise could not start.'),
@@ -123,7 +131,7 @@
     h.closed.then(function (v) {
       ES.core.clock.resume('menu');
       if (!cur) return;
-      if (v === 'end') { cur.aborted = true; if (cur.view) cur.view.abort(); ES.ui.session.endSetEarly(); return; }
+      if (v === 'end') { cur.aborted = true; if (cur.view && typeof cur.view.abort === 'function') cur.view.abort(); ES.ui.session.endSetEarly(); return; }
       if (v === 'help') { openHelp(true); return; }
       if (cur.view) cur.view.resume();
     });
@@ -133,34 +141,37 @@
     var set = cur.set, info = ES.ui.session.exInfo(set.exId), X = ES.ex[set.exId];
     if (cur.view) cur.view.pause();
     ES.core.clock.pause('menu');
-    if (X && typeof X.openHelp === 'function') {          // the exercise's own "How it works" (exA request)
+    var hasTut = !!(info.tutorial && info.tutorial.steps && info.tutorial.steps.length);
+    var acts = [hasTut ? { label: 'Replay the tutorial', value: 'tutorial' } : null,
+      { label: fromPause ? 'Resume' : 'Back to the trial', kind: 'primary', value: 'resume' }].filter(Boolean);
+    function after(v) {
+      ES.core.clock.resume('menu');
+      if (!cur) return;
+      if (v === 'tutorial') { ES.core.router.go('tutorial', { exId: set.exId, resume: true }); return; }
+      if (cur.view) cur.view.resume();
+    }
+    if (X && typeof X.openHelp === 'function') {          // the exercise's own "How it works", with our actions
       var own = null;
-      try { own = X.openHelp(); } catch (e) { own = null; }
-      if (own && own.closed) {
-        own.closed.then(function () { ES.core.clock.resume('menu'); if (cur && cur.view) cur.view.resume(); });
-        return;
-      }
+      try { own = X.openHelp({ actions: acts }); } catch (e) { own = null; }
+      if (own && own.closed) { own.closed.then(after); return; }
+    }
+    if (X && typeof X.helpBody === 'function') {          // or its body inside our sheet
+      ES.ui.sheet({ title: info.name, cls: 'sheet-help', body: function (b) { try { X.helpBody(b); } catch (e) { b.appendChild(U.el('p', null, info.short || '')); } },
+        actions: acts }).closed.then(after);
+      return;
     }
     var tips = info.tips || ((info.tutorial && info.tutorial.steps) || []).filter(function (s) { return s.kind === 'caption' || s.text; }).map(function (s) { return s.text; });
     var h = ES.ui.sheet({ title: info.name, cls: 'sheet-help', body: function (b) {
       if (info.short) b.appendChild(U.el('p', { class: 'lead' }, info.short));
       if (tips.length) b.appendChild(U.el('ul', { class: 'tips' }, tips.slice(0, 5).map(function (t) { return U.el('li', null, t); })));
       if (info.bet) b.appendChild(U.el('p', { class: 'bet' }, [U.el('strong', null, 'The bet: '), info.bet]));
-    }, actions: [
-      info.tutorial && info.tutorial.steps && info.tutorial.steps.length ? { label: 'Replay the tutorial', value: 'tutorial' } : null,
-      { label: fromPause ? 'Resume' : 'Back to the trial', kind: 'primary', value: 'resume' }
-    ].filter(Boolean) });
-    h.closed.then(function (v) {
-      ES.core.clock.resume('menu');
-      if (!cur) return;
-      if (v === 'tutorial') { ES.core.router.go('tutorial', { exId: set.exId, resume: true }); return; }
-      if (cur.view) cur.view.resume();
-    });
+    }, actions: acts });
+    h.closed.then(after);
   }
   function unmount() {
     if (cur) {
       cur.aborted = true;
-      if (cur.view) cur.view.abort();
+      if (cur.view && typeof cur.view.abort === 'function') cur.view.abort();
       document.removeEventListener('visibilitychange', cur.onVis);
       // Left mid-set (Back, Help → tutorial): the set waits; invitations may show again and the clock rests.
       var s = ES.ui.session.currentSet();

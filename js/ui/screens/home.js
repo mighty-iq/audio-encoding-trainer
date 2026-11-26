@@ -47,6 +47,16 @@
     return 'About ' + min + ' minutes of short mixed sets, each held at the edge of what you can hear.';
   }
 
+  /** Cards other modules offer for Tonight (element or null each): the Lab's check-in, the game's welcome-back,
+      overnight check or weekly challenge, this week's mission. They never block Start. */
+  function moduleCards() {
+    var out = [];
+    [ES.lab && ES.lab.homeCard, ES.game && ES.game.homeCard, ES.ex.missions && ES.ex.missions.homeCard].forEach(function (fn) {
+      if (typeof fn !== 'function') return;
+      try { var el = fn(); if (el && el.nodeType === 1) out.push(el); } catch (e) { if (win.console) console.error('[home card]', e); }
+    });
+    return out;
+  }
   function mount(root) {
     var w = W();
     var today = w.sessionsToday();
@@ -64,7 +74,7 @@
           { id: 'a', role: 'target', az: 28, dist: 2.2 }, { id: 'b', role: 'masker', az: -55, dist: 3.1 },
           { id: 'c', role: 'masker', az: 140, dist: 2.6 }, { id: 'd', role: 'masker', az: 95, dist: 3.6 }] }))
       ]),
-      U.el('div', { class: 'home-cards' }, [w.weekCard(), venueTeaser()]),
+      U.el('div', { class: 'home-cards' }, [w.weekCard()].concat(moduleCards(), [venueTeaser()])),
       U.el('nav', { class: 'index', 'aria-label': 'Sections' }, U.el('ul', null, INDEX.map(function (it) {
         var later = !ES.ui.screens[it[0]] && ES.ui.placeholders[it[0]];
         return U.el('li', null, U.el('a', { href: '#' + it[0], class: 'index-row', 'data-index-link': it[0] }, [

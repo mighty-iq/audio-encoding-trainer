@@ -78,6 +78,8 @@
     return ES.ui.confirm('Your training record, settings and any own-voice recordings on this device will be deleted. This cannot be undone. Export a backup first to keep a copy.',
       { title: 'Delete everything?', ok: 'Delete everything', danger: true }).then(function (yes) {
       if (!yes) return false;
+      // Own-voice recordings first: their module closes its database so the deletion is not blocked.
+      try { if (ES.ex.voicesOwn && typeof ES.ex.voicesOwn.wipe === 'function') ES.ex.voicesOwn.wipe(); } catch (e) { /* the store wipe still deletes it */ }
       var r = ES.core.store.wipe();
       if (!r.ok) { ES.ui.toast(r.reason === 'read-only' ? 'This tab is read-only: delete from the newer version.' : 'Nothing was deleted.'); return false; }
       if (ES.ui.session && ES.ui.session.abandon) ES.ui.session.abandon();

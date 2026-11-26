@@ -280,7 +280,8 @@
         captions: T.bool(false)
       }),
       welcomeSeen: T.num(0, { min: 0, merge: 'max' }),
-      tutorials: T.map(T.any(true, { merge: 'or' }))
+      tutorials: T.map(T.any(true, { merge: 'or' })),
+      cards: T.map(T.num(0, { min: 0, merge: 'min' }))          // strategy cards already shown: id → first shown
     }) },
     learner: { v: 1, desc: T.obj({
       dials: T.map(T.obj({ m: T.num(0), s: T.num(1, { min: 0 }), n: T.int(0, { min: 0 }), at: T.num(0, { min: 0 }) },

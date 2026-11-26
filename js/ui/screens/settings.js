@@ -51,12 +51,19 @@
     return [list, engine ? null : U.el('p', { class: 'hint' }, 'Modes take effect once the training engine is installed; the demo ignores them.')];
   }
   function headphones(s) {
-    var status = s.hpCheck && s.hpCheck.result === 'pass' ? 'Checked: headphones detected.' : s.hpCheck && s.hpCheck.result === 'manual' ? 'You said you wear headphones (check skipped).' : 'Not checked yet.';
+    var r = s.hpCheck && s.hpCheck.result;
+    var status = r === 'pass' ? 'Checked: headphones detected.' : r === 'manual' ? 'You said you wear headphones (check skipped).'
+      : r === 'fail' ? 'Checked: the left-right test did not pass (a speaker or mono output?).' : 'Not checked yet.';
     var line = U.el('p', { class: 'hint', 'data-hp-status': '' }, status);
     return [
       U.el('div', { class: 'row' }, [U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Headphone check'), line]),
-        ES.ui.button('Check', { small: true, onClick: function () {
-          if (ES.audio && ES.audio.hpcheck && typeof ES.audio.hpcheck.open === 'function') { ES.audio.hpcheck.open(); return; }
+        ES.ui.button('Check', { small: true, attrs: { 'data-hpcheck': '' }, onClick: function () {
+          var chk = (ES.lab && ES.lab.hpcheck) || (ES.audio && ES.audio.hpcheck);
+          if (chk && typeof chk.open === 'function') {
+            var h = chk.open();
+            if (h && h.closed) h.closed.then(function () { var c = ES.core.router.current(); if (c && c.name === 'settings') ES.core.router.refresh(); });
+            return;
+          }
           ES.ui.sheet({ title: 'Headphone check', body: 'A short left-right test arrives with the audio build. Everything except the 3D-direction dials works on a phone speaker; those dials wait for headphones.', actions: [{ label: 'OK', kind: 'primary' }] });
         } })]),
       toggle('I am wearing headphones', 'Skips the check and unlocks the direction dials; turn it off when you use a speaker.', !!s.headphones, function (on) {
@@ -76,6 +83,13 @@
     offSaved = ES.hooks.on('playtest:saved', paint);
     return line;
   }
+  /** "Voices from your life" (exB): recordings of people you know, on this device only. */
+  function ownVoices() {
+    if (!ES.core.router.has('voices-own')) return [];
+    return [U.el('div', { class: 'row' }, [U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Voices from your life'),
+      U.el('span', { class: 'hint' }, 'Record or import voices of people you know. They stay on this device and are never exported.')]),
+      ES.ui.button('Open', { small: true, go: 'voices-own', attrs: { 'data-own-voices': '' } })])];
+  }
   function mount(root) {
     var p = prof(), s = p.settings || {};
     var nick = U.el('input', { type: 'text', class: 'text-input', maxlength: '40', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Nickname', placeholder: 'optional' });
@@ -93,7 +107,7 @@
         U.el('div', { class: 'row' }, [U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Comfortable level'),
           U.el('span', { class: 'hint' }, s.volumeSet ? 'Set on ' + U.dayKey(s.volumeSet) + '. Every trial plays at this level.' : 'Not set yet. Takes 20 seconds.')]),
           ES.ui.button('Set level', { small: true, go: 'volume' })])
-      ].concat(headphones(s)), 'sound'),
+      ].concat(headphones(s), ownVoices()), 'sound'),
       section('Display', [
         U.el('div', { class: 'row' }, [U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Theme')]),
           seg('Theme', [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']], s.theme || 'system', function (v) { setSetting('theme', v); applyTheme(); })]),

@@ -18,7 +18,9 @@
   }
   function comfortDials(exId) {
     var defs = (ES.engine.dials || {})[exId] || [], out = {};
-    defs.forEach(function (d) { if (d && d.id != null) out[d.id] = d.comfort != null ? d.comfort : d.start; });
+    // comfort is a fixed easy level in dial units; null (Strange family dials) means "leave unset", so a
+    // tutorial's forced family is the only one set.
+    defs.forEach(function (d) { if (d && d.id != null && d.comfort !== null) out[d.id] = d.comfort !== undefined ? d.comfort : d.start; });
     return out;
   }
   function hook(exId) { var X = ES.ex[exId]; return X && typeof X.tutorialTrial === 'function' ? X : null; }

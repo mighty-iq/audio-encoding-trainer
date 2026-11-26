@@ -43,7 +43,10 @@
     var trial = cfg.trial, X = trial && ES.ex[trial.ex];
     if (X && typeof X.prepare === 'function') { try { trial = X.prepare(trial) || trial; } catch (e) { report(e); } }
     var mode = cfg.mode || 'set', q = trial.question || { slots: [] }, words = Object.assign({}, FOIL_WORDS, cfg.foilWords || {});
-    var primed = false, primeT = null;
+    var primed = false, primeT = null, holdT = null, needsHold = false;
+    // Echo: question.delayMs keeps the options out of sight while the sound plays and for the delay after it
+    // (seeing them would cue what to listen for); the status stays a neutral "Hold it in mind…".
+    var delayMs = Math.max(0, Math.min(15000, +(q.delayMs) || 0));
     var state = 'loading', player = null, playTok = 0, panel, result = null, resp = null, autoT = null, aborted = false;
     var needsReplay = false, cache = {}, t0 = 0, resolveDone, nextBtn = null, keyBound = false;
     var done = new Promise(function (r) { resolveDone = r; });
@@ -61,6 +64,7 @@
     host.appendChild(body);
     panel = ES.ui.answerPanel(q.slots, onAnswer, { enabled: false });
     answerBox.appendChild(panel.el);
+    if (delayMs && mode !== 'demo') answerBox.classList.add('is-held');
 
     function setState(s, text) { state = s; body.setAttribute('data-state', s); if (text != null) status.textContent = text; }
     function get(which) {
@@ -113,12 +117,21 @@
       playBuf(buf, function (r) {
         if (aborted || state !== 'listen') return;
         if (mode === 'demo') { showExample(r); return; }
-        setState('answer', r.silent ? 'Sound is unavailable here: answer anyway to walk through.' : (q.slots.length > 1 ? 'Your answers:' : 'Your answer:'));
+        if (delayMs && answerBox.classList.contains('is-held')) { holdAnswer(r); return; }
+        openAnswer(r);
+      });
+    }
+    function holdAnswer(r) {
+      setState('hold', 'Hold it in mind…');
+      holdT = setTimeout(function () { holdT = null; if (aborted || state !== 'hold') return; answerBox.classList.remove('is-held'); openAnswer(r); }, delayMs);
+    }
+    function openAnswer(r) {
+      r = r || {};
+      setState('answer', r.silent ? 'Sound is unavailable here: answer anyway to walk through.' : (q.slots.length > 1 ? 'Your answers:' : 'Your answer:'));
         panel.enable();
         t0 = Date.now();
         panel.focusFirst();
         (trial.feedback && trial.feedback.replays || []).forEach(function (x, i) { get(i).catch(function () { /* replay shows its own error */ }); });
-      });
     }
     function fail(err) {
       report(err);
@@ -243,6 +256,7 @@
       pause: function () {
         cancelAuto();
         if (primeT) { clearTimeout(primeT); primeT = null; }
+        if (state === 'hold') { if (holdT) { clearTimeout(holdT); holdT = null; } needsHold = true; setState('paused', 'Paused'); return; }
         if (state === 'listen' || state === 'loading' || state === 'prime') { loadTok++; stopPlayer(); needsReplay = true; setState('paused', 'Paused'); }
         else if ((state === 'feedback' || state === 'example') && player) {     // a replay was playing: stop it
           stopPlayer();
@@ -252,6 +266,7 @@
         }
       },
       resume: function () {
+        if (needsHold && !aborted) { needsHold = false; holdAnswer({}); return; }
         if (!needsReplay || aborted) return;
         needsReplay = false;
         load('Listen again…');
@@ -261,6 +276,7 @@
         aborted = true;
         cancelAuto(); stopPlayer(); unbindKeys();
         if (primeT) { clearTimeout(primeT); primeT = null; }
+        if (holdT) { clearTimeout(holdT); holdT = null; }
         panel.destroy();
         state = 'done';
         resolveDone({ aborted: true });
@@ -271,5 +287,5 @@
     return handle;
   }
 
-  ES.ui.trialView = { run: run, renderAudio: renderAudio, FOIL_WORDS: FOIL_WORDS };
+  ES.ui.trialView = { run: run, renderAudio: renderAudio, FOIL_WORDS: FOIL_WORDS, supports: { delay: true, prime: true, review: true } };
 })(window.ES, window);

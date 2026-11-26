@@ -79,6 +79,19 @@ def run(h):
     wait_state(pg, 'feedback', 3000)
     c.ok(True, 'Enter picks the focused key')
 
+    # A held answer panel (Echo's question.delayMs): hidden while the sound plays and for the delay after it.
+    c.ok(pg.evaluate('ES.ui.trialView.supports && ES.ui.trialView.supports.delay === true'), 'trial view announces delay support')
+    pg.evaluate("""() => { const host = document.createElement('div'); host.id = 'delay-host'; host.style.cssText = 'position:fixed;inset:0;z-index:30;background:var(--bg)';
+      document.body.appendChild(host); const t = ES.ui.demo.make(ES.core.rng('delay'), { tmr: 9 }); t.question.delayMs = 1500;
+      window.__dv = ES.ui.trialView.run(host, { trial: t, mode: 'practice', score: ES.ui.demo.score }); }""")
+    c.ok(pg.evaluate("document.querySelector('#delay-host .trial-answer').classList.contains('is-held')"), 'held: options out of sight before and during the sound')
+    pg.wait_for_function("() => document.querySelector('#delay-host .trial-body').dataset.state === 'hold'", timeout=8000)
+    c.ok('Hold it in mind' in pg.inner_text('#delay-host .trial-status'), 'held: a neutral status during the delay')
+    c.eq(pg.evaluate("getComputedStyle(document.querySelector('#delay-host .trial-answer')).visibility"), 'hidden', 'held: the panel is hidden, not just disabled')
+    pg.wait_for_function("() => document.querySelector('#delay-host .trial-body').dataset.state === 'answer'", timeout=4000)
+    c.ok(not pg.evaluate("document.querySelector('#delay-host .trial-answer').classList.contains('is-held')"), 'held: after the delay the options appear')
+    pg.evaluate("() => { window.__dv.abort(); document.getElementById('delay-host').remove(); }")
+
     # Invitations wait while a set runs and appear between sets.
     pg.evaluate("ES.hooks.emit('pb', { text: 'Followed a voice at −6 dB' })")
     c.eq(pg.locator('.chimera-card').count(), 0, 'no invitation inside a set')
