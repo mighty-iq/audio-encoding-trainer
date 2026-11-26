@@ -158,19 +158,23 @@
     if (dist > d - back - 0.3) d = dist + back + 0.3;   // last resort: never draw the talker outside the walls
     return { w: round(w, 1), d: round(d, 1), cx: 0, cy: round(d / 2 - back, 2), far: round(d - back, 2) };
   }
-  /** Voices that share a direction (no direction cue) are drawn one behind the other, a few degrees apart,
-      so every dot shows without suggesting a direction cue. Mutates and returns voices. */
-  function stackSamePlace(voices) {
-    var groups = {};
-    voices.forEach(function (v) { var k = Math.round((v.az || 0) / 6); (groups[k] = groups[k] || []).push(v); });
-    Object.keys(groups).forEach(function (k) {
-      var g = groups[k];
+  /** Voices that share a place (no direction cue, or the same azimuth) are drawn as a small group at one
+      distance, 24° apart, the voice to follow in the middle: every dot and the call-sign label stay visible, and
+      nobody looks nearer or farther (which would suggest a level difference). Mutates and returns voices. */
+  function clusterSamePlace(voices, dist) {
+    var groups = [];
+    voices.forEach(function (v) {
+      var g = null;
+      for (var i = 0; i < groups.length && !g; i++) if (Math.abs((groups[i][0].az || 0) - (v.az || 0)) < 3) g = groups[i];
+      if (g) g.push(v); else groups.push([v]);
+    });
+    groups.forEach(function (g) {
       if (g.length < 2) return;
       g.sort(function (a, b) { return (b.role === 'target') - (a.role === 'target'); });
+      var az0 = g[0].az || 0;
       g.forEach(function (v, i) {
-        if (!i) return;
-        v.az = (v.az || 0) + (i % 2 ? 8 : -8);
-        v.dist = round((v.dist || 1) * (1 + 0.45 * i), 2);
+        v.dist = dist || v.dist || 1.5;
+        v.az = az0 + (i === 0 ? 0 : (i % 2 ? 1 : -1) * 24 * Math.ceil(i / 2));
       });
     });
     return voices;
@@ -201,7 +205,7 @@
     dialsOf: dialsOf, dialOf: dialOf, easyEnd: easyEnd, hardEnd: hardEnd, fmt: fmt, range: range, edge: edge, value: value,
     helpBody: helpBody, openHelp: openHelp, slotsOf: slotsOf, answerIndex: answerIndex, placeAnswers: placeAnswers,
     missLine: missLine, findReplay: findReplay, audioAlone: audioAlone, audioNear: audioNear, audioClean: audioClean,
-    ROOM_M: ROOM_M, roomBox: roomBox, stackSamePlace: stackSamePlace, tutorialTrial: tutorialTrial });
+    ROOM_M: ROOM_M, roomBox: roomBox, clusterSamePlace: clusterSamePlace, tutorialTrial: tutorialTrial });
 
   /* ---- strategy cards (plateau breaker): one change to try, each from the notes ----
      Sources: crowd R3 §1 (most same-sex errors are the other voice's words), §3 (10–15° releases much

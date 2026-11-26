@@ -60,7 +60,7 @@
     tv.dist = dist;
     tv.label = fmtM(dist);
     var box = k.roomBox(r.size, dist);
-    return { voices: [tv], room: { w: box.w, d: box.d, cx: box.cx, cy: box.cy }, maxDist: Math.max(dist * 1.15, box.far),
+    return { voices: [tv], room: { w: box.w, d: box.d, cx: box.cx, cy: box.cy }, maxDist: Math.max(dist * 1.1, box.far * 0.9),
       title: 'A talker ' + fmtM(dist) + ' ahead in ' + (SIZE_WORD[r.size] || 'a room') + (r.rt60 ? ' with ' + r.rt60 + ' s of echo' : '') };
   }
   M.prepare = function (t) {

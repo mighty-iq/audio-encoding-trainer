@@ -90,12 +90,13 @@
     }
     var cs = callSign(t), cue = cueOf(t);
     vs.forEach(function (v) {
-      v.dist = typeof v.dist === 'number' && v.dist > 0 ? v.dist : 1;
+      v.dist = 1.5;
       if (v.role === 'target') v.label = cs || (cue === 'preview' ? 'first voice' : cue === 'location' ? 'this one' : '');
       else { v.role = v.role === 'decoy' ? 'decoy' : 'other'; v.label = ''; }
     });
     var same = !spatial(t);
-    if (same) k.stackSamePlace(vs);
+    if (same) vs.forEach(function (v) { v.az = 0; });
+    k.clusterSamePlace(vs, 1.5);
     base.voices = vs;
     base.maxDist = 2.6;
     base.title = (cs ? 'Voice to follow: ' + cs : 'The voice to follow is red') + '; ' +

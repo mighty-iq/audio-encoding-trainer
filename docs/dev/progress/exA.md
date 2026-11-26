@@ -26,3 +26,21 @@ field(trial, phase, result), tutorialTrial(step, i, rng) }`.
   (Strange), R3 §4/§6 (Repair).
 
 Tests: tests/e2e/ex_a_*.py under `flock /tmp/earshot-browser.lock`, outputs in tests/out/.
+
+## 2026-11-26 18:03 UTC — modules, tests, first review
+Done (commit 0605c4a + this one): js/ex/{crowd,far,strange,repair,strategies}.js. The shell adopted prepare, prime,
+review, tutorialTrial and "Try again" (js/ui/trialview.js, tutorial.js); Results renders strategy cards via
+ES.ex.strategies.pick. Help: the shell's Play sheet still uses short/tips/bet; helpBody() + styles requested.
+Engine TrialSpecs read: crowd meta.cue/items/maskers (who said a borrowed word), far audio.room {rt60, dist,
+size word} + meta.text, strange meta.family/text/synthetic, repair meta.items/keyPos + bracketed feedback.text.
+Rooms drawn from CONTRACTS §12 R1 sizes; rings fitted to the far wall. Crowd: voices without a direction cue
+are drawn as a group at one distance, 24° apart (no fake level difference).
+Tests (Playwright, under flock): tests/e2e/ex_a_common.py builds tests/out/exa/page.html from index.html's script
+list + fixtures (data-fixture, audio-fixture aliased so the real renderer runs; adds js/ex files the index lacks).
+- ex_a_tutorial.py [--miss]: fresh profile → Home plan → tutorial → set. Last run: 76/76 pass; tutorial time of
+  simulated play: crowd 28.5 s, far 48.7 s, strange 31.9 s, repair 29.6 s (limit 120 s); a miss shows "Try again"
+  and stays on the step; every practice/set trial fits 360×640 in answer and feedback states.
+- ex_a_layout.py [--quick]: 360×640 light/dark, 390×844, 1366×768 dark; miss feedback fits; Help ranges = code;
+  strange text-first prime shows the words ≥ 1 s before the sound. Last run: all pass except a transient Far
+  render error seen once while other builders were editing (passed on rerun).
+Open: Help sheet styles/adoption (shell); index.html lacks far/strange/repair until the shell reruns build-index.
