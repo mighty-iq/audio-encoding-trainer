@@ -96,7 +96,7 @@ TrialSpec (the contract between generator, renderer and views):
   // levels: part db = active speech level re the reference (target 0); bed db = RMS re the target's active level.
   // fx: {type:'wsola',rate} {type:'resample',ratio} {type:'vocode',bands,carrier} {type:'whisper'}
   //     {type:'band',lo,hi} {type:'tilt',db} {type:'gate',rateHz,duty,fill} {type:'lowpass',f}
-  question: { prompt, slots:[{label, options:[...], answer, foils:{word:'masker'|'neighbour'|'context'|'random'}}] },
+  question: { prompt, slots:[{label, options:[...], answer, foils:{word:'masker'|'neighbour'|'number'|'similar'|'context'|'random'}}] },
   feedback: { text, replays:[{label, audio}] },        // e.g. "Target alone", "Again with the words"
   picture: { voices:[{id, role, az, dist, label}], room? },  // what the field shows (static during playback)
   meta: { items:[...], voices:[...], family?, probe:false } }
