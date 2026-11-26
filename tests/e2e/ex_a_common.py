@@ -62,11 +62,15 @@ HOOK = r"""<script>
 </script>"""
 
 
-def build_page(name='page.html', head_extra=''):
-    """Write the test page and return its file:// URL."""
+def build_page(name='page.html', head_extra='', real=False):
+    """Write the test page and return (file:// URL, exA files the index lacked). real=False (default): the real
+    data/ and audio/ packs are left out and the fixtures stand in (all four exercises, deterministic); real=True:
+    index.html's own data and packs (whatever the stimuli pipeline has built so far)."""
     html = (ROOT / 'index.html').read_text(encoding='utf-8')
     a, b = html.index('<!-- scripts:begin -->'), html.index('<!-- scripts:end -->')
     srcs = re.findall(r'<script src="([^"]+)"></script>', html[a:b])
+    if not real:
+        srcs = [s for s in srcs if not (s.startswith('audio/') or (s.startswith('data/') and s != 'data/ltas.js'))]
     missing = [s for s in EXA if s not in srcs]
     if missing:   # the shell's index lags behind new files: put them where js/ex/* belongs (before js/ui/)
         present = [s for s in srcs if s.startswith('js/ex/')]
@@ -78,7 +82,7 @@ def build_page(name='page.html', head_extra=''):
     up = '../../../'
     tags = []
     for i, s in enumerate(srcs):
-        if i == first_audio:
+        if i == first_audio and not real:
             tags += ['<script src="%s%s"></script>' % (up, f) for f in FIXTURES]
             tags.append(ALIAS)
         if s == 'js/app.js':

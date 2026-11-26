@@ -78,10 +78,14 @@
     if (h.why) el.appendChild(u.el('p', { class: 'help-why' }, h.why));
     return el;
   }
-  function openHelp(mod) {
+  /** The Help sheet. opts.actions (optional) replaces the single "Got it" button, e.g. Play's
+      [{label:'Replay the tutorial', value:'tutorial'}, {label:'Back to the trial', kind:'primary', value:'resume'}];
+      the returned handle's closed promise resolves with the chosen value. */
+  function openHelp(mod, opts) {
     if (!ES.ui || typeof ES.ui.sheet !== 'function') return null;
+    var acts = opts && opts.actions && opts.actions.length ? opts.actions : [{ label: 'Got it', kind: 'primary', value: 'ok' }];
     return ES.ui.sheet({ title: mod.name + ': how it works', cls: 'sheet-help', label: mod.name + ' help',
-      body: function (b) { helpBody(mod, b); }, actions: [{ label: 'Got it', kind: 'primary', value: 'ok' }] });
+      body: function (b) { helpBody(mod, b); }, actions: acts });
   }
 
   /* ---- trial helpers ---- */
@@ -227,8 +231,8 @@
       text: 'With headphones, where a voice stands is one of the strongest cues. Even 10 to 15 degrees between voices releases much of the confusion when the others are talking.',
       tryIt: 'Next set: glance at the red dot before every sound and keep your listening on that side.' },
     { id: 'far.tune-in', ex: 'far', dial: 'rt60', title: 'Let the room tune you in',
-      text: 'The first sentence is there so you can hear the room. Listeners adjust to a room within about half a second to three seconds, and speech in it then gets easier to catch.',
-      tryIt: 'Next set: during the first sentence, notice how long the room rings after each word.' },
+      text: 'The first phrase is there so you can hear the room. Listeners adjust to a room within about half a second to three seconds, and speech in it then gets easier to catch.',
+      tryIt: 'Next set: during the first phrase, notice how long the room rings after each word.' },
     { id: 'far.starts', ex: 'far', dial: 'dist', title: 'Catch the start of each word',
       text: 'Echo smears the ends of words. In two very echoey halls, final consonants were heard right 56 to 62 % of the time, against 88 % without echo. Hold on to each word’s first sound and its vowel, and let the phrase fill in the end.',
       tryIt: 'Next set: when a word ends in a blur, choose by its first sound and its vowel.' },
@@ -239,7 +243,7 @@
       text: 'After each answer the words appear and the same voice plays again. Hearing a hard voice again while knowing its words trained listeners as well as hearing a clear version, and better than plain repetition.',
       tryIt: 'Next set: during each replay, match every word on screen to the sound as it passes.' },
     { id: 'strange.few', ex: 'strange', title: 'Give a new voice three tries',
-      text: 'Getting used to a new kind of voice is fast and front-loaded: in one study half of the gain came within about three sentences. The first few of a new kind are warm-ups and do not move your level.',
+      text: 'Getting used to a new kind of voice is fast and front-loaded: in one study half of the gain over 30 sentences came within the first three. The first few of a new kind are warm-ups and do not move your level.',
       tryIt: 'Next set: when a new kind of voice appears, stay relaxed through the first three and notice when it clicks.' },
     { id: 'strange.noise', ex: 'strange', dial: 'accent', title: 'Accents show up in noise',
       text: 'In quiet most accents are easy; in noise the differences open up. In one study English listeners in noise scored about 80 % with their own accent and 46 to 58 % with others, so accent trials run in babble.',

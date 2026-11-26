@@ -95,7 +95,7 @@
     return { text: lines.map(k.cap).join(' '), words: marked(t), auto: result.correct ? [] : [0, 1] };
   };
   M.helpBody = function (el) { return K().helpBody(M, el); };
-  M.openHelp = function () { return K().openHelp(M); };
+  M.openHelp = function (opts) { return K().openHelp(M, opts); };
   M.tutorialTrial = function (step, i, rng) { return K().tutorialTrial(M, step, i, rng); };
 
   /* ---- two-minute tutorial; every dial forced (level indices): gap 0 → 2 → 3, context 0 → 0 → 1 ---- */

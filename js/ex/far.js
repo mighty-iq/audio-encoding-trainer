@@ -17,25 +17,25 @@
     short: 'Catch words across echoing rooms, halls and stations.',
     card: { trains: 'Catch words across echoing rooms, halls and stations. Distance and echo grow with you; rooms change so the skill is general.',
       bet: 'adapting to rooms, trained across many rooms' },
-    bet: 'Room adaptation, trained across many rooms so it carries over to rooms you have never heard.',
+    bet: 'Room adaptation, trained across many rooms so that it can carry over to rooms you have never heard.',
     betNew: false,
     venues: ['cathedral', 'station', 'lecture', 'park', 'stadium'],
     view: 'keyword', feedback: 'standard',
     strategies: ['far.tune-in', 'far.starts', 'far.closer'],
     tips: [
-      'The first sentence is there so you can hear the room: listeners adjust to a room within about half a second to three seconds.',
+      'The first phrase is there so you can hear the room: listeners adjust to a room within about half a second to three seconds.',
       'Echo blurs the ends of words more than their starts. Hold on to the first sound and the vowel of each word.',
       'Each doubling of distance makes the direct sound 6 dB weaker against the room’s echo, so the same voice gets harder fast.'
     ],
     helpData: function () {
       return {
-        goal: 'Someone in a room says two sentences. The first lets you hear the room; tap two words from the second.',
+        goal: 'Someone in a room says two phrases. The first lets you hear the room; then tap what you heard in the second.',
         dials: {
           dist: 'How far away the talker stands. Each doubling of distance makes the direct sound 6 dB weaker against the room’s echo.',
           rt60: 'How long the room rings after a sound (reverberation time): about 0.35 s in an office, 0.6 s in a cafeteria, 2.5 to 3 s in a very echoey hall.',
           noise: 'How loud the voice is against the room’s own noise, from a quiet room to noise louder than the voice.'
         },
-        why: 'Ears adjust to a room within seconds, but to that room. In one study practice across three rooms carried over to rooms never trained, while practice in a single room did not. So Far keeps changing rooms as you improve, and the Lab checks you in rooms you never trained in.'
+        why: 'Ears adjust to a room within seconds, but to that room. In one study, practice spread over three rooms carried over to rooms never trained. So Far keeps changing rooms as you improve, and the Lab checks you in rooms you never trained in.'
       };
     }
   };
@@ -51,6 +51,13 @@
   }
   function hasCue(t) { return ((t.audio && t.audio.parts) || []).some(function (p) { return p.role === 'cue'; }); }
   function fmtM(x) { return ES.core && ES.core.util ? ES.core.util.fmtM(x) : x + ' m'; }
+  /** What the slots ask for: "two words", "the word and the number", "the word". */
+  function asked(t) {
+    var L = K().slotsOf(t).map(function (s) { return String(s.label || '').toLowerCase(); });
+    if (L.length === 2 && /^first/.test(L[0]) && /^second/.test(L[1])) return 'two words';
+    if (!L.length || L.some(function (x) { return !x; })) return L.length > 1 ? 'the words' : 'the word';
+    return 'the ' + L.join(' and the ');
+  }
   function drrDrop(dist) { return Math.round(20 * Math.log(Math.max(1, dist)) / Math.LN10); }
 
   function picture(t) {
@@ -68,7 +75,7 @@
     if (!t || !k || t._exA || t.ex !== 'far') return t;
     t._exA = true;
     var dist = distOf(t);
-    if (t.question) t.question.prompt = hasCue(t) ? 'Listen to the room, then tap two words from the second sentence.' : 'Tap two words from the sentence.';
+    if (t.question) t.question.prompt = hasCue(t) ? 'Listen to the room, then tap ' + asked(t) + ' from the second phrase.' : 'Tap ' + asked(t) + ' from the phrase.';
     t.picture = picture(t);
     t.feedback = t.feedback || {};
     var near = k.findReplay(t, /close|near|1 m/i), again = k.findReplay(t, /again|from/i);
@@ -94,7 +101,7 @@
     return { text: lines.map(k.cap).join(' '), words: words, auto: result.correct ? [] : [0, 1] };
   };
   M.helpBody = function (el) { return K().helpBody(M, el); };
-  M.openHelp = function () { return K().openHelp(M); };
+  M.openHelp = function (opts) { return K().openHelp(M, opts); };
   M.tutorialTrial = function (step, i, rng) { return K().tutorialTrial(M, step, i, rng); };
 
   /* ---- two-minute tutorial. Ordinal dials are level indices: dist 1 → 4 → 5, rt60 0 → 2 → 3 (texts read the
@@ -106,11 +113,11 @@
   function steps() {
     return [
       { kind: 'caption', minMs: 3000, then: 'tap',
-        text: 'Someone in a room says two sentences. The first lets you hear the room. Tap two words from the second.' },
+        text: 'Someone in a room says two phrases. The first lets you hear the room. Then tap what you heard in the second.' },
       { kind: 'demo', force: { dials: { dist: 1, rt60: 0, noise: 30 } },
         text: 'An example first: a talker ' + lv('dist', 1, '1.5 m') + ' away in a small room.' },
       { kind: 'practice', force: { dials: { dist: 1, rt60: 0, noise: 30 }, answerAt: [1, 3] },
-        text: 'Your turn. Listen to the room, then catch two words of the second sentence.' },
+        text: 'Your turn. Listen to the room, then catch the second phrase.' },
       { kind: 'practice', force: { dials: { dist: 4, rt60: 2, noise: 24 }, answerAt: [3, 0] },
         text: 'The talker steps back to ' + lv('dist', 4, '4 m') + ', in a room that rings for ' + lv('rt60', 2, '0.6 s') + '.' },
       { kind: 'practice', force: { dials: { dist: 5, rt60: 3, noise: 20 }, answerAt: [0, 2] },

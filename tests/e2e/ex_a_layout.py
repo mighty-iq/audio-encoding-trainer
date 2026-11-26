@@ -116,7 +116,7 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     exs = args or C.EXERCISES
     quick = '--quick' in sys.argv
-    url, missing = C.build_page()
+    url, missing = C.build_page(real='--real' in sys.argv)
     rep = C.Report('ex_a_layout')
     combos = [('phone-s', 'light', True), ('phone-s', 'dark', False), ('phone', 'light', False), ('desktop', 'dark', True)]
     if quick:

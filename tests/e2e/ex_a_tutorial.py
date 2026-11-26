@@ -130,7 +130,7 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     exs = args or C.EXERCISES
     miss = '--miss' in sys.argv
-    url, missing = C.build_page()
+    url, missing = C.build_page(real='--real' in sys.argv)
     rep = C.Report('ex_a_tutorial')
     if missing:
         print('note: index.html does not list', missing, '- the test page adds them')

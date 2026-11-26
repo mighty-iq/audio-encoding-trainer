@@ -16,27 +16,27 @@
     short: 'Follow one voice while others talk over it.',
     card: { trains: 'Follow one voice while others talk over it. The crowd gets louder, more alike and closer together as you improve.',
       bet: 'attention control and voice cues against competing talkers' },
-    bet: 'Attention control and voice and place cues against competing talkers, with ever-changing crowds so the skill stays general.',
+    bet: 'Attention control and voice and place cues against competing talkers; ever-changing crowds aim to keep the skill general.',
     betNew: false,
     venues: ['cafe', 'restaurant', 'bar', 'party', 'club', 'concert'],
     view: 'keyword', feedback: 'standard',
     strategies: ['crowd.lock-on', 'crowd.borrowed', 'crowd.space'],
     tips: [
-      'The call sign comes first. Lock on to that voice, its pitch, pace and place, and let it lead you to the word and number.',
-      'A wrong word that another voice said means you heard well and followed the wrong talker. Most crowd mistakes are of this kind.',
-      'The other sex is easiest to tell apart; a same-sex voice with a similar pitch is hardest. Pitch and voice size together help more than either alone.',
+      'The call sign comes first. Lock on to that voice, its pitch, pace and place, and let it lead you to the words.',
+      'A wrong word that another voice said means you heard well and followed the wrong talker. In a classic study most mistakes against a same-sex voice were of this kind.',
+      'A voice of the other sex is easiest to tell apart; the closer two voices are in pitch and size, the harder it gets. Differences in both help more than either alone.',
       'With headphones, place matters: even 10 to 15° between voices helps a lot when the others are talking.'
     ],
     helpData: function () {
       return {
-        goal: 'One voice says a call sign, then a word and a number. Follow it through the crowd and tap its word and number. The other voices say words and numbers too.',
+        goal: 'One voice says a call sign, then a word and a number. Follow it through the crowd and tap what it said. The other voices say words and numbers too.',
         dials: {
           tmr: 'How loud your voice is against each other voice. Above 0 dB yours is louder; below 0 dB the others are louder.',
           talkers: 'How many other voices talk at the same time.',
           similar: 'How alike the other voices sound, from the other sex to a near-twin of your voice.',
           space: 'How far apart the voices stand around you. Unlocks once the headphone check passes.'
         },
-        why: 'Most of the difficulty in a crowd is choosing which talker to follow, not hearing the words. Crowd trains that choice with call signs, voices and places. In one study gains from training in babble stuck to the babble that was trained, so the crowd here keeps changing: voices, sexes, numbers of talkers and backgrounds.'
+        why: 'Most of the difficulty in a crowd is choosing which talker to follow, not hearing the words. Crowd trains that choice with call signs, voices and places. In one study, gains from practice in babble did not carry over to babble in another language, so the crowd here keeps changing: voices, sexes, numbers of talkers and backgrounds.'
       };
     }
   };
@@ -148,18 +148,18 @@
     return { text: lines.join(' '), words: null, auto: result.correct ? [] : [0, 1] };
   };
   M.helpBody = function (el) { return K().helpBody(M, el); };
-  M.openHelp = function () { return K().openHelp(M); };
+  M.openHelp = function (opts) { return K().openHelp(M, opts); };
   M.tutorialTrial = function (step, i, rng) { return K().tutorialTrial(M, step, i, rng); };
 
   /* ---- two-minute tutorial: an example, then three practice trials from easy to a little harder ----
      Every dial is forced (ordinal = level index): talkers 0 = one other voice; similar 0 = other sex, 1 = same sex. */
   M.tutorial = { steps: [
     { kind: 'caption', minMs: 3000, then: 'tap',
-      text: 'One voice says a call sign, then a word and a number. It is the red dot. Follow it and tap the word and the number it says.' },
+      text: 'One voice says a call sign, then a word and a number. It is the red dot. Follow it and tap what it says.' },
     { kind: 'demo', force: { dials: { tmr: 12, talkers: 0, similar: 0 } },
       text: 'An example first. The blue voice talks quietly over the red one.' },
     { kind: 'practice', force: { dials: { tmr: 12, talkers: 0, similar: 0 }, answerAt: [2, 0] },
-      text: 'Your turn. Listen for the call sign, then tap its word and number.' },
+      text: 'Your turn. Listen for the call sign, then tap what that voice says.' },
     { kind: 'practice', force: { dials: { tmr: 3, talkers: 0, similar: 0 }, answerAt: [0, 3] },
       text: 'The blue voice is almost as loud now. Stay with the call sign.' },
     { kind: 'practice', force: { dials: { tmr: 6, talkers: 0, similar: 1 }, answerAt: [3, 1] },

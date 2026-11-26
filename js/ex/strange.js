@@ -20,19 +20,19 @@
     short: 'Accents, fast, whispered, phone and robot-like speech.',
     card: { trains: 'Accents, fast, whispered, phone-quality and robot-like speech. The words pop up after each try so your ear retunes.',
       bet: 'variety that teaches you to adapt to any new voice' },
-    bet: 'Variety that teaches your ear to adapt to new voices, fast.',
+    bet: 'Varied voices that train your ear to adapt to new ones, fast.',
     betNew: false,
     venues: ['phone', 'station', 'restaurant'],
     view: 'keyword', feedback: 'popout',
     strategies: ['strange.replay', 'strange.few', 'strange.noise'],
     tips: [
       'The replay with the words on screen is where the learning happens: you hear the hard voice again while knowing what it says.',
-      'A new kind of voice takes a few tries. In one study half of the early gain came within about three sentences.',
+      'A new kind of voice takes a few tries. In one study half of the gain over 30 sentences came within the first three.',
       'The phrases are deliberately odd, so guessing from meaning does not work. Listen for the sounds.'
     ],
     helpData: function () {
       return {
-        goal: 'Each phrase comes from an unusual voice: an accent, a fast talker, a whisper, a bad phone line, a voice through a wall or a robot voice. Tap two words you heard. Then the words appear and you hear the same voice again.',
+        goal: 'Each phrase comes from an unusual voice: an accent, a fast talker, a whisper, a bad phone line, a voice through a wall or a robot voice. Tap the words you heard. Then the words appear and you hear the same voice again.',
         dialsTitle: 'The kinds of voice and how each gets harder',
         dials: {
           accent: 'Accented voices from mild to strong, first in quiet, then in babble that gets louder.',
@@ -79,7 +79,7 @@
     var k = K();
     if (!t || !k || t._exA || t.ex !== 'strange') return t;
     t._exA = true;
-    if (t.question) t.question.prompt = kindText(t) + ': tap the two words you heard.';
+    if (t.question) t.question.prompt = kindText(t) + ': tap the ' + (K().slotsOf(t).length > 1 ? 'words' : 'word') + ' you heard.';
     t.picture = picture(t);
     t.feedback = t.feedback || {};
     var again = k.findReplay(t, /again|words/i);
@@ -97,7 +97,7 @@
     return { text: lines.map(k.cap).join(' '), words: words(t), auto: [0] };
   };
   M.helpBody = function (el) { return K().helpBody(M, el); };
-  M.openHelp = function () { return K().openHelp(M); };
+  M.openHelp = function (opts) { return K().openHelp(M, opts); };
   M.tutorialTrial = function (step, i, rng) { return K().tutorialTrial(M, step, i, rng); };
 
   /* ---- two-minute tutorial: one family per trial, each at its easiest level (index 0) ---- */
@@ -108,7 +108,7 @@
   function steps() {
     return [
       { kind: 'caption', minMs: 3000, then: 'tap',
-        text: 'Each phrase comes from an unusual voice. Tap the two words you heard. Then the words appear and the voice plays again: that replay is where your ear retunes.' },
+        text: 'Each phrase comes from an unusual voice. Tap the words you heard. Then the words appear and the voice plays again: that replay is where your ear retunes.' },
       { kind: 'demo', force: { dials: { fast: 0 } },
         text: 'An example first: a fast talker, at ' + lv('fast', 0, '1.3×') + ' speed.' },
       { kind: 'practice', force: { dials: { fast: 0 }, answerAt: [2, 1] },
