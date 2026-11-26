@@ -36,6 +36,22 @@ if (!flag('skip-checks')) {
   for (const [ex, s] of Object.entries(report.checks.shortcuts)) console.log(`  shortcuts ${ex}: worst |acc−chance| ${s.worstDev} over ${s.bins} bins; flagged ${s.flagged.length}`, JSON.stringify(s.all.dev));
 }
 
+// generator checks on the stimulus data as built (exercises with material only)
+if (flag('real')) {
+  const R = loadEngine({ realData: true });
+  if (R.data.manifest && !R.data.__fixture) {
+    const t0 = Date.now(), res = runChecks(R, { seeds: SEEDS });
+    report.checksReal = { secs: (Date.now() - t0) / 1000, ready: Object.fromEntries(R.engine.exercises.map((ex) => [ex, R.engine.items[ex].ready()])), solver: res.solver, shortcuts: {} };
+    for (const [ex, bins] of Object.entries(res.shortcuts)) {
+      const flagged = Object.entries(bins).filter(([, v]) => v.flag.length).map(([b, v]) => ({ bin: b, n: v.n, flags: v.flag }));
+      report.checksReal.shortcuts[ex] = { all: bins.all, bins: Object.keys(bins).length, flagged, worstDev: r3(Math.max(...Object.values(bins).map((v) => Math.abs(v.worst)))) };
+    }
+    console.log('real-data checks: ready', JSON.stringify(report.checksReal.ready));
+    for (const [ex, r] of Object.entries(res.solver)) console.log(`  solver ${ex}: ${r.n} trials, ${r.fail} failing`, JSON.stringify(r.errors));
+    for (const [ex, s] of Object.entries(report.checksReal.shortcuts)) console.log(`  shortcuts ${ex}: worst |acc−chance| ${s.worstDev}; flagged ${s.flagged.length}/${s.bins}`, JSON.stringify(s.all.dev));
+  }
+}
+
 // ---------- simulated learners ----------
 function trueIdx(ES, S, ex, ck) {
   const E = ES.engine, meta = E.dialMeta[ex], ref = meta.primary ? E.dialDef(ex, meta.primary).slope : 0.25;

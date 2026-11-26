@@ -227,6 +227,7 @@
       if (family) out.focus = act.filter(function (d) { return d.family; })[0].id;
       out.dials = dials; out.target = tp; out.p = pAt(lr, ex, ck, act, dials, zs);
       if (out.p < md.floor && Object.keys(pins).length) easePins(lr, ex, ck, act, dials, pins, md, zs, out);
+      if (out.p < md.floor) out.floor = true; // even the easiest levels are predicted below the floor
       return out;
     }
     // edge trial: decide the focus among dials that can still be pushed (not saturated, not floored)
