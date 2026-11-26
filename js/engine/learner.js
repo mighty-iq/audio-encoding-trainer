@@ -64,6 +64,28 @@
     return logit(Math.min(0.995, fT / Math.pow(md.fc, nTyp(ex, ck) - 1)));
   }
 
+  // Entries of the wrong shape (a damaged import, review M9) are dropped one by one, never the whole record.
+  function num(x) { return typeof x === 'number' && isFinite(x); }
+  function props(x) { return x && typeof x === 'object' && !Array.isArray(x) ? x : {}; }
+  var CLEAN = {
+    dials: function (r) { return num(r.m) && num(r.s) && r.s > 0 ? { m: r.m, s: r.s, n: num(r.n) && r.n >= 0 ? r.n : 0, at: num(r.at) ? r.at : 0,
+      h: Array.isArray(r.h) ? r.h.filter(num).slice(-10) : [], f: num(r.f) ? r.f : 0, lf: num(r.lf) ? r.lf : undefined, u: num(r.u) ? r.u : 0 } : null; },
+    breadth: function (b) { return num(b) ? Math.max(0, Math.min(1, b)) : null; },
+    recent: function (a) { return Array.isArray(a) ? a.filter(num).map(function (x) { return Math.max(0, Math.min(1, x)); }).slice(-30) : null; },
+    edge: function (a) { return Array.isArray(a) ? a.filter(num).map(function (x) { return Math.max(0, Math.min(1, x)); }).slice(-20) : null; },
+    cond: function (c) { return c && typeof c === 'object' && num(c.n) && c.n >= 0 ? { n: Math.floor(c.n), acc: num(c.acc) ? Math.max(0, Math.min(1, c.acc)) : 0.7, at: num(c.at) ? c.at : 0 } : null; },
+    path: function (p) { return p && typeof p === 'object' && num(p.i) && p.i >= 0 ? { i: Math.floor(p.i), hist: Array.isArray(p.hist) ? p.hist.filter(num).slice(-15) : [],
+      run: num(p.run) ? p.run : 0, n: num(p.n) ? p.n : 0, best: num(p.best) ? p.best : 0 } : null; },
+    best: function (b) { return num(b) ? b : null; },
+    plat: function (p) {
+      if (!p || typeof p !== 'object') return null;
+      var o = {};
+      ['k', 'at', 'n', 'forceN', 'anchorBoost', 'rest'].forEach(function (k) { if (num(p[k])) o[k] = p[k]; });
+      ['last', 'forceFocus'].forEach(function (k) { if (typeof p[k] === 'string') o[k] = p[k]; });
+      return o;
+    },
+    cast: function (c) { return num(c) && c >= 0 ? c : null; }
+  };
   function create(initial, clock) {
     var self = {};
     self.clock = clock || function () { return Date.now(); };
@@ -74,10 +96,11 @@
     function load(obj) {
       var s = fresh();
       if (obj && typeof obj === 'object' && (obj.v === 1 || obj.v === undefined)) {
-        ['dials', 'breadth', 'recent', 'edge', 'cond', 'path', 'best', 'plat', 'cast'].forEach(function (k) {
-          if (obj[k] && typeof obj[k] === 'object') s[k] = JSON.parse(JSON.stringify(obj[k]));
+        Object.keys(CLEAN).forEach(function (k) {
+          var src = props(obj[k]);
+          Object.keys(src).forEach(function (id) { var v = CLEAN[k](src[id]); if (v !== null && v !== undefined) s[k][id] = v; });
         });
-        s.n = +obj.n || 0;
+        s.n = num(obj.n) && obj.n >= 0 ? Math.floor(obj.n) : 0;
         if (typeof obj.seed === 'string') s.seed = obj.seed;
       }
       self.state = s;
@@ -199,6 +222,8 @@
       return updateRaw(trial, result);
     }
     function updateRaw(trial, result) {
+      // learn:false (Weekly Night Out, review M8): nothing in the record changes, on any path
+      if (trial && trial.setting && trial.setting.learn === false) return { updated: [], warmup: false, skipped: 'learn:false' };
       var st = self.state, ex = trial.ex, set = trial.setting || {}, md = M();
       var ck = (trial.meta && trial.meta.ctxKey) || ctxKey(ex, false);
       var prop = result && typeof result.prop === 'number' ? result.prop : 0;

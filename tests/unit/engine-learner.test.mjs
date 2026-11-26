@@ -64,6 +64,24 @@ export const tests = [
     assert.equal(sp.meta.task, 'who');
     sp.question.slots[0].options.forEach((o) => assert.ok(cast.slice(0, 3).map(E.items.voices.nameOf).includes(o), o));
   } },
+  { name: 'learner (M9): damaged entries are dropped on load, and a set still runs', fn(ES, assert) {
+    const E = ES.engine, good = seasoned(E.learner.create(null, () => T0));
+    good.update(crowdTrial(ES, { tmr: 2, talkers: 0, similar: 0 }, 'tmr', 1).trial, { prop: 1 });
+    const rec = JSON.parse(JSON.stringify(good.state));
+    Object.assign(rec, { recent: { crowd: 'x', far: [0.5, 'y', 2] }, edge: { crowd: {} }, cond: { 'crowd:base': 5, 'far:base': { n: 3, acc: 0.8, at: 1 } },
+      path: { crowd: 'x' }, best: { 'crowd.tmr': 'z' }, plat: { crowd: 7 }, cast: { v1: -1, v2: 2 }, breadth: { crowd: 'wide', far: 3 } });
+    rec.dials['crowd.talkers'] = { m: 'x', s: 1 };
+    const lr = E.learner.create(rec, () => T0), st = lr.state;
+    assert.deepEqual(st.recent, { far: [0.5, 1] }); assert.deepEqual(st.edge, {});
+    assert.ok(!('crowd:base' in st.cond) && st.cond['far:base'].n === 3);
+    assert.deepEqual(st.path, {}); assert.deepEqual(st.best, {}); assert.deepEqual(st.plat, {}); assert.deepEqual(st.cast, { v2: 2 }); assert.deepEqual(st.breadth, { far: 1 });
+    assert.ok(st.dials['crowd.tmr'] && !st.dials['crowd.talkers']);
+    for (const mode of ['edge', 'path']) {
+      const sc = E.flow.start('crowd', { learner: lr, mode, seed: 'm9' + mode, trials: 10 }); let t;
+      while ((t = E.flow.next(sc))) E.flow.answer(sc, t, { picks: t.question.slots.map((x) => x.answer) });
+      assert.equal(E.flow.end(sc).n, 10);
+    }
+  } },
   { name: 'learner: state survives a JSON round trip', fn(ES, assert) {
     const E = ES.engine, lr = seasoned(E.learner.create(null, () => T0));
     for (let i = 0; i < 30; i++) { const t = crowdTrial(ES, { tmr: -2, talkers: 0, similar: 0 }, 'tmr', i % 3 ? 1 : 0); lr.update(t.trial, t.result); }

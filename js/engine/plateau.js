@@ -6,8 +6,10 @@
    sets need more sessions to fill a window). Operating point and its
    simulated error rates in docs/dev/progress/engine.md. Breakers, in order, each with a player-facing reason:
    widen variety; switch the focus dial; more anchors and pop-out feedback; a strategy card; sleep after same-day
-   runs; switch exercise. check() has no side effects; apply() changes the learner state; at most one breaker per
-   3 sessions. */
+   runs; switch exercise. check() has no side effects; the caller applies the breaker with
+   apply(ex, result, {learner, log}) right after check() returns one (the session does: review H1), else the same
+   breaker repeats and nothing changes; at most one breaker per 3 sessions. Partial and learn:false sets are left
+   out. check() runs after the current session is in the log (so "today" counts it). */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -17,10 +19,10 @@
   var STRATEGY = {
     crowd: 'Lock on to the call sign first, then stay with that voice: its pitch, its pace, where it sits. Let the other words go past.',
     far: 'Use the first sentence to tune in to the room. Listen for the start of each word, where the echo blurs least.',
-    strange: 'Let the first phrases wash over you: ears re-tune to a new voice within a handful of sentences. Then follow the rhythm, not each sound.',
+    strange: 'Let the first phrases wash over you: ears re-tune to a new voice within a handful of sentences. Then listen for the sounds this voice changes.',
     repair: 'Hold the whole sentence in mind, then pick the word that fits both what you caught of it and what the sentence means.',
     echo: 'Picture each detail as it arrives: a face for the name, the place, a clock for the time.',
-    seek: 'Move in small steps and compare: louder means closer. With headphones, turn until the voice sits straight ahead.',
+    seek: 'Move in small steps and compare: louder means closer. With headphones, turn so the voice sits about 30° to one side.',
     voices: 'Give each voice one feature you can name: pitch, pace, accent, or how its sentences end.'
   };
   var Z80 = 1.2816;
@@ -34,7 +36,7 @@
   function sessionsWith(log, ex) {
     var out = [];
     ((log && log.sessions) || []).forEach(function (s) {
-      var sets = (s.sets || []).filter(function (t) { return t.ex === ex && typeof t.idx === 'number'; });
+      var sets = (s.sets || []).filter(function (t) { return t.ex === ex && typeof t.idx === 'number' && !t.partial && t.learn !== false; });
       if (!sets.length) return;
       var foci = {}, trials = 0;
       sets.forEach(function (t) { trials += (t.n || 0) - (t.warmups || 0); Object.keys(t.foci || {}).forEach(function (k) { foci[k] = (foci[k] || 0) + t.foci[k]; }); });
@@ -118,24 +120,27 @@
     var k = pl.k === undefined ? 0 : (pl.k + 1) % ORDER.length, today = sameDayCount(log, now), guard = 0, kind;
     while (guard++ < ORDER.length) {
       kind = ORDER[k];
-      if (kind === 'sleep' && today < 2) { k = (k + 1) % ORDER.length; continue; }
+      if (kind === 'sleep' && today < 2) { k = (k + 1) % ORDER.length; continue; } // today counts the current session
       if (kind === 'focus' && lr.active(ex, { ctxKey: lr.ctxKey(ex, !!opts.headphones) }).filter(function (d) { return !d.family; }).length < 2) { k = (k + 1) % ORDER.length; continue; }
       break;
     }
     var name = NAMES[ex] || ex, focusDial = leastFocused(all, lr, ex, opts.headphones);
     win = lastN.length;
-    var unit = (E.dialMeta[ex] && E.dialMeta[ex].primary) ? ' dB' : ' points';
-    var reason = name + ' has held near the same level for ' + win + ' sessions (trend ' + fmt(t.slope) + unit + ' per session) with no new best in ' + (cfg.pbSessions || 4) + '.';
+    // Reason in the player's terms (review C10): the trend is a dB-equivalent index where up = better; exercises
+    // without a primary dB dial get no unit; a clearly falling trend says so.
+    var nb = cfg.pbSessions || 4, dB = !!(E.dialMeta[ex] && E.dialMeta[ex].primary), slipped = t.hi < 0;
+    var reason = name + ' has set no new best in ' + nb + ' sessions, and ' + (slipped ? 'its level has slipped a little over the last ' + win + ' sessions.'
+      : dB ? 'its level moved less than ' + band + ' dB a session over the last ' + win + '.' : 'its level has barely moved over the last ' + win + ' sessions.');
     var text = {
-      variety: 'Next sets bring in more voices, rooms and noises. Wider variety makes a skill more general, and a fresh mix often breaks a stall.',
+      variety: 'Next sets bring in more voices, rooms and noises. Wider variety makes a skill more general, and a fresh mix gives the skill something new to work on.',
       focus: 'The next sets push a different dial (' + (focusDial ? E.dialDef(ex, focusDial).label.toLowerCase() : 'another dial') + ') to its edge while the rest sit at comfort.',
-      anchors: 'More easy trials go in between the hard ones for a while, and every miss replays the sound with its words, so the hard trials have something to build on.',
+      anchors: 'More easy trials go in between the hard ones for a while, so the hard trials have something to build on.',
       strategy: 'Try this: ' + (STRATEGY[ex] || ''),
-      sleep: 'This is your ' + ordinal(today + 1) + ' session today. Same-day repetition wears a skill thin and sleep consolidates it, so the next gain is likely tomorrow.',
-      switch: 'For the next few sessions the plan gives ' + name + ' a rest and trains other situations; skills often move again after a break.'
+      sleep: 'This is your ' + ordinal(today) + ' session today. Same-day repetition wears a skill thin; sleep consolidates practice, so tomorrow is a good time for the next session.',
+      switch: 'For the next few sessions the plan gives ' + name + ' a rest and trains other situations for a while, then comes back to it.'
     }[kind];
     return { ex: ex, reason: reason, breaker: { kind: kind, dial: kind === 'focus' ? focusDial : undefined, text: text },
-      trend: { slope: t.slope, lo: t.lo, hi: t.hi, sessions: win, last: ys[ys.length - 1] }, chimera: true };
+      trend: { slope: t.slope, lo: t.lo, hi: t.hi, sessions: win, last: ys[ys.length - 1], slipped: slipped }, chimera: true };
   }
   function leastFocused(ss, lr, ex, hp) {
     var cnt = {}, ck = lr.ctxKey(ex, !!hp);
@@ -143,7 +148,6 @@
     ss.slice(-6).forEach(function (x) { (x.s.sets || []).forEach(function (t) { if (t.ex === ex && t.focus && cnt[t.focus] !== undefined) cnt[t.focus] += t.n; }); });
     return Object.keys(cnt).sort(function (a, b) { return cnt[a] - cnt[b]; })[0] || null;
   }
-  function fmt(x) { var v = Math.round(x * 100) / 100; return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v); }
   function ordinal(n) { return n === 1 ? 'first' : n === 2 ? 'second' : n === 3 ? 'third' : n + 'th'; }
 
   // Apply a breaker to the learner record. opts.sessionsCount = sessions with this exercise so far.

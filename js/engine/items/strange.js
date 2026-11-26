@@ -72,8 +72,7 @@
     if (snr !== null && snr !== undefined) {
       if (d.id === 'phone') beds.push({ kind: 'pink', db: -snr });
       else {
-        var b = X.bed(rng, ['babble']);
-        beds.push(b ? { kind: 'babble', bed: b.id, db: -snr } : { kind: 'babble', clips: X.babbleClips(rng, [hit.voice], 6), db: -snr });
+        beds.push(X.bedSpec(rng, ['babble'], { avoid: [hit.voice], talkers: 6, db: -snr }) || { kind: 'ssn', db: -snr });
       }
     }
     var meta = X.clip, dur = (meta(hit.clip) && meta(hit.clip).dur) || 1.6;

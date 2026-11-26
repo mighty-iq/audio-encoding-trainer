@@ -70,8 +70,8 @@
     var c = X.clip(hit.clip), dur = (c.dur || 3) / (rate || 1);
     var part = { clip: hit.clip, at: 0.6, db: 0, role: 'target' };
     if (fx) part.fx = fx;
-    var b = X.bed(rng, breadth < 0.4 ? ['cafe'] : ['cafe', 'party', 'babble']);
-    var beds = [b ? { kind: b.kind === 'babble' ? 'babble' : 'ambience', bed: b.id, db: -snr } : { kind: 'babble', clips: X.babbleClips(rng, [hit.voice], 6), db: -snr }];
+    var bo = { avoid: [hit.voice], talkers: X.bedTalkers(rng, breadth), db: -snr };
+    var beds = [X.bedSpec(rng, breadth < 0.4 ? ['cafe'] : ['cafe', 'party', 'babble'], bo) || X.bedSpec(rng, ['babble'], bo) || { kind: 'ssn', db: -snr }];
     var audio = { out: { db: -20 }, dur: Math.round((0.6 + dur + 0.8) * 100) / 100, spatial: 'mono', parts: [part], beds: beds, room: null };
     C.remember(ctx, hit.voice, null);
     var nQ = Math.min(3, actual), facts = C.sample(rng, it.facts.filter(function (f) { return cats[f.cat] && cats[f.cat].length >= 4; }), nQ);

@@ -2,12 +2,13 @@
 
 Owner paths: js/engine/**, tests/unit/engine*, tests/sim/**, tests/fixtures/{data-fixture,rng}.js. Never pushes.
 
-## Status (2026-11-26 20:08 UTC)
+## Status (2026-11-26 20:40 UTC)
 CONTRACTS §5 implemented for all seven exercises (missions has no dials). Unit tests: 38 engine tests pass with
 `node tests/unit/run.mjs engine` (whole suite green). Full verification: `node tests/sim/run.mjs --real` (results in
 the Results section). Engine files load in the order of tools/build-index.mjs (items/adapt.js loads via `items/*`).
 Lead follow-ups of 19:40 UTC done in 61c3b41 (Seek live fields and preview, noteMet, foil types, plateau retune),
-plus game's 19:16 request (venue sets keep their Strange family).
+plus game's 19:16 request (venue sets keep their Strange family). Fix round 1: every engine finding fixed (section
+"Fix round 1"); 46 engine tests, whole suite green.
 
 ## Files
 - dials.js — dials per exercise (real units; ordinal ladders easy → hard, model unit = level index), slope priors
@@ -40,13 +41,22 @@ plus game's 19:16 request (venue sets keep their Strange family).
   Seek's audio.live = {bed, target, decoys, found (field units = the locate radius), spatial, seed, start, headTurn}
   (no `radius`: the live scene reads that as metres per field unit); meta.preview = another clip by the target
   voice with none of the scene's words (relaxed: none of the called words; null + 'no preview'), never an option.
-- score.js, plateau.js, planner.js, flow.js (set runner: start/next/answer/end/exposure; `end` = log entry with
-  end/avg/sd/idx/foci/pb/pbs).
+- score.js, plateau.js, planner.js, flow.js (set runner: start/next/answer/skip/end/snapshot/resume/exposure; `end`
+  = log entry with end/avg/sd/idx/foci/pb/pbs, plus partial/planned/why, replaced, learn:false when they apply).
+  flow.start(…, {learn:false}) leaves the learner untouched; flow.skip(sc, {reason:'error'|'void'|'skip', bad})
+  drops the pending trial unscored and draws a NEW one at the same level (same decision, new item, failing clips
+  avoided), cap 3 per set, then {ended:true} and a partial record; flow.end(sc, {early:true}) is partial below half
+  the planned trials; flow.snapshot(sc) is plain JSON, flow.resume(snap, {learner}) continues after a reload (the
+  trial in flight is replaced, not charged). Partial and learn:false sets never set a personal best and stay out of
+  plateau windows and the overnight check.
 
 ## Option design (shortcut-proof)
 Foils come from each slot's own answer distribution (item-sampled: the same slot's answer in a random other
 eligible item), neighbours only when they can be answers for that slot, symmetric similarity structure: no maskers
-→ (T, nT) (R, nR); one masker → (T, nT) (M, nM); two → T, M1, M2, R; three → all spoken. Homophones never shown.
+→ (T, T') (R, R') with T', R' sound-alikes of the SAME length and R drawn among words that have one (when T has
+none: four unpaired words that have none either); one masker → (T, nT) (M, nM); two → T, M1, M2, R; three → all
+spoken. Neighbour lists are symmetric (either word listing the other), and a pair partner is the neighbour
+closest in length. Homophones never shown.
 A slot is asked only if the build has ≥ 3 different answers for it. Foil types: 'masker' (another voice said it),
 'neighbour' (sound-alike from vocab neighbours), 'context' (fits the sentence / said in Echo's message for another
 question), 'number' (another number: numbers are never called sound-alikes; set by number slots and inferred when
@@ -71,6 +81,11 @@ preview clips never say an option.
   The literal two-sided "within ±0.15" never fires on training data.
 - Foil types 'number' and 'similar' (CONTRACTS lists four types; views treat unknown types generically).
 - Venue sets in Path mode run at the edge with their pins (Path's staged steps are for normal sets).
+- Babble beds: 6 talkers (4–8 at wide variety), one sentence each, never the target's or a talker's voice; the
+  recorded crowd bed only as an ambience (it cannot be split into talkers).
+- Replacements keep the trial's decision (same level), draw a new item, and avoid a failed trial's clips; 3 per
+  set, then the set ends as partial. A reload is not charged against the cap. "End set" below half = partial.
+- Option pairs are same-length sound-alikes (symmetric neighbour lists), so option length carries no information.
 - Personal bests per dial (≥ 0.10 logit beyond the best), in real units, so a dial joining the index cannot fake one.
 - Breadth judged on edge trials only (anchors and warm-ups would make it saturate at once).
 - Distance ladder tops at 30 m; room size always fits the distance (CONTRACTS §12 R1).
@@ -84,7 +99,8 @@ preview clips never say an option.
   the dials (masker levels, talker count, separation, rt60/dist/room fit, noise, family fx, mask fraction, details,
   decoys, radius, cast size); number slots typed 'masker'/'context'/'number' only; Voices foils 'similar' exactly
   when close in pitch; Crowd cue and Seek preview by the target voice and never saying an option; Seek live.found
-  = locate radius, live.spatial, live.seed, no live.radius; preview words none of the called (or scene) words.
+  = locate radius, live.spatial, live.seed, no live.radius; preview words none of the called (or scene) words;
+  babble beds ≥ 3 sentence clips from distinct voices, none the target's; bed ids only on ambience beds.
 - Shortcut responders (tests/sim/shortcuts.mjs): first, last, most frequent past answer, only options seen as answers,
   most different, most typical (bigram similarity), longest, shortest, heard-word (vs 1/heard), answer position per
   option count; per generator and per dial level; flag beyond max(0.04, 3.5 SE).
@@ -140,6 +156,39 @@ preview clips never say an option.
 - Trials planned below p 0.65: 0.1–0.3 % of trials, all flagged `floor` (the easiest levels are predicted below the
   floor for weak simulated dimensions; asserted in engine-controller.test.mjs).
 
+## Fix round 1 (docs/dev/reviews/FIX-ROUND-1.md; snapshot e079caf; 2026-11-26 20:40 UTC)
+Each finding in engine files or assigned to the engine, with its test (tests/unit/engine-*.test.mjs unless noted):
+- M2 fixed: a 'find' trial only for a met voice with a call-sign phrase (or a word clip of the noun pool); else
+  'who' with two met voices, else 'meet' (meta.relaxed 'find → who' / 'find → meet'); 61c3b41 had still allowed an
+  unmet friend. Test: realdata "M2" (the review's case, 40 seeds, plus a Variety set with phrase-less met voices).
+- M3 fixed: X.bedSpec — a babble bed is {kind:'babble', clips:[one train sentence per talker], db} from voices other
+  than the target's (and the other talkers'); bed ids only on ambience beds; < 3 talkers in the build → the recorded
+  crowd bed as an ambience, else speech-shaped noise. Talkers: 6, 4–8 once variety is wide (no dial sets the bed's
+  talker count; Crowd's talkers dial counts the competing voices, which are parts). Solver check + realdata "M3".
+- M4 fixed: overnight() returns null once a session has started today. Test: planner (M4…).
+- M6, M11 (flow support) fixed: flow.skip / end({early}) / snapshot / resume as in Files; stale answers to a
+  skipped trial change nothing. Tests: flow (M6), flow (M11). Wiring is the shell's.
+- M8 fixed: flow learn:false (spec.setting.learn = false on every trial) and learner.update ignores such trials on
+  any path (the shell's record() too). Test: flow (M8) — learner byte-identical after a set and its replay.
+- M9 (engine part) fixed: learner.load keeps only well-formed entries per map (recent/edge arrays of 0–1 numbers
+  capped 30/20, cond {n, acc, at}, path {i, hist, run, n, best}, plat fields, numeric best/breadth/cast, dials with
+  finite m and s > 0); path clamps a step index out of range. Test: learner (M9) with the review's four bad values.
+- H1 (engine part): plateau.js documents that the caller applies the breaker right after check().
+- C03, C33 fixed (strategy texts); C05 fixed (anchors text promises no replay with words); C10 fixed (reason: "no
+  new best in 4 sessions, and its level moved less than 0.15 dB a session over the last N" / "has slipped a little"
+  / no unit for Strange and Repair); C24 fixed (variety, sleep, switch texts; planner sleep note); C04 fixed
+  (plateau ordinal(today) since the current session is in the log; planner "You have trained three times today"
+  at the fourth session); C19 fixed in the planner ("Yesterday's" only for the previous calendar day, else "Your
+  last day's hardest"; "a voice that was not in that set"). Tests: plateau texts (…), planner (M4, C04, C19, L9).
+- L9 fixed: Focus-mode plan sets carry focusEx:true (flow ignores a non-string focus).
+- fixlist [engine] items fixed in 61c3b41 (number foil types; chooseFamily honours the set's family).
+- Option-length bias (lead's request) fixed in the option builder (see Option design); Repair foils now follow the
+  answers of the item's own voice pool. Real build, 10,000 seeds: Far longest/shortest 0.255/0.247 (were
+  0.279/0.227, 4/25 bins flagged → 0/25), Repair 0.255/0.249 (were 0.288/0.218, 6/17 → 0), Repair most-frequent
+  0.265 (was 0.266–0.278). Fixture: 0 flagged bins in 163; solver 0 failures × 7 on both.
+- Sanity simulation after the round (100 learners × 60 days per mode): accuracy, edge accuracy, anchors and
+  warm-ups as before; plateau false alarms 5.5–7.2 % and detection 51–83 % across modes (sampling noise ±2 %).
+
 ## Log
 - 2026-11-26 17:05 UTC — Started; requests to stimuli/audio/shell.
 - 2026-11-26 17:40 UTC — Core engine, generators, solver, shortcut responders landed; foils made answer-matched.
@@ -151,6 +200,8 @@ preview clips never say an option.
 - 2026-11-26 20:05 UTC — Lead follow-ups (61c3b41): Seek live fields + preview, noteMet, number/similar foil types,
   Crowd cue words never options, venue families held (game 19:16), Voices find without call-sign voices (the new
   build's first voices have sentences only), plateau retuned (tuner: replay of dumped logs; numbers above).
+- 2026-11-26 20:40 UTC — Fix round 1: M2, M3, M4, M6/M11 flow support, M8, M9 (engine part), H1 doc, C03–C05, C10,
+  C19, C24, C33, L9, option-length bias; tests per finding.
 
 ## Open issues
 - Starter pack: Strange, Repair and Echo run on the call-sign fallback until their own clips land; residual
@@ -159,6 +210,6 @@ preview clips never say an option.
 - Strange text-first aid trials (exA's "Same or different?") not implemented; exposure interludes are text-first.
 - Plateau: Focus mode detects 47 % of flat stretches (structural: few sessions for its other exercises); the
   earliest call is at the 13th session with an exercise. All false alarms are at the band edge (0.15–0.3).
-- Real build: option-length bias in the call-sign fallbacks of Far and Repair (long nouns have no rhyme neighbours,
-  so their foils are random and shorter on average); fix candidates: length-matched random foils, or neighbours
-  for every noun from stimuli.
+- Real build: Voices most-frequent responder 0.30 (cast names; 1 bin of 18), single flagged bins in Strange and Seek;
+  re-check when the full packs land.
+- Shell wiring of flow.skip / end({early}) / snapshot / resume (M6, M7, M11) and of learn:false (game, M8).

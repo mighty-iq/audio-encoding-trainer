@@ -130,9 +130,8 @@
       sq.parts.forEach(function (p) { if (m.fx) p.fx = m.fx; if (hp) p.az = az; parts.push(p); });
       end = Math.max(end, sq.end);
     });
-    var b = X.bed(rng, breadth < 0.3 ? ['babble'] : breadth < 0.6 ? ['babble', 'cafe', 'hum'] : ['babble', 'cafe', 'party', 'hum', 'street']), bedDb = -tmr - 10;
-    var bab = b ? null : X.babbleClips(rng, [target].concat(tal.map(function (m) { return m.v; })), 6);
-    var beds = [b ? { kind: b.kind === 'babble' ? 'babble' : 'ambience', bed: b.id, db: bedDb } : bab.length ? { kind: 'babble', clips: bab, db: bedDb } : { kind: 'ssn', db: bedDb }];
+    var bedDb = -tmr - 10, bk = breadth < 0.3 ? ['babble'] : breadth < 0.6 ? ['babble', 'cafe', 'hum'] : ['babble', 'cafe', 'party', 'hum', 'street'];
+    var beds = [X.bedSpec(rng, bk, { avoid: [target].concat(tal.map(function (m) { return m.v; })), talkers: X.bedTalkers(rng, breadth), db: bedDb }) || { kind: 'ssn', db: bedDb }];
     var room = null;
     if (breadth >= 0.6 && C.chance(rng, 0.3)) {
       room = X.room(rng, 0.3 + Math.round(rng.next() * 2) / 10, 1.5);

@@ -75,23 +75,28 @@
       return true;
     }
     function add(w) { if (w !== undefined && out.length < n && ok(w)) { out.push(w); used[norm(w)] = 1; return true; } return false; }
-    // neighbours in a random order weighted by how often each is an answer for this slot (o.freq), so a neighbour
-    // foil is not systematically a rarer answer than the target
+    // neighbours closest in length first (a pair of options never gives away its member by length), then in a
+    // random order weighted by how often each is an answer for this slot (o.freq), so a neighbour foil is not
+    // systematically a rarer answer than the target
     function nbOf(w) {
-      var a = ((o.neighbours ? o.neighbours(w) : []) || []).filter(ok);
-      if (!o.freq) return shuffle(rng, a);
-      var keyed = a.map(function (x) { return { x: x, k: Math.pow(rng.next(), 1 / Math.max(0.01, o.freq[norm(x)] || 0.01)) }; });
-      keyed.sort(function (p, q) { return q.k - p.k; });
+      var a = ((o.neighbours ? o.neighbours(w) : []) || []).filter(ok), L = norm(w).length;
+      var keyed = a.map(function (x) { return { x: x, d: Math.min(2, Math.abs(norm(x).length - L)), k: o.freq ? Math.pow(rng.next(), 1 / Math.max(0.01, o.freq[norm(x)] || 0.01)) : rng.next() }; });
+      keyed.sort(function (p, q) { return p.d - q.d || q.k - p.k; });
       return keyed.map(function (e) { return e.x; });
     }
-    function randomOne() {
-      // foils follow the answer distribution of this slot (item-sampled), so no option is more often "an answer"
-      if (o.draw) for (var d = 0; d < 30; d++) { var dw = o.draw(rng); if (dw !== undefined && ok(dw) && !nbTset[norm(dw)]) return dw; }
+    function randomOne(f) {
+      // foils follow the answer distribution of this slot (item-sampled), so no option is more often "an answer";
+      // f: an extra condition (the length class below), dropped when nothing meets it
+      var g = function (w) { return w !== undefined && ok(w) && !nbTset[norm(w)] && (!f || f(w)); };
+      if (o.draw) for (var d = 0; d < 30; d++) { var dw = o.draw(rng); if (g(dw)) return dw; }
       var P = o.pool || [];
-      for (var t = 0; t < 30 && P.length; t++) { var w = P[ri(rng, P.length)]; if (ok(w) && !nbTset[norm(w)]) return w; }
-      var cand = shuffle(rng, P.filter(function (w) { return ok(w) && !nbTset[norm(w)]; }));
-      return cand[0];
+      for (var t = 0; t < 30 && P.length; t++) { var w = P[ri(rng, P.length)]; if (g(w)) return w; }
+      var cand = shuffle(rng, P.filter(g));
+      return cand.length || !f ? cand[0] : randomOne();
     }
+    // a sound-alike of w with exactly its length (pairs then say nothing by length); undefined when none
+    function twin(w) { var L = norm(w).length; return nbOf(w).filter(function (x) { return norm(x).length === L; })[0]; }
+    function nbOfAny(w) { var k = norm(w); return out.some(function (x) { return ((o.neighbours ? o.neighbours(x) : []) || []).some(function (y) { return norm(y) === k; }); }); }
     (o.prefer || []).forEach(function (w) { add(w); });
     var spoken = uniq((o.spoken || []).filter(function (w) { return norm(w) !== norm(T); }));
     var ctx = uniq(o.context || []);
@@ -108,9 +113,17 @@
       add(nbOf(T)[0]);
       if (add(C)) add(nbOf(C)[0]);
     } else {
-      add(nbOf(T)[0]);
-      var R = randomOne();
-      if (add(R)) add(nbOf(R)[0]);
+      // no other voice's words and no context: two same-length sound-alike pairs (T, T') (R, R') with R drawn among
+      // words that have such a twin; when T has none, four unpaired words that have none either. Neither option
+      // length nor pairing then tells the answer apart (review: longest-option bias in Far and Repair).
+      var tT = twin(T);
+      if (tT !== undefined) {
+        add(tT);
+        var R = randomOne(function (w) { return twin(w) !== undefined; });
+        if (add(R)) add(twin(R));
+      } else {
+        for (var u = 0; u < n - 1; u++) add(randomOne(function (w) { return twin(w) === undefined && !nbOfAny(w); }));
+      }
     }
     var guard = 0;
     while (out.length < n && guard++ < 50) { if (!add(randomOne())) { var any = shuffle(rng, (o.pool || []).filter(ok))[0]; if (!add(any)) break; } }

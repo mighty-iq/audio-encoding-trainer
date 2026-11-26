@@ -75,6 +75,50 @@ export const tests = [
     assert.ok(res.some((d) => d.anchor));
     assert.ok(!Object.keys(set).includes('__es'), 'memo is not enumerable');
   } },
+  { name: 'flow (M8): learn:false changes nothing in the learner, also on a replay of the same set', fn(ES, assert) {
+    const E = ES.engine, lr = E.learner.create(null, () => T0);
+    runSet(ES, 'crowd', { learner: lr, trials: 30, seed: 'warm' });
+    const before = JSON.stringify(lr.state);
+    for (const seed of ['wk', 'wk']) {
+      const { out, rec } = runSet(ES, 'crowd', { learner: lr, trials: 24, seed, learn: false }, (s, i, k) => k % 3 !== 0);
+      assert.equal(out.length, 24); assert.ok(out.every((t) => t.setting.learn === false));
+      assert.equal(rec.learn, false); assert.equal(rec.pb, false); assert.deepEqual(rec.pbs, []);
+    }
+    assert.equal(JSON.stringify(lr.state), before, 'learner untouched');
+    const t = runSet(ES, 'crowd', { trials: 1 }).out[0]; t.setting.learn = false;
+    const lr2 = E.learner.create(null, () => T0), b2 = JSON.stringify(lr2.state);
+    lr2.update(t, E.score(t, { picks: t.question.slots.map((x) => x.answer) })); assert.equal(JSON.stringify(lr2.state), b2);
+  } },
+  { name: 'flow (M6): a skipped trial is replaced by a NEW trial at the same level; 3 replacements, then a partial end', fn(ES, assert) {
+    const E = ES.engine, lr = E.learner.create(null, () => T0), sc = E.flow.start('crowd', { learner: lr, seed: 'sk', trials: 20 });
+    for (let i = 0; i < 3; i++) { const t = E.flow.next(sc); E.flow.answer(sc, t, { picks: t.question.slots.map((x) => x.answer) }); }
+    const a = E.flow.next(sc), r1 = E.flow.skip(sc, { reason: 'error' }), b = E.flow.next(sc);
+    assert.ok(r1.replaced && r1.left === 2);
+    assert.notEqual(a.id, b.id); assert.deepEqual(b.setting.dials, a.setting.dials); assert.equal(b.setting.focus, a.setting.focus);
+    const bad = new Set(E.flow.clipsOf(a)), tclip = (t) => t.audio.parts.find((p) => p.role === 'target').clip;
+    assert.ok(!bad.has(tclip(b)), 'the failing target clip is not drawn again');
+    const stale = E.flow.answer(sc, a, { picks: a.question.slots.map((x) => x.answer) });
+    assert.ok(stale.stale && sc.i === 3, 'a late answer to the skipped trial changes nothing');
+    E.flow.skip(sc, { reason: 'void' }); E.flow.next(sc); E.flow.skip(sc, { reason: 'skip' }); E.flow.next(sc);
+    const r4 = E.flow.skip(sc, { reason: 'error' });
+    assert.ok(r4.ended && r4.partial); assert.equal(E.flow.next(sc), null);
+    const rec = E.flow.end(sc);
+    assert.ok(rec.partial && rec.why === 'replacements' && rec.n === 3 && rec.planned === 20 && rec.pb === false);
+  } },
+  { name: 'flow (M11): End set before half is partial; a stored set resumes after a reload with a new trial', fn(ES, assert) {
+    const E = ES.engine, mk = (n, seed) => { const lr = E.learner.create(null, () => T0), sc = E.flow.start('far', { learner: lr, seed, trials: 20 });
+      for (let i = 0; i < n; i++) { const t = E.flow.next(sc); E.flow.answer(sc, t, { picks: t.question.slots.map((x) => x.answer) }); } return { lr, sc }; };
+    let r = mk(5, 'e5'); const p5 = E.flow.end(r.sc, { early: true }); assert.ok(p5.partial && p5.why === 'ended early' && !p5.pb);
+    r = mk(10, 'e10'); const p10 = E.flow.end(r.sc, { early: true }); assert.ok(!p10.partial && p10.n === 10);
+    r = mk(6, 'rs'); const pend = E.flow.next(r.sc), snap = JSON.parse(JSON.stringify(E.flow.snapshot(r.sc)));
+    const sc2 = E.flow.resume(snap, { learner: r.lr });
+    assert.ok(sc2 && sc2.i === 6 && sc2.results.length === 6);
+    const t2 = E.flow.next(sc2);
+    assert.notEqual(t2.id, pend.id); assert.deepEqual(t2.setting.dials, pend.setting.dials, 'same level after the reload');
+    let t = t2; while (t) { E.flow.answer(sc2, t, { picks: t.question.slots.map((x) => x.answer) }); t = E.flow.next(sc2); }
+    const rec = E.flow.end(sc2); assert.equal(rec.n, 20); assert.ok(!rec.partial && !rec.replaced, 'a reload is not charged');
+    assert.equal(E.flow.resume({ v: 2 }), null);
+  } },
   { name: 'flow: an unanswered trial is offered again', fn(ES, assert) {
     const E = ES.engine, sc = E.flow.start('far', { learner: E.learner.create(null, () => T0), seed: 'p' });
     assert.equal(E.flow.next(sc), E.flow.next(sc));

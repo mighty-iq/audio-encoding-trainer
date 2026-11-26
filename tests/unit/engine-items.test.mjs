@@ -89,6 +89,26 @@ export const tests = [
     p = E.planner.session({ learner: lr, log: today, now: T0 + 4 * 3600000 });
     assert.ok(p.notes.some((n) => n.kind === 'sleep'));
   } },
+  { name: 'planner (M4, C04, C19, L9): overnight only in a day\'s first session; truthful texts; focusEx flag', fn(ES, assert) {
+    const E = ES.engine, lr = E.learner.create(null, () => T0), L = log('crowd', 1, 0, T0 - DAY);
+    let p = E.planner.session({ learner: lr, log: L, now: T0 + 3600000 });
+    assert.equal(p.sets[0].kind, 'overnight');
+    assert.ok(/^Yesterday's hardest: .*now with a voice that was not in that set\.$/.test(p.sets[0].text), p.sets[0].text);
+    const L2 = { sessions: L.sessions.concat([{ id: 'today', start: T0, end: T0 + 900000, sets: [] }]) };
+    assert.equal(E.planner.overnight({ learner: lr, log: L2, now: T0 + 3600000 }), null);
+    assert.notEqual(E.planner.session({ learner: lr, log: L2, now: T0 + 3600000 }).sets[0].kind, 'overnight');
+    const now = new Date(T0); now.setHours(1, 0, 0, 0); const last = new Date(now.getTime()); last.setDate(last.getDate() - 2); last.setHours(23, 0, 0, 0);
+    const o = E.planner.overnight({ learner: lr, log: log('crowd', 1, 0, last.getTime()), now: now.getTime() });
+    assert.ok(o && /^Your last day's hardest: /.test(o.text), o && o.text);
+    const L3 = log('crowd', 1, 0, T0 - DAY); L3.sessions[0].sets[0].partial = true;
+    assert.equal(E.planner.overnight({ learner: lr, log: L3, now: T0 + 3600000 }), null, 'a partial set is never the hardest');
+    const mk = (k) => ({ sessions: Array.from({ length: k }, (_, i) => ({ id: 't' + i, start: T0 + i * 3600000, end: T0 + i * 3600000 + 600000, sets: [] })) });
+    assert.ok(!E.planner.session({ learner: lr, log: mk(2), now: T0 + 3 * 3600000 }).notes.some((n) => n.kind === 'sleep'));
+    const sl = E.planner.session({ learner: lr, log: mk(3), now: T0 + 4 * 3600000 }).notes.find((n) => n.kind === 'sleep');
+    assert.ok(sl && /^You have trained three times today\. Sleep consolidates practice, so tomorrow is a good time/.test(sl.text), sl && sl.text);
+    const pf = E.planner.session({ learner: lr, log: { sessions: [] }, mode: 'focus', lab: { weakest: 'rooms' }, rng: ES.core.rng('fx') });
+    assert.ok(pf.sets.some((x) => x.focusEx === true) && pf.sets.every((x) => x.focus === undefined));
+  } },
   { name: 'planner: focus mode gives the weakest probe\'s exercise 60 % of sets', fn(ES, assert) {
     const E = ES.engine, lr = E.learner.create(null, () => T0); let far = 0, all = 0;
     for (let i = 0; i < 100; i++) { const p = E.planner.session({ learner: lr, log: { sessions: [] }, mode: 'focus', lab: { weakest: 'rooms' }, rng: ES.core.rng('f' + i) }); all += p.sets.length; far += p.sets.filter((s) => s.exId === 'far').length; }
@@ -100,8 +120,34 @@ export const tests = [
     const D = E.plateau.DEFAULTS, need = D.window + D.persist - 1; // earliest call: persist full windows, one session apart
     assert.equal(E.plateau.check('crowd', { learner: lr, log: log('crowd', need - 1, 0) }), null);
     const flat = E.plateau.check('crowd', { learner: lr, log: log('crowd', need, 0) });
-    assert.ok(flat && flat.breaker.kind === 'variety' && /held/.test(flat.reason) && flat.breaker.text.length > 20);
+    assert.ok(flat && flat.breaker.kind === 'variety' && flat.breaker.text.length > 20);
+    assert.equal(flat.reason, 'Crowd has set no new best in 4 sessions, and its level moved less than 0.15 dB a session over the last 10.');
     assert.equal(E.plateau.check('crowd', { learner: lr, log: log('crowd', need + 4, 0.6) }), null);
+  } },
+  { name: 'plateau texts (C03, C04, C05, C10, C24, C33); partial and learn:false sets stay out of the windows', fn(ES, assert) {
+    const E = ES.engine, P = E.plateau, need = P.DEFAULTS.window + P.DEFAULTS.persist - 1, lr = () => E.learner.create(null, () => T0);
+    const fall = P.check('crowd', { learner: lr(), log: log('crowd', need, -0.4) });
+    assert.ok(fall && /has slipped a little over the last \d+ sessions\.$/.test(fall.reason), fall && fall.reason);
+    const st = log('repair', need, 0); st.sessions.forEach((s) => { s.sets[0].end = { gap: 2 }; s.sets[0].foci = { gap: 20 }; s.sets[0].focus = 'gap'; });
+    const rp = P.check('repair', { learner: lr(), log: st });
+    assert.ok(rp && /its level has barely moved over the last \d+ sessions\.$/.test(rp.reason) && !/points/.test(rp.reason), rp && rp.reason);
+    assert.ok(/about 30° to one side/.test(P.STRATEGY.seek) && !/straight ahead/.test(P.STRATEGY.seek));
+    assert.ok(/listen for the sounds this voice changes/.test(P.STRATEGY.strange) && !/rhythm/.test(P.STRATEGY.strange));
+    // breaker texts in order (variety, focus, anchors, strategy, sleep, switch): no promises the code does not keep
+    const L = lr(), seen = {};
+    for (let k = need; k < need + 40 && Object.keys(seen).length < 6; k++) {
+      const g = log('crowd', k, 0); g.sessions.push({ id: 'x', start: T0 + (k - 1) * DAY + 3600000, end: T0 + (k - 1) * DAY + 4000000, sets: [] });
+      const r = P.check('crowd', { learner: L, log: g, now: T0 + (k - 1) * DAY + 4000000 });
+      if (r) { seen[r.breaker.kind] = r.breaker.text; P.apply('crowd', r, { learner: L, log: g }); }
+    }
+    assert.ok(/fresh mix gives the skill something new to work on/.test(seen.variety) && !/often breaks/.test(seen.variety));
+    assert.equal(seen.anchors, 'More easy trials go in between the hard ones for a while, so the hard trials have something to build on.');
+    assert.ok(/^This is your second session today\./.test(seen.sleep) && /tomorrow is a good time for the next session/.test(seen.sleep), seen.sleep);
+    assert.ok(/trains other situations for a while, then comes back to it\./.test(seen.switch), seen.switch);
+    const pl = log('crowd', need, 0); pl.sessions.forEach((s) => { s.sets[0].partial = true; });
+    assert.equal(P.check('crowd', { learner: lr(), log: pl }), null, 'partial sets are not plateau evidence');
+    const nl = log('crowd', need, 0); nl.sessions.forEach((s) => { s.sets[0].learn = false; });
+    assert.equal(P.check('crowd', { learner: lr(), log: nl }), null, 'learn:false sets are not plateau evidence');
   } },
   { name: 'plateau: breakers go in order and wait 3 sessions', fn(ES, assert) {
     const E = ES.engine, lr = E.learner.create(null, () => T0), kinds = [];

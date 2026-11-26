@@ -58,9 +58,19 @@
     return out;
   }
   function isProbeWord(w) { return !!idx().probeWords[C.norm(w)]; }
+  // Sound-alike neighbours, symmetric (x lists w ⇒ w's neighbours include x): one-way lists made long answers'
+  // neighbours shorter on average, which an always-pick-the-longest player could exploit (review: option length).
   function neighbours(w) {
-    var nb = (idx().vocab.neighbours || {})[C.norm(w)];
-    return nb ? nb.slice() : [];
+    var X = idx();
+    if (!X.nbSym) {
+      var src = X.vocab.neighbours || {}, m = {};
+      Object.keys(src).forEach(function (k) {
+        var a = C.norm(k);
+        (src[k] || []).forEach(function (x) { var b = C.norm(x); if (!a || !b || a === b) return; (m[a] = m[a] || {})[b] = 1; (m[b] = m[b] || {})[a] = 1; });
+      });
+      X.nbSym = {}; Object.keys(m).forEach(function (k) { X.nbSym[k] = Object.keys(m[k]); });
+    }
+    return (X.nbSym[C.norm(w)] || []).slice();
   }
   function semis(a, b) { return a && b ? 12 * Math.log(a / b) / Math.LN2 : null; }
 
@@ -142,14 +152,28 @@
   }
   // Babble from other train voices' sentences when no bed clip exists.
   function babbleClips(rng, avoidVoices, n) {
-    var X = idx(), vs = X.voices.filter(function (v) { return (avoidVoices || []).indexOf(v) < 0; });
-    var out = [];
-    C.shuffle(rng, vs).slice(0, n * 2).forEach(function (v) {
-      var a = kindsOf(v, 'sentence');
-      if (a.length && out.length < n) out.push(C.pick(rng, a));
-    });
-    return out;
+    return C.shuffle(rng, sentenceVoices(avoidVoices)).slice(0, n).map(function (v) { return C.pick(rng, kindsOf(v, 'sentence')); });
   }
+  // Background bed spec (review M3): 'babble' = one train sentence clip per talker, from voices other than `avoid`
+  // ({kind:'babble', clips, db}; never a recorded bed id, which the renderer cannot split into talkers); any other
+  // kind = a recorded bed of that kind ({kind:'ambience', bed:id, db}). With fewer than 3 babble talkers in the build
+  // the recorded crowd bed stands in as an ambience, else speech-shaped noise. Talkers: o.talkers (default 6).
+  // Returns null when no listed kind exists in the build (the caller picks its default).
+  function sentenceVoices(avoid) { var X = idx(); return X.voices.filter(function (v) { return (avoid || []).indexOf(v) < 0 && kindsOf(v, 'sentence').length > 0; }); }
+  function bedSpec(rng, kinds, o) {
+    o = o || {};
+    var X = idx(), db = o.db || 0, rec = X.beds.babble || [];
+    var have = (kinds || []).filter(function (k) { return k === 'babble' ? sentenceVoices(o.avoid).length >= 3 || rec.length > 0 : X.beds[k] && X.beds[k].length; });
+    var k = C.pick(rng, have);
+    if (!k) return null;
+    if (k !== 'babble') return { kind: 'ambience', bed: C.pick(rng, X.beds[k]), db: db };
+    var clips = babbleClips(rng, o.avoid, o.talkers || 6);
+    if (clips.length >= 3) return { kind: 'babble', clips: clips, db: db };
+    return rec.length ? { kind: 'ambience', bed: C.pick(rng, rec), db: db } : { kind: 'ssn', db: db };
+  }
+  // Talkers in a babble bed: 6, and 4–8 once variety is wide (talker count is one of the masker variations, PLAN §3).
+  function bedTalkers(rng, breadth) { return breadth >= 0.6 ? 4 + 2 * Math.floor(rng.next() * 3) : 6; }
+
   // Synthetic training rooms: seeds 1…9999 only (probes use ≥ 10000 or measured responses). Size words map to fixed
   // lengths in the renderer (CONTRACTS §12 R1); the talker distance must stay ≤ 0.8 × the room length.
   var SIZES = ['small', 'medium', 'large', 'hall'], LEN = { small: 5, medium: 10, large: 22, hall: 38 };
@@ -197,5 +221,5 @@
 
   I.data = { itemVoice: itemVoice, keyPool: keyPool, idx: idx, clip: clip, textOf: textOf, voice: voice, has: has, clipFor: clipFor, kindsOf: kindsOf, pool: pool,
     isProbeWord: isProbeWord, neighbours: neighbours, semis: semis, voicePool: voicePool, maskers: maskers, bed: bed,
-    babbleClips: babbleClips, room: room, fitSize: fitSize, ROOM_LEN: LEN, reset: function () { cache = null; } };
+    babbleClips: babbleClips, bedSpec: bedSpec, bedTalkers: bedTalkers, room: room, fitSize: fitSize, ROOM_LEN: LEN, reset: function () { cache = null; } };
 })(typeof window !== 'undefined' ? window : globalThis);

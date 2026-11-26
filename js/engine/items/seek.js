@@ -74,12 +74,12 @@
     });
     if (decoys.length < nDec) dials.decoys = decoys.length;
     C.remember(ctx, tv, null);
-    var b = X.bed(rng, breadth < 0.4 ? ['babble'] : ['babble', 'party', 'cafe', 'station']);
+    var bedLive = X.bedSpec(rng, breadth < 0.4 ? ['babble'] : ['babble', 'party', 'cafe', 'station'], { avoid: [tv].concat(decoys.map(function (d) { return d.voice; })), talkers: X.bedTalkers(rng, breadth), db: 0 }) || { kind: 'pink', db: 0 };
     var hp = !!ctx.headphones, relaxed = [];
     var pv = previewOf(rng, tv, [target.clip].concat(decoys.map(function (d) { return d.clip; })), [tw].concat(decoys.map(function (d) { return d.word; })));
     if (!pv) relaxed.push('no preview'); else if (pv.relaxed) relaxed.push('preview shares a name or number');
     var sid = C.seedOf(rng), spatial = hp ? 'hrtf' : 'ild';
-    var live = { bed: b ? { kind: b.kind === 'babble' ? 'babble' : 'ambience', bed: b.id, db: 0 } : { kind: 'pink', db: 0 },
+    var live = { bed: bedLive,
       target: target, decoys: decoys.map(function (d) { return { clip: d.clip, x: d.x, y: d.y, db: d.db, gapMs: d.gapMs }; }),
       found: r, spatial: spatial, seed: setting.seed != null ? String(setting.seed) : 'seek-' + sid.toString(36), start: start, headTurn: hp && breadth >= 0.5 };
     var audio = { out: { db: -20 }, spatial: spatial, parts: [], beds: [], room: null, live: live };

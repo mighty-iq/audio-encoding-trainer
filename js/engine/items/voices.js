@@ -47,22 +47,17 @@
     var k = val('cast', dials.cast || 0), lvl = Math.round(dials.similar || 0), snr = dials.snr !== undefined ? dials.snr : 30, len = val('length', dials.length || 0);
     var cast = castVoices(), lr = E.lrOf(ctx.learner);
     var met = (ctx.met || Object.keys((lr.state && lr.state.cast) || {})).filter(function (v) { return cast.indexOf(v) >= 0; });
-    var meta = X.clip, nouns = X.pool('word', V.nouns || [], 2);
-    var task = ctx.task || (met.length < Math.max(2, k) ? 'meet' : breadth >= 0.4 && C.chance(rng, 0.25) ? 'find' : 'who');
-    // small casts: 'who' needs two met voices, else 'meet'; 'meet' needs two cast names, else 'find' (meta.relaxed)
-    var relaxed = [];
-    if (task === 'who' && met.length < 2) { task = 'meet'; relaxed.push('who → meet'); }
-    if (task === 'meet' && cast.length < 2) { task = 'find'; relaxed.push('meet → find'); }
-    // 'find' needs a friend with call-sign phrases (or word clips): a met one, else the first cast voice that has
-    // them; with none, 'who' (two met voices) or 'meet' (with stand-in names when the cast has one voice)
-    var A = I.adapt, phr = A.phraseMode();
-    function findable(v) { return phr ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }
-    if (task === 'find' && !met.some(findable)) {
-      var fc = cast.filter(findable);
-      if (fc.length) { if (met.length) relaxed.push('find: a voice not met yet'); met = fc.slice(0, 1); }
-      else if (met.length >= 2) { task = 'who'; relaxed.push('find → who'); }
-      else { task = 'meet'; relaxed.push('find → meet'); }
-    }
+    var meta = X.clip, nouns = X.pool('word', V.nouns || [], 2), A = I.adapt, phr = A.phraseMode();
+    // a 'find' friend needs a call-sign phrase (or a word clip of the noun pool): never a find trial without one (M2)
+    function wordsOf(v) { return nouns.filter(function (w) { return X.has(v, 'word', w); }); }
+    function findable(v) { return phr ? A.callsignBy(v).length > 0 : wordsOf(v).length > 0; }
+    var allMet = cast.length > 0 && cast.every(function (v) { return met.indexOf(v) >= 0; });
+    var task = ctx.task || (met.length < Math.max(2, k) && !allMet ? 'meet' : breadth >= 0.4 && C.chance(rng, 0.25) ? 'find' : 'who');
+    // ladder (meta.relaxed): 'who' needs two met voices, else 'find' (all met, one findable) or 'meet'; 'find' needs a
+    // met voice that has a phrase, else 'who' (two met) or 'meet'; 'meet' with a one-voice cast uses stand-in names
+    var relaxed = [], canWho = met.length >= 2, canFind = met.some(findable);
+    if (task === 'who' && !canWho) { task = canFind && allMet ? 'find' : 'meet'; relaxed.push('who → ' + task); }
+    if (task === 'find' && !canFind) { task = canWho ? 'who' : 'meet'; relaxed.push('find → ' + task); }
     var parts = [], beds = [], slots, target, prompt, fb, others = [], setOut = { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup };
     if (task === 'meet') {
       var order = C.shuffle(ES.core.rng('cast:' + (ctx.playerSeed || 'p')), cast);
@@ -93,11 +88,11 @@
       prompt = 'Who is talking?';
       fb = 'That was ' + nameOf(target) + '.';
     } else {
-      target = C.pick(rng, met.filter(findable)) || C.pick(rng, met);
+      target = C.pick(rng, met.filter(findable));
       var nOther = Math.max(1, Math.min(3, k - 1)), used = [];
       var tw = null, tclip = null;
-      if (phr) { var tp = C.pick(rng, A.callsignBy(target)); if (tp) { tw = tp.word; tclip = tp.clip; } }
-      for (var a = 0; a < 40 && !tw; a++) { var w = nouns[C.ri(rng, nouns.length)]; if (X.has(target, 'word', w)) { tw = w; tclip = X.clipFor(target, 'word', w); } }
+      if (phr) { var tp = C.pick(rng, A.callsignBy(target)); tw = tp.word; tclip = tp.clip; }
+      else { tw = C.pick(rng, wordsOf(target)); tclip = X.clipFor(target, 'word', tw); }
       used.push(C.norm(tw));
       parts.push({ clip: tclip, at: 0.4, db: 0, role: 'target' });
       var crowd = C.sample(rng, X.voicePool({ filter: function (vo, v) { return phr ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }, avoid: [target] }), nOther), spoken = [];
@@ -118,8 +113,7 @@
       fb = nameOf(target) + ' said “' + tw + '”.';
     }
     if ((task === 'who' || (task === 'find' && !others.length)) && snr < 30) {
-      var b = X.bed(rng, ['babble', 'cafe']);
-      beds.push(b ? { kind: b.kind === 'babble' ? 'babble' : 'ambience', bed: b.id, db: -snr } : { kind: 'pink', db: -snr });
+      beds.push(X.bedSpec(rng, ['babble', 'cafe'], { avoid: [target].concat(others), talkers: X.bedTalkers(rng, breadth), db: -snr }) || { kind: 'pink', db: -snr });
     }
     C.remember(ctx, target, null);
     var end = 0.5;

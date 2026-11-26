@@ -66,7 +66,10 @@
   function list(ex) { return CACHE[ex] || (CACHE[ex] = steps(ex)); }
   function state(lr, ex) {
     var p = lr.state.path[ex];
-    if (!p) p = lr.state.path[ex] = { i: 0, hist: [], run: 0, n: 0, best: 0 };
+    if (!p || typeof p !== 'object') p = lr.state.path[ex] = { i: 0, hist: [], run: 0, n: 0, best: 0 };
+    var top = list(ex).length - 1;
+    if (!(p.i >= 0 && p.i <= top)) p.i = Math.max(0, Math.min(top, Math.floor(+p.i) || 0)); // damaged or older records (M9)
+    if (!Array.isArray(p.hist)) p.hist = [];
     return p;
   }
 

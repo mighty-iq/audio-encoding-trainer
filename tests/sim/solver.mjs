@@ -18,8 +18,9 @@ export function buildIndex(ES) {
   const D = ES.data, clips = D.manifest.clips, voices = D.voices, V = D.vocab;
   const probeWords = new Set();
   Object.values(V.matrix || {}).forEach((a) => a.forEach((w) => probeWords.add(norm(w))));
-  const nb = {};
-  Object.entries(V.neighbours || {}).forEach(([k, a]) => { nb[norm(k)] = new Set(a.map(norm)); });
+  const nb = {}; // symmetric: either word listing the other makes them neighbours
+  const link = (a, b) => { if (!a || !b || a === b) return; (nb[a] = nb[a] || new Set()).add(b); (nb[b] = nb[b] || new Set()).add(a); };
+  Object.entries(V.neighbours || {}).forEach(([k, a]) => a.forEach((x) => link(norm(k), norm(x))));
   const echoByText = new Map((V.echo || []).map((it) => [norm(it.text), it]));
   const repairByText = new Map((V.repair || []).map((it) => [norm(it.text), it]));
   return { clips, voices, V, probeWords, nb, echoByText, repairByText };
@@ -56,6 +57,20 @@ export function checkSpec(ES, X, spec) {
     if (c.asr && c.asr.ok === false) E('clip failed ASR ' + id);
   }
   const room = spec.audio.room; if (room && !(room.seed >= 1 && room.seed < 10000)) E('room seed outside training range');
+  // beds (review M3): babble = ≥ 3 talker clips (sentences, one per voice, not the target's voice); a recorded bed id
+  // only on ambience beds
+  const tVoices = new Set((spec.audio.parts || []).filter((p) => p.role === 'target' && C[p.clip]).map((p) => C[p.clip].voice)
+    .concat(spec.audio.live && C[spec.audio.live.target.clip] ? [C[spec.audio.live.target.clip].voice] : []));
+  const bedsOf = (a) => (a ? (a.beds || []).concat(a.live && a.live.bed ? [a.live.bed] : []) : []);
+  [spec.audio, ...(spec.feedback.replays || []).map((r) => r.audio)].flatMap(bedsOf).forEach((b) => {
+    if (b.bed !== undefined && b.kind !== 'ambience') E('bed id on a ' + b.kind + ' bed');
+    if (b.kind !== 'babble') return;
+    const cl = b.clips || [], vs = cl.map((id) => C[id] && C[id].voice);
+    if (cl.length < 3) E('babble bed with ' + cl.length + ' talkers');
+    if (new Set(vs).size !== cl.length) E('babble bed repeats a talker');
+    if (cl.some((id) => !C[id] || C[id].kind !== 'sentence')) E('babble talker clip is not a sentence');
+    if (vs.some((v) => tVoices.has(v))) E('babble bed contains the target voice');
+  });
   // --- dial levels in range
   const dset = spec.setting.dials;
   for (const [id, v] of Object.entries(dset)) {
