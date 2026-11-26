@@ -32,6 +32,7 @@ Branches: work on `build`; `main` only by merge with the owner's yes. GitHub Pag
 
 ## Commands
 - Privacy check of what a push would publish: `python3 tools/privacy_check.py`
-- Unit `node tests/unit/run.mjs` · sim `node tests/sim/run.mjs` · e2e `python3 tests/e2e/run_all.py` (flock
-  /tmp/earshot-browser.lock; at most two browsers) · single file `node tools/build-single.mjs` → dist/earshot.html
+- Unit `node tests/unit/run.mjs` · sim `node tests/sim/run.mjs` · e2e `tools/with-browser.sh python3 tests/e2e/run_all.py
+  [filters]` (two machine-wide browser slots) · script block `node tools/build-index.mjs` (after adding files; `--check` in CI) · single file
+  `node tools/build-single.mjs` → dist/earshot.html (`--test` = playtest build)
   · stimuli `python3 tools/audio/build_all.py` (raw corpora outside the repo).
