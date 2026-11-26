@@ -139,3 +139,20 @@ controller, plateau, planner) → lab/* → game/* → ex/* → ui/screens/* →
 - Single file: `node tools/build-single.mjs` → `dist/earshot.html` (everything inlined; ≤ 12 MB).
 - Stimuli: `python3 tools/audio/build_all.py` (see docs/dev/STIMULI.md); raw corpora live outside the repo.
 - Privacy before push (lead): `python3 tools/privacy_check.py`.
+
+## 11. Screen registry and wave-2 modules (added 2026-11-26 17:05 UTC)
+- Shell: `ES.ui.screens[name] = { mount(root, params), unmount() }`. The router mounts a registered screen if present,
+  else the shell's placeholder. Wave-2 modules register their own screens (lab, probe, map, cast, weekly, progress,
+  missions, diary) without editing js/ui/**.
+- Exercise modules (`js/ex/<id>.js`): `ES.ex[id] = { id, name, short, bet, betNew, venues:[...], view:'keyword'|'custom',
+  feedback:'standard'|'popout', tutorial:{ steps:[...] }, custom?(root, api) }`. The shell's Play screen runs every
+  'keyword' exercise from TrialSpecs (crowd, far, strange, repair, echo, voices' who-is-talking); 'custom' views
+  (seek, voices' meet/record, missions) receive `api = { engine, audio, ui, done(result), rate() }`.
+- Tutorial steps (two-minute start): `{ kind:'caption'|'demo'|'practice', text, force?:{dials, items}, minMs:3000,
+  then?:'tap'|'auto' }`; the shell's tutorial runner plays them (captions ≥ 3 s, the next action always stated,
+  practice answers vary their slot, the demo shows every foil type the practice uses). The tutorial ends with the
+  Chimera link.
+- Lab (`js/lab/**`): `ES.lab = { probes:{id:{name, distance, minutes, make(form, rng)}}, schedule(state)→{due, baseline},
+  stats:{runEstimate, trend}, exporter:{json, csv, pooled, importJson} }` + screens.
+- Game (`js/game/**`): `ES.game = { venues, cast, weekly, share, milestones }` + screens; hooks into `ES.hooks`
+  events (`set:done`, `session:done`, `pb`, `milestone`, `plateau`, `export`).
