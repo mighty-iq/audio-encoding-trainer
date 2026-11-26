@@ -1,199 +1,351 @@
 # R1 — Auditory / listening training for speech in noise in adults: what controlled research shows
 
-Status: IN PROGRESS (notes are written progressively; sections fill in as sources are read).
-Scope: computer- or app-based auditory/listening training aimed at speech understanding in noise, at a distance, and for unusual speech, in adults (normal hearing, older, hearing-aid users, cochlear-implant users, self-reported listening difficulty / auditory processing problems).
-Reading-depth tags used for every source: [full text], [abstract only], [secondary report: where].
-All paraphrase is in our own words. Times are UTC. Paths are repository-relative.
+Compiled 2026-11-26 (UTC). Status: complete for this pass; gaps are listed in section 8.
+Scope: computer- or app-based auditory/listening training aimed at speech understanding in noise, at a distance, and for unusual talkers, in adults (normal hearing, older, hearing-aid (HA) users, cochlear-implant (CI) users, self-reported listening difficulty / auditory processing disorder (APD)).
+Reading-depth tag on every source: [full text], [abstract only], [secondary report: where].
+All text is paraphrase in our own words; quotes are single short phrases. Paths are repository-relative.
+Abbreviations: SIN speech in noise; SNR signal-to-noise ratio; SRT speech reception threshold; NH normal hearing; ARHL age-related hearing loss; WM working memory; d / g standardised effect sizes; dppc2 pre-post-control effect size.
 
 ## 1. Summary (15 lines)
 
-(to be written last)
+1. On-task learning from computer-based auditory training is robust in every population studied (2.1, 2.5, all trials in 3).
+2. Transfer to untrained SIN tests is small and tracks study quality: pooled dppc2 ≈ 0.7 overall, but RCTs −0.09 and high-quality studies −0.01 (2.2).
+3. The biggest independent trials are null against placebo: a commercial hybrid programme in 279 HA users; frequent-word training (trained items only); adaptive WM training (no SIN transfer); home training for normal-hearing veterans with complaints (null, 36% attrition) (3.1, 3.2).
+4. Controlled positives are small samples: closed-loop audiomotor game (n = 24, ≈ +25 points words in noise), mixed psychoacoustic phone game (n = 30, between-group d ≈ 0.7), adaptive auditory "brain fitness" (net ≈ 0.3 dB QuickSIN), serious game in CI users (≈ 4 dB, n = 15), choir (≈ 1.3 dB, not randomised).
+5. Transfer gains fade within 1–6 months without practice (audiomotor game, phone game, brain fitness); trained-item gains last 6–8.5 months.
+6. Cognition: auditory training gives WM g ≈ 0.21 and overall cognition g ≈ 0.19 (low certainty); pure WM training does not reach SIN (2.3, 3.1).
+7. Self-report outcomes rarely move in controlled trials; one partner-conversation study and one phoneme study moved single items or subscales.
+8. Training that transferred was usually in noise or competition and close to the outcome task (digits in noise → sentences in noise; spatial/competition game → spatial release); quiet phoneme training, basic temporal tasks and WM tasks did not transfer to SIN.
+9. For unfamiliar talkers, exposure to several accents generalised to a new accent in tiny lab samples; generalisation is asymmetric, and talkers that are too hard to understand block adaptation (3.3).
+10. Schedules: blocked beat interleaved for a hard new contrast; practice alternated with passive exposure matched continuous practice; an immediate second task inside a trial disrupted learning (3.7).
+11. Who gains: poorest baselines improve most in every arm, placebo included (regression); NH > HA users in percent-correct outcomes; better attention predicts learning.
+12. Music: musicians ≈ 0.4 dB better cross-sectionally; 6 months of piano in an RCT (n = 156) gave ≤ 0.4 dB.
+13. Adherence: 70–90% with supervision and reminders; ≈ 30% in a clinical roll-out; 36–45% attrition in remote or long trials.
+14. Apps: none measures untrained SIN with alternate forms or exports data; difficulty is mostly manual; "more voices" and audio bugs dominate complaints; familiar-voice training is the main innovation.
+15. Measurement: real controlled effects (0.3–1.3 dB) sit below QuickSIN critical differences (1.5–1.9 dB), so a single short test cannot show one person's gain.
 
 ## 2. Systematic reviews and meta-analyses
 
-### 2.1 Henshaw & Ferguson 2013, PLOS ONE — individual computer-based auditory training (CBAT) for people with hearing loss [full text, journals.plos.org; per-study tables only partly visible]
-- 13 studies (1996–2012), n per study 3–69 (median about 10). Populations: unaided hearing loss, new and experienced hearing-aid users, experienced CI users, bimodal users. Narrative synthesis; no meta-analysis possible.
-- Training: "analytic" (phonemes, syllables, words, digits, spondees) and "synthetic/hybrid" (LACE-type programmes mixing degraded speech, cognitive tasks and strategy tips). Sessions 30 min–2 h, daily to twice weekly, 4 days to 3 months.
-- On-task learning: robust (9 of 10 studies that reported it).
-- Generalisation to untrained speech tests: significant in 11 of 13 but small and inconsistent (roughly 3 to 15 percentage points).
-- Cognition: measured in only one study (LACE: Stroop, listening span gains). Self-report: 1 of 2 studies positive (LACE, HHIE), CI study with SSQ null.
-- Effect sizes were almost never reported; the one reported (LACE, QuickSIN) was small (ES about 0.2–0.3); self-report about 0.4.
-- Retention: follow-ups in 8 of 13 (4 days–7 months), mostly on the trained task. Example: trained word recognition 38% → 84% after training → 63% at 6 months (older adults, word training).
-- Adherence: 73–93% in research settings, but about 30% in a large clinical LACE roll-out (secondary figure cited by the review).
-- Quality: max 13/20 on their scale; no study had blinding or a power calculation; evidence "very low to moderate". The best-rated study was by the developers of the commercial programme.
-- Authors' verdict: on-task learning is real; transfer is small and inconsistent; the evidence could not yet guide clinical practice.
+### 2.1 Henshaw & Ferguson 2013, PLOS ONE: individual computer-based auditory training (CBAT) for people with hearing loss [full text, journals.plos.org; per-study tables only partly visible]
+- 13 studies (1996–2012), n per study 3–69 (median ≈ 10). Unaided hearing loss, new and experienced HA users, experienced CI users, bimodal users. Narrative synthesis only.
+- Training types: "analytic" (phonemes, syllables, words, digits, spondees) and "synthetic/hybrid" (programmes mixing degraded-speech tasks, cognitive tasks and communication-strategy tips). Sessions 30 min–2 h, daily to twice weekly, 4 days to 3 months.
+- On-task learning robust (9 of 10 that reported it). Generalisation to untrained speech significant in 11 of 13 but small and inconsistent (≈ 3–15 percentage points).
+- Cognition measured in one study only (hybrid programme: Stroop and listening-span gains). Self-report positive in 1 of 2.
+- Only reported effect sizes: QuickSIN ES ≈ 0.23–0.31 and self-report ≈ 0.4, both from the developers' own trial; the trial's controls also improved on HINT (retest effect).
+- Retention: follow-ups in 8 of 13 (4 days–7 months), mostly on trained tasks.
+- Adherence 73–93% in research settings; the review cites ≈ 30% compliance in a large clinical roll-out of a commercial programme.
+- Quality ≤ 13/20 on their scale; no study blinded or powered; evidence "very low to moderate". Test-retest: HINT/QuickSIN need practice lists before baseline, yet only two studies repeated baselines until stable.
+- Verdict: on-task learning real; transfer small and inconsistent; not yet enough to guide practice.
 
-### 2.2 Fallahnezhad, Pourbakht & Toufan 2023, Indian J Otolaryngol Head Neck Surg — CBAT and speech-in-noise (SIN) in adults, meta-analysis [full text, PMC]
-- 23 controlled studies (1990–Nov 2020), adults 22–79 y (mean 57), normal hearing (11 studies), mild loss (6), moderate+ (6); 3 CI studies. Programmes included LACE, a lip-read/caption game (ReadMyQuips), a commercial brain-fitness programme, phoneme/word/sentence training, talker ID, melodic-contour ID, a trivia game, SPATS.
-- Pooled pre-post-control effect (dppc2): SIN thresholds −0.69 (95% CI −1.11 to −0.26; I² 70%, 12 studies); SIN percent-correct 0.71 (0.38 to 1.03; I² 18%, 11 studies). Authors call this "moderate".
-- **Decisive subgroup result:** for SIN thresholds, RCTs showed essentially no effect (−0.09, CI −0.45 to 0.27), high-quality studies showed none (−0.01), and randomised and blinded studies showed none; the large effects came from non-randomised controlled trials and one cohort study. Interaction tests significant (p = 0.001–0.006).
-- For percent-correct scores, normal-hearing and non-hearing-aid participants gained more (dppc2 about 1.0) than hearing-aid users (0.34) and people with mild loss (0.09).
-- Training type (bottom-up vs bottom-up+top-down), inclusion of SIN in training, duration, intensity, home vs lab, age: no significant moderation (small subgroups).
-- GRADE: low certainty. Risk of bias high in 19 of 22 studies. No follow-up/retention data could be synthesised. The paper has internal inconsistencies (participant totals, design counts), so treat numbers as approximate.
-- Our reading: the "moderate" headline effect is carried by weak designs; when design is good the SIN effect shrinks towards zero. This is the single most important caution for our measurement design.
+### 2.2 Fallahnezhad, Pourbakht & Toufan 2023, Indian J Otolaryngol Head Neck Surg: CBAT and SIN in adults, meta-analysis [full text, PMC]
+- 23 controlled studies (1990–Nov 2020), adults 22–79 y (mean 57); NH (11 studies), mild loss (6), moderate+ (6); 3 CI studies. Programmes: hybrid commercial programmes, a caption/quip-based audiovisual programme, a commercial adaptive brain-fitness suite, phoneme/vowel/word/sentence training, talker ID, melodic-contour ID, a trivia game, a syllable-to-sentence system.
+- Pooled dppc2: SIN thresholds −0.69 (−1.11 to −0.26; I² 70%; 12 studies); SIN percent-correct 0.71 (0.38 to 1.03; I² 18%; 11 studies).
+- **Decisive subgroups (thresholds): RCTs −0.09 (−0.45 to 0.27); high-quality studies −0.01; randomised and blinded studies ≈ 0. Large effects came from non-randomised trials and one cohort (interaction p = 0.001–0.006).**
+- Percent-correct: NH and non-HA users ≈ 1.0; HA users 0.34; mild loss 0.09 (p < 0.05). Lab 0.91 vs home 0.49 (n.s.).
+- No moderation by bottom-up vs top-down training, SIN content in training, duration, intensity or age (small subgroups).
+- GRADE low; high risk of bias in 19 of 22; no retention data; internal count inconsistencies.
 
-### 2.3 Lawrence, Jayakody, Henshaw, Ferguson, Eikelboom, Loftus & Friedland 2018, Trends in Hearing — auditory vs cognitive training for cognition in adults with hearing loss [full text, journals.sagepub.com]
-- 9 RCT/controlled studies, 620 participants (5 auditory-training, 4 cognitive-training studies).
-- Auditory training → working memory g = 0.21 (0.05–0.36), overall cognition g = 0.19 (0.07–0.31), executive function n.s. (0.21, CI crosses 0). Low/very-low GRADE certainty.
-- Cognitive training → working memory g = 0.38 (0.14–0.63); overall cognition g = 1.06 but I² = 94% and driven by one combined auditory–cognitive study (a commercial adaptive brain-fitness programme in older adults); removing it drops the effect to 0.32 and the auditory-vs-cognitive difference disappears.
-- Take-away: small cognitive spill-over from auditory training is plausible but weakly evidenced; the biggest "cognitive" effect in this literature came from an adaptive auditory speed/discrimination programme, not from a pure WM task.
+### 2.3 Lawrence, Jayakody, Henshaw, Ferguson, Eikelboom, Loftus & Friedland 2018, Trends in Hearing: auditory vs cognitive training for cognition in adults with hearing loss [full text, journals.sagepub.com]
+- 9 controlled studies, 620 participants (5 auditory, 4 cognitive training).
+- Auditory training: WM g = 0.21 (0.05–0.36); overall cognition g = 0.19 (0.07–0.31); executive function n.s.
+- Cognitive training: WM g = 0.38 (0.14–0.63); overall cognition g = 1.06 (I² = 94%), driven by one combined auditory–cognitive adaptive programme; without it 0.32 and no difference from auditory training. Certainty low to very low.
 
-### 2.4 Park, Ma, Joo, Ha, Yoon & Han 2026, J Audiol Otol — self-directed auditory rehabilitation, meta-analysis [full text, ejao.org]
-- 22 studies (children and adults with at least mild loss; HA and CI users); categories: standard training, gamified training, training plus counselling (LACE-type).
-- Adults/older adults: d = 0.55 (0.45–0.65), but Egger test p < 0.001 and trim-and-fill lowers it to d = 0.42; heterogeneity "substantial" (no I² reported). Children (4 studies): d = 1.32.
-- **Caveat:** repeated-measures (uncontrolled pre–post) designs were eligible, so these effect sizes include retest and placebo gains; they are not comparable with controlled estimates.
-- Narrative dose claim: most adult gains appeared with about 20 cumulative hours or more; one study suggested a plateau after 8–12 weeks. Gains reported as maintained 1–3 months. Patient-reported outcomes under-studied.
-- RoB 2 low risk only for 3 of 10 RCTs (one of them the large at-home frequent-word RCT, 2019). Internal inconsistencies in counts.
+### 2.4 Park, Ma, Joo, Ha, Yoon & Han 2026, J Audiol Otol: self-directed auditory rehabilitation, meta-analysis [full text, ejao.org]
+- 22 studies (children and adults; HA and CI). Categories: standard, gamified, training plus counselling.
+- Adults: d = 0.55 (0.45–0.65); Egger p < 0.001; trim-and-fill d = 0.42. Children (4 studies) d = 1.32.
+- **Uncontrolled pre–post designs were eligible, so these include retest and placebo gains.**
+- Narrative: most adult gains after ≈ 20 cumulative hours; possible plateau after 8–12 weeks; gains kept 1–3 months; RoB 2 low risk in only 3 of 10 RCTs.
 
-### 2.5 Dornhoffer et al. 2024, J Clin Med — auditory training in adult CI recipients, systematic review and meta-analysis [full text, mdpi.com]
-- 23 studies; 11 meta-analysed (132 patients). Mostly experienced CI users; n per study 3–24 (one observational n = 72). Mostly CBAT on phonemes, words or digits at various SNRs; 4 days–16 weeks, 15 min–3 h per session.
-- Patient-directed (home) training, pooled mean differences (percentage points): sentences in noise +10.3 (4.2–16.5, significant); vowels +8.0 (0.1–15.9, significant); consonants +4.1, words in quiet +3.2, sentences in quiet +6.8 (all n.s.). Clinician-directed (2 studies): sentences in noise +21.8. Mixed: n.s.
-- Quality: 8 moderate, 13 low, 2 very low; none high. Lack of control groups common, so these mean differences are mostly uncontrolled.
-- Follow-up in 13 studies (4 days–8 months), mostly durable; quality-of-life gains in a crossover RCT faded by 1–3 months.
-- Per-study detail picked up from its tables: serious-game SIN training RCT (Reynard 2022): about 4 dB better SNR for 70% sentences right after, 2.3 dB at 5 weeks, control unchanged; personalised vs non-personalised home training (Magits 2023): both arms improved equally (personalisation added nothing measurable); connected-text SIN training (Green 2019): 0.7–2.6 dB sentence-threshold gains, no phoneme gains; phoneme-discrimination RCT (Schumann 2015): +10 points at +5 dB SNR, +8 at 6 months; digits-in-noise (Oba 2011): digit SRT 3–4 dB better, HINT in babble about 3 dB better, retained at 1 month.
+### 2.5 Stropahl, Besser & Launer 2020, Ear Hear: auditory and auditory–cognitive training, adults with mild to moderately severe loss [secondary report: ASHA Evidence Map summary]
+- 16 studies (Dec 2012–Dec 2018). On-task learning in 7; untrained speech gains in 10, none in 6; auditory attention up in 2, processing speed in 1, WM in 1 of 4; self-report mixed.
+- Retention 2 weeks–6 months in 3 of 4 with follow-up. 70–80% completed; **more compliant trainees gained more**.
+- Authors favour intensive training mixing auditory and cognitive demands, alongside HA fitting.
 
-### 2.6 Crum, Chowsilpa, Kaski, Giunti, Bamiou & Koohi 2024, Front Hum Neurosci — rehabilitation of adults with auditory processing disorder (APD) [full text, frontiersin.org; last part of one table truncated]
-- 13 studies, adults with documented APD (incl. TBI, stroke, MS, blast-exposed veterans). Auditory training (7 studies), low-gain hearing aids (2), personal remote-microphone systems (5).
-- Auditory training evidence is thin and mostly uncontrolled (n = 4–18 before–after studies). The two RCTs disagree: a home computer-based programme for blast-exposed veterans with near-normal audiograms (Saunders et al. 2018, n = 99, 8 weeks) gave **no gain over control and lost 36% of the training arm**; a computer-based auditory–cognitive programme (Yusof et al. 2019, n = 43, 8 weeks) beat control on several measures, held at 4 weeks.
-- A small crossover study using a cappella vocal duets as training material (Picinini et al. 2021, n = 10, 6–10 h) improved SIN and pitch-pattern tests, partly kept at 3 months — an interesting "real-voice competing-talker" material.
-- Remote microphones gave the most consistent benefit (a device, not training). No meta-analysis was possible.
+### 2.6 Dornhoffer et al. 2024, J Clin Med: auditory training in adult CI users, review and meta-analysis [full text, mdpi.com and institutional PDF]
+- 23 studies; 11 meta-analysed (132 patients); n per study 3–24. Mostly phoneme/word/digit CBAT at various SNRs; 4 days–16 weeks.
+- Home (patient-directed) pooled mean differences, percentage points: sentences in noise +10.3 (4.2–16.5); vowels +8.0 (0.1–15.9); consonants, words and sentences in quiet n.s. Clinician-directed (2 studies) sentences in noise +21.8.
+- Quality: 8 moderate, 13 low, 2 very low, none high; most designs lacked controls.
 
-### 2.6b Stropahl, Besser & Launer 2020, Ear Hear — state-of-the-art review of auditory / auditory–cognitive training, adults with mild–moderately severe loss [secondary report: ASHA Evidence Map summary]
-- 16 studies, Dec 2012–Dec 2018, incl. non-randomised designs.
-- On-task learning in 7; untrained speech gains in 10 but no transfer in 6; auditory attention improved in 2, processing speed in 1; working memory in 1 of 4; self-report mixed. Benefits persisted (2 weeks–6 months) in 3 of 4 studies with follow-up. 70–80% completed full training; **more compliant trainees gained more**.
-- Authors favour intensive training that combines auditory and cognitive demands and pairs with hearing-aid fitting; timing, duration and schedule unresolved.
+### 2.7 Cambridge, Taylor et al. 2022, Int J Audiol: auditory training for adult CI users [secondary report: ASHA Evidence Map summary]
+- 10 studies (2010–2019). All reported a gain somewhere, but **only 2 of 10 had gains attributable to training** (sentence-in-noise or phoneme identification). Very low to moderate evidence.
 
-### 2.6c Cambridge, Taylor et al. 2022, Int J Audiol — auditory training for adult CI users [secondary report: ASHA Evidence Map summary]
-- 10 studies 2010–2019; all reported a gain on at least one outcome, but most lacked adequate controls; **only 2 of 10 showed gains attributable to training itself** (sentence-in-noise or phoneme identification). Very low to moderate evidence.
+### 2.8 Crum, Chowsilpa, Kaski, Giunti, Bamiou & Koohi 2024, Front Hum Neurosci: rehabilitation of adults with APD [full text, frontiersin.org; one table truncated]
+- 13 studies (APD incl. TBI, stroke, MS, blast exposure): auditory training 7, low-gain HAs 2, remote microphones 5. Mostly uncontrolled, n = 4–18.
+- Two RCTs disagree: home CBAT for blast-exposed veterans with near-normal audiograms (Saunders et al. 2018, n = 99) null vs control with 36% attrition in the training arm; auditory–cognitive CBAT (Yusof et al. 2019, n = 43) better than control, kept at 4 weeks.
+- Remote microphones (a device) had the most consistent benefit. No meta-analysis possible.
 
-### 2.7 Musician advantage meta-analyses (cross-sectional; context for music-based training)
-- Hennessy, Mack & Habibi 2022, Hear Res [full text, lab PDF]: 31 cross-sectional studies, 62 effect sizes, normal-hearing adults. Musicians better at SIN, g = 0.58 (0.42–0.74), I² ≈ 53%. Masker type, target (words vs sentences) and context did not moderate; older adults g ≈ 1.0 vs younger 0.5 (n.s. after correction). In dB this is only about 0.4 dB (≈ half the smallest detectable difference); Egger test borderline (p = 0.063) and a bias-adjusted estimate was not significant. No causal claim possible.
-- Maillard, Joyal, Murray & Tremblay 2023, Curr Res Neurobiol [abstract only, institute page]: 38 studies, mostly young adults; music-making associated with better SIN, **mainly in the hardest listening conditions**; randomised studies in older adults are still lacking.
-- Reading with 3.3: the large musician cross-sectional gaps shrink to tenths of a dB in the one large RCT (6 months of piano); choir studies report positive SIN results in older adults with hearing loss but are small and only abstracts were available to us.
+### 2.9 Musician-advantage meta-analyses (cross-sectional; context for music training)
+- Hennessy, Mack & Habibi 2022, Hear Res [full text, lab PDF]: 31 studies, 62 effect sizes; g = 0.58 (0.42–0.74), I² ≈ 53%; no moderation by masker, target or context. In dB ≈ 0.4 dB, about half the smallest detectable difference; Egger p = 0.063 and a bias-adjusted estimate n.s. No causal inference.
+- Maillard, Joyal, Murray & Tremblay 2023, Curr Res Neurobiol [abstract only, institute page]: 38 studies, mostly young adults; advantage concentrated in the hardest listening conditions.
 
-<!-- R1:REVIEWS -->
+### 2.10 Across reviews
 
-## 3. Key individual studies (RCTs and controlled studies)
+| Outcome | What the controlled evidence shows |
+|---|---|
+| Trained task | Large, reliable gains in nearly every study |
+| Untrained SIN test | Small; near zero in RCTs and high-quality studies; larger in uncontrolled designs |
+| Cognition | Small (g ≈ 0.2) after auditory training; WM-only training does not reach SIN |
+| Self-report | Mostly null; occasional single-subscale gains |
+| Retention | Trained items: months. Transfer: often lost by 1–6 months |
+| Quality | Few blinded, powered RCTs; developer-run trials are the most positive |
 
-Columns: study | population, n | training content | dose | adherence | control | outcomes, effect sizes | retention | depth
+## 3. Key individual studies
 
-### 3.1 Hearing-aid users and older adults with hearing loss (the largest and best-controlled trials)
-
-| Study | Population, n | Training | Dose | Adherence | Control | Outcomes, effect sizes | Retention | Depth |
-|---|---|---|---|---|---|---|---|---|
-| Saunders, Smith, Chisolm, Frederick, McArdle & Wilson 2016, Ear Hear (VA multisite RCT) | Veterans, new and experienced HA users, n = 279 (263 post, 243 at 6 mo) | Commercial hybrid programme (degraded-speech tasks: babble, competing talker, time-compressed speech, plus memory/processing-speed tasks and strategy tips), computer (20 sessions) or DVD (10 sessions) | about 20 × 30 min (computer) | not given in abstract | placebo (10 h of audiobooks on a computer) and educational counselling, all with standard HA care | **No significant effect of training on any of 5 untrained behavioural or 2 self-report outcomes** | 6 months: no effect | [abstract only, PubMed] |
-| Smith, Saunders, Chisolm, Frederick & Bailey 2016, JSLHR (secondary analysis of the trial above) | n = 263 | — | — | — | — | Baseline performance predicted change (11–17% of variance) in every arm, placebo included; **treatment arm did not predict change** → worst performers improve most, regardless of what they did (regression to the mean plus non-specific effects) | — | [abstract only, institutional repository] |
-| Humes, Skinner, Kinney, Rogers, Main & Quigley 2019, Ear Hear (double-blind placebo-controlled RCT) | Ages 54–80, mild–moderate loss, own HAs, n = 45 enrolled / 43 completed, 3 arms | At-home frequent-word training (most frequent words/phrases of spoken English, in noise, closed-set feedback) | 5 weeks | "reasonably good" | active placebo (audiobook listening) and passive control | Trained materials improved; **no generalisation to untrained materials** (Connected Speech Test) and no change in HA satisfaction, handicap, noise tolerance | trained-item gains held ≥ 8.5 months | [abstract only, qxmd/PubMed] |
-| Ferguson, Henshaw, Clark & Moore 2014, Ear Hear (RCT, delayed-start control) | 50–74 y, mild loss, no HAs, n = 44 (23 immediate, 21 delayed) | Home phoneme-discrimination game, 11 synthetic phoneme continua, 3-interval odd-one-out, adaptive, feedback, **no background noise** | 15 min/day, 6 days/week, 4 weeks (target 360 min; mean ≈ 377 min) | 80% met target, no dropouts | waitlist (delayed training) | Robust on-task learning (largest for poorest starters). **No gain on sentence-in-noise or digit-triplet tests.** Divided attention d = 0.53; visual WM d = 0.34–0.50; self-reported disability d = 0.51; "group conversation" item d = 0.68 (between-group p = 0.03), but between-group test for cognition weak (p = 0.06) | gains held at 4 weeks | [full text, PMC] |
-| Henshaw, Heinrich, Tittle & Ferguson 2022, Ear Hear (preregistered blinded active-controlled RCT) | Adult HA users, mild–moderate loss, n = 57 (27 vs 30) | Adaptive working-memory training (commercial WM programme) | 5 weeks | not in abstract | same programme, non-adaptive | On-task gains and backward digit span improved; small self-report gain on one subscale; **no transfer to untrained WM/attention, SIN, or everyday hearing** | 6 months (digit span and one subscale kept) | [abstract only, institutional repository] |
-| Saunders et al. 2018, J Am Acad Audiol (4-arm RCT) — via Crum 2024 | Blast-exposed veterans, near-normal audiograms, self-reported SIN difficulty, n = 99 | Home computer-based auditory training | 8 weeks | 36% attrition in the training arm | standard care / remote mic arms | No significant gain vs control | — | [secondary report: Crum et al. 2024] |
-| Yusof et al. 2019 (RCT) — via Crum 2024 and Fallahnezhad 2023 | Adults with APD signs, n = 43 | Computer-based auditory–cognitive training | 8 weeks (24 sessions) | — | no-training control | Several measures better than control | 4 weeks | [secondary report: Crum et al. 2024] |
-| Whitton, Hancock, Shannon & Polley 2017, Curr Biol (double-blind RCT) | Older HA users (mean age about 70, mild–severe loss, about 7 y of HA use), n = 24 | **Closed-loop audiomotor game**: the player moves a fingertip through a virtual soundscape and must use small mismatches between predicted and heard sound to find targets (game content kept confidential) | 3.5 h/week × 8 weeks (≈ 28 h) | — | placebo game that trained auditory working memory; both groups expected benefit | About 25% more words correct in sentences/digits in high noise (≈ 3× the benefit of their hearing aids); game accuracy predicted speech gain; placebo improved on its own game but not on speech or other WM tasks | **benefit faded without continued practice** | [secondary report: Harvard Medical School news release]; full text open in PMC but blocked to us |
-| Anderson, White-Schwoch, Parbery-Clark & Kraus 2013, PNAS (randomised, active control) | 55–70 y, near-normal hearing (PTA ≈ 18 dB HL), 104 recruited, 67 analysed (35 vs 32) | Commercial adaptive brain-fitness programme: 6 auditory exercises — FM-sweep discrimination, syllable discrimination with exaggerated-then-compressed formant transitions, syllable/word sequence recall, matching, multi-step instructions, story details — all **in quiet** | 1 h/day, 5 d/week, 8 weeks (≈ 40 h) | completion logged; rate not reported | educational DVDs + quiz (time-matched, not adaptive) | QuickSIN SNR loss 1.13 → 0.44 dB (control 1.06 → 0.65): interaction p = 0.004, but absolute gain small and near ceiling; auditory short-term memory +8.5 standard-score points (p = 0.002); processing speed +5 (p = 0.007); faster brainstem timing in noise | none | [full text, lab PDF] |
-| Anderson, White-Schwoch, Choi & Kraus 2014, Neuropsychologia (6-month follow-up of the PNAS trial) | 62 of 67 returned (30 trained, 32 controls) | — | no booster | — | same | **QuickSIN gain lost** (1.08 → 0.36 → 0.81 dB SNR loss; interaction over 3 sessions p = 0.545); memory gain faded (p = 0.057); processing-speed gain and brainstem timing in noise persisted. Authors suggest higher dose or booster sessions | 6 months: partial | [full text, university PDF] |
-| Anderson, White-Schwoch, Choi & Kraus 2013, Front Syst Neurosci | 55–79 y, n = 58 (29 vs 29; each half normal hearing / hearing loss, no HAs) | Same programme, in quiet | ≈ 40 h over 8 weeks | logged | educational DVDs | QuickSIN improved in hearing-loss trainees by 1.2 dB (below the 1.9 dB critical difference; authors call it modest); memory gain only in normal-hearing trainees; sustained attention improved in both | none | [full text, frontiersin.org] |
-
-### 3.2 Normal-hearing adults: basic-auditory games and remote delivery
+### 3.1 Older adults and hearing-aid users
 
 | Study | Population, n | Training | Dose | Adherence | Control | Outcomes, effect sizes | Retention | Depth |
 |---|---|---|---|---|---|---|---|---|
-| Lelo de Larrea-Mancera, Philipp, Stavropoulos, Carrillo, Cheung, Koerner, Molis, Gallun & Seitz 2022, J Cogn Enhanc (double-blind, active placebo) | Young normal-hearing students, 54 recruited, **30 completed** (≈ 15/group); trained remotely on own phones/earbuds | "Mixed" game: spectro-temporal modulation up/down discrimination at 5 centre frequencies, left/right spatial discrimination (60° down to 2.5°), auditory 1-/2-back; in quiet and in competition; adaptive | 30 sessions × ≈ 25 min | 21 dropped out; only 9 of 15 reached the level matching the assessment | gamified frequency discrimination (adaptive) | Speech-in-competition composite (spatial release + digits in noise): trained d = 1.19 pre–post vs control d = 0.01; between-group d = 0.68 (p = 0.033); gain visible by mid-test. No transfer to basic auditory-processing composite or cognition | **not retained at 1 month** (d = 0.34, n.s.) | [full text, bioRxiv preprint of the published paper] |
-| Rate-discrimination training RCT, Univ. of Maryland group (medRxiv 2021 preprint 10.1101/2021.11.29.21266998; we believe published as Anderson, DeVries, Smith, Goupell & Gordon-Salant 2022, JARO — not verified) | 125 randomised, 77 completed: young NH, older NH, older with hearing loss | Pulse-rate discrimination (100 and 300 Hz) with feedback | 9 sessions over 2–3 weeks | 48 of 125 did not complete | tone-in-noise detection (active control) | Trained-rate thresholds improved much more than control; near transfer to untrained rates (esp. older NH); **no transfer to gap/tempo tasks or to sentence recognition (clean, time-compressed, reverberant)**. Flanker (attention) score predicted learning (R² = 0.29) | none | [full text, medRxiv preprint] |
-| Karawani, Bitan, Attias & Banai 2016, Front Psychol (immediate vs delayed vs no training) | 60–72 y, n = 56 (21 NH, 35 mild–moderate ARHL; 46 trained) | Home training on **connected speech (popular-science passages)** in 3 conditions: 4-talker babble, time-compressed speech, competing talker; multiple-choice comprehension questions, visual feedback, 2-down/1-up adaptive | 13 sessions × 20–30 min over 4 weeks | — | delayed-training and no-training groups | Clear learning in all trained conditions (NH learned more in babble). **Little generalisation**: only ARHL group transferred, and only to a pseudoword-in-noise discrimination; no transfer to sentence plausibility in noise or to basic auditory tasks. Authors: mostly task-specific, higher-level learning | reported elsewhere | [full text, frontiersin.org] |
+| Saunders et al. 2016, Ear Hear (multisite RCT) | Veterans, new and experienced HA users, n = 279 (263 post, 243 at 6 mo) | Commercial hybrid programme (speech in babble, time-compressed speech, competing talker, auditory memory, missing word, strategy tips); computer 20 sessions or DVD 10 sessions | ≈ 20 × 30 min | not in abstract | placebo (10 h of audiobooks on a computer); educational counselling; all with standard HA care | **No effect on any of 5 untrained behavioural or 2 self-report outcomes** | none at 6 mo | [abstract only, PubMed] |
+| Smith, Saunders, Chisolm, Frederick & Bailey 2016, JSLHR (secondary analysis) | n = 263 | — | — | — | — | Baseline predicted change (11–17% of variance) in every arm; **arm did not predict change**. Our reading: regression to the mean plus non-specific effects | — | [abstract only, institutional repository] |
+| Chisolm et al. 2013, Am J Audiol (secondary analysis) | HA-using veterans, n = 50 | Same programme, 20 sessions | — | 84% completed all 20 (scripted instructions + phone follow-up) | — | Completers gained on 4 of 7 untrained measures (mostly d ≈ 0.2–0.3), non-completers on none. Within-group only; parent trial null vs placebo | — | [abstract only, PubMed] |
+| Humes, Skinner, Kinney, Rogers, Main & Quigley 2019, Ear Hear (double-blind, placebo RCT) | 54–80 y, mild–moderate loss, own HAs; 45 enrolled, 43 completed; 3 arms | At-home "frequent-word" training (details not in abstract) | 5 weeks | "reasonably good" | audiobook placebo; passive control | Trained materials improved; **no generalisation to untrained materials**; no change in satisfaction, handicap, noise tolerance | trained items ≥ 8.5 mo | [abstract only, repository and qxmd pages] |
+| Ferguson, Henshaw, Clark & Moore 2014, Ear Hear (RCT, delayed start) | 50–74 y, mild loss, no HAs, n = 44 | Home phoneme-discrimination game: 11 synthetic continua, 3-interval odd-one-out, adaptive, feedback, **no noise** | 15 min/day, 6 d/week, 4 weeks (≈ 6 h) | 80% met target; no dropouts | waitlist | Robust on-task learning (most in poorest starters). **No gain on sentences or digit triplets in noise.** Divided attention d = 0.53; visual WM d = 0.34–0.50; self-reported disability d = 0.51; "group conversation" item d = 0.68 (between-group p = 0.03); between-group cognition only p = 0.06 | 4 weeks | [full text, PMC] |
+| Henshaw, Heinrich, Tittle & Ferguson 2022, Ear Hear (preregistered, blinded, active control) | Adult HA users, n = 57 | Adaptive WM training (commercial WM programme) | 5 weeks | not in abstract | same programme, non-adaptive | On-task and backward digit span gains; one small self-report subscale gain; **no transfer to untrained WM, attention, SIN or everyday hearing** | 6 mo (span and subscale kept) | [abstract only, institutional repository] |
+| Lowe, Henshaw, Wild & Ferguson (≈ 2022; venue not stated in our copy), RCT | HA users 65–85 y; 50 enrolled, 39 completed | **Live conversations at home with a chosen partner** against a single-talker audiobook distractor at a "challenging" level; no software | 30 min/day, 5 d/week, 4 weeks | all completers finished; ≈ 2/3 on schedule | same conversations in quiet | QuickSIN improved in both (time effect only); one between-group effect: words-in-noise, d = 0.71; HHIE up in both, below clinical threshold; enjoyed by both groups. Underpowered | not tested | [full text, institutional repository] |
+| Whitton, Hancock, Shannon & Polley 2017, Curr Biol (double-blind RCT) | Older HA users (mean ≈ 70 y, mild–severe loss, ≈ 7 y HA use), n = 24 | **Closed-loop audiomotor game**: moving a fingertip through a virtual soundscape while tracking small differences between predicted and actual sound feedback | 3.5 h/week × 8 weeks | — | placebo game training auditory WM; equal expectations | ≈ 25% more words correct in sentences/digits in heavy noise (≈ 3× their HA benefit); game accuracy predicted gain; placebo improved only on its own game | **faded without continued practice** | [secondary report: university news release; open full text blocked to us] |
+| Anderson, White-Schwoch, Parbery-Clark & Kraus 2013, PNAS (randomised, active control) | 55–70 y, near-normal hearing; 104 recruited, 67 analysed | Commercial adaptive brain-fitness suite, 6 exercises: FM-sweep discrimination, syllable discrimination with exaggerated then compressed transitions, syllable/word sequence recall, matching, multi-step instructions, story details; **all in quiet** | 1 h/day, 5 d/week, 8 weeks (≈ 40 h) | logged; rate not given | educational DVDs + quizzes | QuickSIN SNR loss 1.13 → 0.44 vs 1.06 → 0.65 dB (interaction p = 0.004; net ≈ 0.3 dB, near ceiling); auditory short-term memory +8.5 standard points; processing speed +5; faster brainstem timing in noise | — | [full text, lab PDF] |
+| Anderson, White-Schwoch, Choi & Kraus 2014, Neuropsychologia (6-mo follow-up) | 62 of 67 | — | no booster | — | same | **QuickSIN gain lost** (1.08 → 0.36 → 0.81; p = 0.545); memory faded (p = 0.057); processing speed and neural timing kept; authors suggest boosters or more dose | partial | [full text, university PDF] |
+| Anderson, White-Schwoch, Choi & Kraus 2013, Front Syst Neurosci | 55–79 y, n = 58 (half NH, half ARHL; no HAs) | Same suite, in quiet | ≈ 40 h | logged | educational DVDs | ARHL trainees QuickSIN −1.2 dB (below their 1.9 dB critical difference; "modest"); memory gain only in NH; sustained attention up in both | — | [full text, frontiersin.org] |
+| Karawani, Bitan, Attias & Banai 2016, Front Psychol (immediate vs delayed vs no training) | 60–72 y, n = 56 (21 NH, 35 ARHL) | Home training on **connected speech** (science passages) in 4-talker babble, time-compressed speech and competing talker; multiple-choice comprehension; visual feedback; 2-down/1-up | 13 × 20–30 min over 4 weeks | — | delayed and untrained groups | Learning in all trained conditions. **Little generalisation**: ARHL only, and only to pseudowords in noise; none to sentence judgments in noise or basic auditory tasks | elsewhere | [full text, frontiersin.org] |
+| Rate-discrimination RCT, Univ. of Maryland group (medRxiv preprint 10.1101/2021.11.29.21266998; possibly the 2022 JARO paper by Anderson, DeVries, Smith, Goupell & Gordon-Salant, unverified) | 125 randomised, 77 completed (young NH, older NH, older HI) | Pulse-rate discrimination at 100 and 300 Hz with feedback | 9 sessions over 2–3 weeks | 48 of 125 did not finish | tone-in-noise detection | Trained rates improved; near transfer to untrained rates; **no transfer to gap/tempo tasks or to clean, time-compressed or reverberant sentences**; neural phase locking changed only at trained rates; Flanker attention score predicted learning (R² = 0.29) | — | [full text, medRxiv preprint] |
 
-### 3.2b Unusual talkers (accents, degraded speech): adaptation studies
+### 3.2 Normal-hearing adults, self-reported difficulty and APD
+
+| Study | Population, n | Training | Dose | Adherence | Control | Outcomes, effect sizes | Retention | Depth |
+|---|---|---|---|---|---|---|---|---|
+| Lelo de Larrea-Mancera, Philipp, Stavropoulos, Carrillo, Cheung, Koerner, Molis, Gallun & Seitz 2022, J Cogn Enhanc (double-blind, active placebo) | Young NH students; 54 recruited, **30 completed**; own phones and earbuds, remote | "Mixed" game: spectro-temporal modulation up/down at 5 centre frequencies, left/right spatial discrimination (60° down to 2.5°), auditory 1-/2-back; in quiet and in noise; adaptive | 30 × ≈ 25 min | 21 dropped out; 9 of 15 reached the assessment-equivalent level | gamified adaptive frequency discrimination | Speech-in-competition composite (spatial release + digits in noise): d = 1.19 pre–post vs 0.01 control; between-group d = 0.68 (p = 0.033); visible by mid-training. No transfer to basic auditory or cognitive composites | **not kept at 1 mo** (d = 0.34, n.s.) | [full text, bioRxiv preprint] |
+| Saunders et al. 2018, J Am Acad Audiol (4-arm RCT) | Blast-exposed veterans, near-normal audiograms, SIN complaints, n = 99 | Home CBAT | 8 weeks | 36% attrition in training arm | standard care, remote-microphone arms | No gain vs control | — | [secondary report: Crum et al. 2024] |
+| Yusof et al. 2019 (RCT) | Adults with APD signs, n = 43 | Computer-based auditory–cognitive training | 8 weeks | — | no training | Better than control on several measures | 4 weeks | [secondary report: Crum et al. 2024; Fallahnezhad et al. 2023] |
+| Picinini et al. 2021 (crossover) | Adults with APD, n = 10 | Training with **a cappella vocal duets** (competing real voices) | 6–10 h | — | crossover | SIN and pitch-pattern gains; some kept at 3 mo | 3 mo partial | [secondary report: Crum et al. 2024] |
+
+### 3.3 Unusual talkers and other "challenge types"
 
 | Study | Population, n | Training | Dose | Control | Outcomes | Depth |
 |---|---|---|---|---|---|---|
-| Bradlow, Bassard & Paller 2023, JASA | 195 online L1-English listeners + 27 untrained controls | Exposure to second-language (L2) English sentences in 0 dB SNR speech-shaped noise, no feedback; single-talker vs multiple-talker exposure; round-robin over 4 talkers with 4 different L1s | 60 sentences; test ≈ 11 h later | untrained group | Gains of about 5–10 percentage points for some novel talkers after single-talker exposure; multi-talker exposure helped some novel talkers but not others; generalisation **asymmetric** (A → B but not B → A); acoustic similarity did not predict it; the least intelligible talker (≈ 55% at baseline) stayed near 50% in training and did not drive adaptation → training material that is too hard may block lexically guided learning | [full text, NSF public-access copy] |
+| Baese-Berk, Bradlow & Wright 2013, JASA Express Letters (groups partly from Bradlow & Bent 2008) | Young adults, 10 per group | Sentence transcription in white noise (+5 dB SNR), no feedback: 5 talkers with 5 different accents vs one accent vs native speech | 2 days, 160 sentences | native-speech group | Only multi-accent exposure helped a **new talker with a new accent**; single-accent exposure helped only a new talker with the same accent | [full text, scispace copy] |
+| Bradlow, Bassard & Paller 2023, JASA | 195 online listeners + 27 controls | L2-English sentences in 0 dB SNR noise, no feedback; single vs multi-talker; 4 talkers with 4 accents, round-robin | 60 sentences; test ≈ 11 h later | untrained | +5–10 points for some new talkers; multi-talker exposure helped some talkers but not others; **asymmetric** generalisation; acoustic similarity did not predict it; the hardest talker (≈ 55% baseline) stayed near 50% and did not produce adaptation | [full text, NSF public-access copy] |
+| Bieber 2021, dissertation, Univ. of Maryland (rapid adaptation) | 60 (young NH, older NH, older HI) | 30 accented sentences per condition in babble at +7/+10 dB SNR; **clear sentence replayed after each response**; single vs multiple talkers and accents | 1 session | native talker | More variability lowered accuracy but **not** adaptation rate; semantic context changed adaptation rate; older listeners hurt by accent × low context | [full text, dissertation PDF; results partly beyond excerpt] |
+| Shechter Shvartzman, Lavie & Banai 2022, Front Psychol (cross-sectional) | 70 adults 65+ with ARHL | Rapid learning of 10 time-compressed sentences, no feedback | 1 session | — | Learning predicted natural fast speech but **not** speech in babble or dichotic speech: learning is specific to the challenge type | [full text, frontiersin.org PDF] |
 
-| Baese-Berk, Bradlow & Wright 2013, JASA Express Letters (with groups from Bradlow & Bent 2008, Cognition) | Young L1-English adults, 10 per group | Sentence transcription in white noise (+5 dB SNR), no feedback; 5 talkers with 5 different L1 accents vs 1 accent (several talkers) vs native speech | 2 days, 160 sentences | no-accent group | Only multi-accent exposure improved a **novel talker with a novel accent**; single-accent exposure helped only a new talker of the same accent. Tiny groups | [full text, scispace copy] |
+### 3.4 Music-based training (older adults)
 
-| Bieber 2021, doctoral dissertation, Univ. of Maryland (rapid adaptation, not multi-session training) | 60 listeners: young NH, older NH, older HI (20 each) | 30 accented sentences per condition in babble (+7 / +10 dB SNR); **after each response the clear sentence was replayed**; single native, single accented, 3 same-accent, 3 different-accent talkers | 1 session | native-talker condition | More talker/accent variability lowered overall accuracy but did **not** slow the rate of adaptation; supportive semantic context changed adaptation rate; older listeners hurt by accent × low context | [full text, dissertation PDF (results section partly beyond excerpt)] |
-| Shechter Shvartzman, Lavie & Banai 2022, Front Psychol (cross-sectional) | 70 adults 65+ with ARHL (35 HA users) | Rapid learning of time-compressed sentences (10 sentences, no feedback) | single session | — | Rapid learning predicted recognition of natural fast speech but **not** speech in babble or dichotic speech → learning of one "challenge type" does not stand in for another | [full text, frontiersin.org PDF] |
+| Study | Population, n | Training | Dose | Adherence | Control | Outcomes | Retention | Depth |
+|---|---|---|---|---|---|---|---|---|
+| Worschech, Marie, Jünemann, … Altenmüller et al. 2021, Front Neurosci (2-site RCT) | 62–78 y, self-reported NH, non-musicians, n = 156 | Piano lessons in pairs | 6 mo: 60 min/week + ≈ 40 min/day homework | 6.4% dropout | music-culture listening course | Matrix test, stationary noise: both groups ≈ −0.14 dB binaurally, no difference; left ear only, piano better by 0.41 dB (interval just excludes 0); authors call it small | 6 mo endpoint | [full text, frontiersin.org] |
+| Zendel, West, Belleville & Peretz 2019, Neurobiol Aging (3-arm RCT) | Older adults | Piano lessons | 6 mo | — | visuo-spatial video game; no contact | Piano group improved word-in-noise recognition with ERP changes; other arms' numbers not in abstract | — | [abstract only, bioRxiv preprint] |
+| Dubinsky, Wood, Nespoli & Russo 2019, Front Neurosci (**not randomised**) | Mild ARHL, no HAs; choir 34 vs matched database controls 29 | Choir 2 h/week + ≤ 1 h/week online pitch/vocal exercises | 10 weeks | 36 of 45 completed | do-nothing | QuickSIN 3.04 → 2.24 dB (d = 0.46) vs 2.95 → 3.40; interaction ≈ 1.3 dB; pitch-discrimination gain (d = 0.77) mediated the SIN gain | none | [full text, frontiersin.org PDF] |
+| Lo, Dubinsky, Gilmore, Wright-Whyte, Singh & Russo 2025, Semin Hear (3-arm RCT) | Older HA users, 47 randomised | Choir vs music appreciation | 14 weeks | — | do-nothing | Choir improved **unaided** SIN and FFR vs control; no aided benefit; choir ≈ appreciation | — | [abstract only, university repository] |
 
-<!-- R1:STUDIES-ACCENT -->
-
-### 3.4 Cochlear-implant users (selected; see also 2.5)
+### 3.5 Cochlear-implant users
 
 | Study | Population, n | Training | Dose | Control | Outcomes | Retention | Depth |
 |---|---|---|---|---|---|---|---|
-| Kerneis, Galvin, Borel, Baqué, Fu & Bakhos 2023, PLOS ONE (pilot, own baseline) | 15 adult French CI users (unilateral, bilateral, bimodal) | Free home phoneme-contrast software: monosyllables from **multiple talkers**, 5 levels from discrimination in quiet to identification in multi-talker babble; contrast shrinks within a level; SNR drops at level 5; start level from pre-test | 30 min/day, 5 d/week, 4 weeks (≈ 10 h achieved) | none | CI-only phoneme recognition +15 points; sentence-in-noise data too unstable to analyse; SSQ-12 unchanged | gains held at 1 month | [full text, escholarship PDF] |
-| Reynard et al. 2022, J Clin Med (RCT; via Dornhoffer 2024) | Adult CI users | Serious game for speech-in-noise | — | no training | SNR for 70% sentences −4.0 dB after, −2.3 dB at 5 weeks; control unchanged | partial at 5 weeks | [secondary report: Dornhoffer et al. 2024 table] |
-| Magits et al. 2023 (RCT; via Dornhoffer 2024) | Adult CI users | Personalised home training (targets each user's confusions) vs non-personalised with the same materials | — | active (non-personalised) | Digits-in-noise and phonemes improved equally in both arms; sentence test 2.0 vs 1.5 dB (n.s.) | QoL held at 8 months | [secondary report: Dornhoffer et al. 2024 table] |
-| Reis et al. 2021, Trends Hear (randomised crossover; via Dornhoffer 2024) | Adult CI users | Computer-based training with and without visual components | — | crossover periods | Words in quiet +8 points and QoL +5/100; sentences in noise, spectral-ripple test and SSQ-12 unchanged | QoL gain gone by 1–3 months | [secondary report: Dornhoffer et al. 2024 table] |
-| Oba, Fu & Galvin 2011, Ear Hear (own-baseline design; via Dornhoffer 2024 and Henshaw & Ferguson 2013) | Adult CI users | Digits in steady noise and babble (closed set) | — | baseline period | Digit SRT 3–4 dB better; HINT in babble 11.2 → 8.3 dB; IEEE sentences improved | 1 month | [secondary report: two reviews] |
+| Reynard, Attina, Idriss, Hermann, Barilly, Veuillet, Joly & Thai-Van 2022, J Clin Med (RCT) | Adult CI users, n = 15 | Custom serious game with progressive activities, home + lab | 5 weeks, ≈ 13 h | no training | SNR for 70% sentences −4.0 dB, −2.3 dB at 5 weeks; control unchanged; gain not correlated with hours | partial at 5 weeks | [secondary report: Dornhoffer et al. 2024] |
+| Magits et al. 2023, Ear Hear (RCT) | Adult CI users | Personalised home training vs non-personalised with the same materials | — | active | Both arms improved equally on digits in noise and phonemes; sentences 2.0 vs 1.5 dB (n.s.) | QoL kept 8 mo | [secondary report: Dornhoffer et al. 2024] |
+| Reis, McMahon, Távora-Vieira, Humburg & Boisvert 2021, Trends Hear (randomised crossover) | Adult CI users | CBAT with and without visual components | — | crossover | Words in quiet +8 points, QoL +5/100; sentences in noise, ripple test, SSQ-12 unchanged | QoL gone by 1–3 mo | [secondary report: Dornhoffer et al. 2024] |
+| Green, Faulkner & Rosen 2019, Trends Hear (repeated measures) | Adult CI users | Connected-text SIN training | — | own baseline | Sentence SRTs 0.7–2.6 dB better; no phoneme gains | improved further at 1 mo | [secondary report: Dornhoffer et al. 2024] |
+| Schumann et al. 2015, Int J Audiol (RCT) | Experienced CI users | Phoneme discrimination | — | no training | +10 points at +5 dB SNR (n.s. at 0 dB) | +8 at 6 mo | [secondary report: Dornhoffer et al. 2024] |
+| Oba, Fu & Galvin 2011, Ear Hear (own baseline) | Adult CI users | Digits in steady noise and babble (closed set) | — | baseline | Digit SRT 3–4 dB better; HINT in babble 11.2 → 8.3 dB; IEEE sentences improved | 1 mo | [secondary report: two reviews] |
+| Kerneis, Galvin, Borel, Baqué, Fu & Bakhos 2023, PLOS ONE (pilot) | 15 French CI users | Free home phoneme-contrast software: monosyllables from **multiple talkers**; 5 levels from quiet discrimination to identification in babble; start level from pre-test | 30 min/day, 5 d/week, 4 weeks | none | Phonemes +15 points; SIN data too unstable to analyse; SSQ-12 unchanged | 1 mo | [full text, escholarship PDF] |
 
-<!-- R1:STUDIES-CI -->
+### 3.6 Older studies, via Henshaw & Ferguson 2013 [secondary report]
+- Monosyllabic word training in older listeners with hearing loss (Burk et al. 2006): untrained words +6.9%; gains carried to new talkers saying trained words but not to those words inside sentences; trained words 38% → 84% → 63% at 6 months.
+- Frequent-word training (Humes et al. 2009): a 600-word set gave ≈ 20% open-set gains vs 40–55% with 150-word sets (Burk & Humes); 50–80% lexical overlap with outcome tests inflated "generalisation"; 81% completed.
+- Nonsense-syllable training in HA users (Stecker et al. 2006, RCT): untrained sentences +3.3%, kept 8 weeks; 92.5% compliance.
+- Bimodal CI users (Zhang et al. 2012): vowels, consonants and words (+14.9%) improved; untrained sentences did not; 20 h.
+- Short SIN training in CI users (Ingvalson et al. 2012, 4 days): no HINT/QuickSIN or SSQ change.
+- Developer trial of a hybrid programme (Sweetow & Henderson Sabes 2006, RCT): QuickSIN 1.5–2.2 dB (ES 0.23–0.31; 46% clinically meaningful); HINT n.s. because controls improved too; Stroop, listening span and self-report gains (ES ≈ 0.4); developers held a financial interest; 73% compliance.
+- Word training in CI users (Stacey et al. 2010): no significant on-task learning; 73% compliance.
 
-### 3.5 Learning-schedule studies relevant to how a trainer should be built (lab studies, young adults)
+### 3.7 Learning-schedule studies (lab, young adults)
 
 | Study | n | Manipulation | Result | Depth |
 |---|---|---|---|---|
-| Wright, Baese-Berk, Marrone & Bradlow 2015, JASA | adults (n not in abstract) | Practice throughout vs practice alternating with periods of **stimulus exposure without a task** (non-native VOT category; foreign-accented sentences) | Practice alone and exposure alone each gave little; alternating them matched or beat full practice → practice "unlocks" learning from nearby passive exposure | [abstract only, university research portal] |
-| Fuhrmeister & Myers 2020, Atten Percept Psychophys | 136 analysed | Blocked vs interleaved training of a very hard non-native contrast (Hindi dental–retroflex), 600 trials with feedback, next-day retest | **Blocked beat interleaved** in training and next-day identification; aptitude predicted everything and higher-aptitude learners coped better with interleaving → for hard new contrasts, start blocked, interleave later or for strong learners | [full text, NSF public-access copy] |
-| Baese-Berk & Samuel 2022, Atten Percept Psychophys | ≈ 20 per group | Saying the sound aloud (or doing another task) right after hearing it during perceptual training | Immediate production abolished learning; delaying it by 2.5–5.5 s restored learning; an unrelated second task caused a smaller, delay-insensitive cost → avoid secondary tasks/immediate repetition inside perceptual-learning trials | [full text, NSF public-access copy] |
+| Wright, Baese-Berk, Marrone & Bradlow 2015, JASA | not in abstract | Continuous practice vs practice alternating with **stimulus exposure without a task** (a non-native VOT category; foreign-accented sentences) | Practice alone or exposure alone did little; alternating matched or beat continuous practice | [abstract only, university research portal] |
+| Fuhrmeister & Myers 2020, Atten Percept Psychophys | 136 | Blocked vs interleaved training of a hard non-native contrast, 600 trials with feedback, next-day retest | **Blocked beat interleaved**; aptitude predicted everything; high-aptitude learners coped better with interleaving | [full text, NSF public-access copy] |
+| Baese-Berk & Samuel 2022, Atten Percept Psychophys | ≈ 20 per group | Saying the sound aloud, or a second task, right after hearing it in each trial | Immediate production abolished learning; a 2.5–5.5 s delay restored it; an unrelated task cost less, regardless of delay | [full text, NSF public-access copy] |
 
-### 3.3 Music-based training (older adults)
+### 3.8 Numbers for measurement planning (facts only)
+- QuickSIN critical differences used by trialists: 1.9 dB (Anderson et al. 2013 FSN) and 1.5 dB (Lowe et al.). 1 dB SNR ≈ 10% intelligibility (Anderson et al. 2013 FSN; Dubinsky et al. cite 10–20%).
+- Controlled between-group SIN effects: ≈ 0.3 dB net (brain fitness, PNAS), 0.4 dB (piano), ≈ 1.2–1.3 dB (brain fitness in ARHL; choir), d ≈ 0.7 (phone game; partner conversations), ≈ 4 dB (CI serious game, n = 15), ≈ 25 points (audiomotor game, n = 24).
+- Retest: SIN tests need practice lists before baseline; controls improve on retest (2.1). Baseline explains 11–17% of change in every arm (Smith et al. 2016).
+- Musician vs non-musician gap ≈ 0.4 dB (Hennessy et al. 2022).
 
-| Study | Population, n | Training | Dose | Adherence | Control | Outcomes, effect sizes | Retention | Depth |
-|---|---|---|---|---|---|---|---|---|
-| Worschech, Marie, Jünemann, … Altenmüller et al. 2021, Front Neurosci (2-site RCT) | 62–78 y, self-reported normal hearing, non-musicians, n = 156 | Piano lessons (dyads) | 6 months: weekly 60 min + ≈ 40 min/day homework | 6.4% dropout | music-culture listening course (≈ 37 min/day homework) | Matrix sentence test in stationary noise: both groups improved ≈ 0.14 dB binaurally (no group difference); left-ear only, piano better by 0.41 dB (credible interval just excludes 0). Authors: small, maybe not clinically meaningful | 6-month endpoint only | [full text, frontiersin.org] |
-| Zendel, West, Belleville & Peretz 2019, Neurobiol Aging (RCT, 3 arms) | Older adults | Piano lessons | 6 months | — | visuo-spatial video game; no-contact | Only the piano group improved word-in-noise recognition, with ERP changes | — | [abstract only, bioRxiv preprint] |
-| Dubinsky, Wood, Nespoli & Russo 2019, Front Neurosci (**not randomised**) | Older adults with mild ARHL, no HAs; choir 34 vs matched database controls 29 | Group choir 2 h/week + up to 1 h/week online pitch/vocal exercises | 10 weeks | 36 of 45 completed | do-nothing (passive) | QuickSIN SNR loss: choir 3.04 → 2.24 dB (d = 0.46), controls 2.95 → 3.40; interaction ≈ 1.3 dB; pitch-discrimination gain (d = 0.77) statistically mediated the SIN gain; FFR F0 interaction only marginal | none | [full text, frontiersin.org PDF] |
-| Lo, Dubinsky, Gilmore, Wright-Whyte, Singh & Russo 2025, Semin Hear (3-arm RCT) | Older HA users, 47 randomised (39 in group counts) | Choir singing vs music appreciation | 14 weeks | — | do-nothing | Choir improved **unaided** SIN and FFR vs control; no aided benefit; choir ≈ music appreciation | — | [abstract only, university repository] |
+## 4. What predicts transfer
 
-<!-- R1:STUDIES -->
+1. **Closeness of training to the outcome task, in the same kind of noise.** Digits in noise and babble improved sentences in babble (Oba 2011); a game with spatial discrimination and noise improved spatial release and digits in noise (Lelo de Larrea-Mancera 2022); an audiomotor game in noise improved words in noise (Whitton 2017). Quiet phoneme training (Ferguson 2014), basic rate discrimination (3.1) and WM training (Henshaw 2022) did not reach SIN. The quiet brain-fitness suite gave only ≈ 0.3 dB, lost by 6 months (Anderson 2013/2014). The 2023 meta-analysis could not show that SIN content in training mattered, but its subgroups were small.
+2. **Material level.** Phoneme and word training transfers within its level (untrained words, phonemes) but weakly to sentences (Burk 2006; Zhang 2012; Kerneis 2023). Sentence and connected-speech training transfers little to other sentence tasks (Karawani 2016), though CI connected-text training improved sentence SRTs in an uncontrolled design (Green 2019). Closed small sets learn fast but stay item-bound; larger sets learn slower (Humes 2009 vs Burk & Humes), and only trained items improved in the 2019 RCT.
+3. **Talker and accent variability.** Multi-accent exposure generalised to a new accent while single-accent exposure did not (Baese-Berk 2013); multi-talker word training carried over to new talkers saying trained words (Burk 2006). But generalisation is asymmetric and unpredictable from acoustics (Bradlow 2023), and variability lowers in-training accuracy without slowing adaptation (Bieber 2021). Partner-voice training improved recognition of that partner (Tye-Murray et al. 2016, via news report).
+4. **Difficulty inside the learnable range.** A talker understood about half the time did not produce adaptation (Bradlow 2023). For a hard new contrast, blocked beat interleaved, especially for low-aptitude learners (Fuhrmeister & Myers 2020). Most transfer-positive studies were adaptive, but so were the nulls, so adaptivity alone does not explain transfer.
+5. **Dose and schedule.** Four days gave nothing (Ingvalson 2012); positive studies used ≈ 12–40 h (Lelo de Larrea-Mancera ≈ 12.5 h; Reynard ≈ 13 h; Whitton ≈ 28 h; Anderson ≈ 40 h). A narrative synthesis points to ≈ 20 h (Park 2026). Hours did not predict gain within one CI trial (Reynard 2022). Alternating practice with passive exposure was efficient (Wright 2015). No trial tested boosters, though transfer faded in every follow-up.
+6. **Targeted vs generic.** Personalised CI training equalled non-personalised training with the same materials (Magits 2023). Combining auditory and cognitive demands is favoured by reviewers (Stropahl 2020; Lawrence 2018; Yusof 2019), but the large hybrid RCT was null (Saunders 2016).
+7. **Feedback.** Most programmes give correct/incorrect feedback; replaying the clear item after each response is common in lab adaptation work (Bieber 2021). We found no controlled test of feedback type in SIN training (search budget; see 8).
+8. **Who benefits.** Poorest baselines gained most, in placebo arms too (Smith 2016; Ferguson 2014). NH and non-HA users gained more in percent-correct outcomes than HA users (Fallahnezhad 2023). Attention (Flanker) predicted learning (rate RCT); better baseline WM predicted more on-task WM learning (Henshaw 2022). Older and hearing-impaired listeners still learn (Karawani 2016; rate RCT).
+9. **Engagement and compliance.** Completers gained and non-completers did not (Chisolm 2013); compliance tracked gains (Stropahl 2020). This may reflect motivation as much as dose.
+10. **Design artefacts.** The strongest predictor of a positive transfer result is a weak design: no randomisation, no blinding, passive or no control, outcomes overlapping training items, developer-run trials (2.1, 2.2, 2.7, 3.6).
 
-## 4. What predicts transfer (what distinguished studies that showed it)
+## 5. Failure modes of earlier trainers
 
-<!-- R1:TRANSFER -->
+| # | Failure mode | Evidence |
+|---|---|---|
+| F1 | Gains stay on trained items, talkers or tasks | Humes 2019 (trained materials only); Burk 2006 (not into sentences); Zhang 2012; Karawani 2016; Henshaw 2022 (only tasks resembling training); rate RCT (trained rates only) |
+| F2 | Training in quiet, or on non-speech or basic tasks, does not reach SIN | Ferguson 2014; rate RCT (no speech transfer, incl. reverberant); Anderson 2013/2014 (≈ 0.3 dB, then lost); Lelo de Larrea-Mancera 2022 (no basic-skill transfer) |
+| F3 | WM or other cognitive training does not reach SIN | Henshaw 2022; Lawrence 2018 (WM effect small, no SIN link) |
+| F4 | Retest, placebo and expectation gains mistaken for training effects | Fallahnezhad 2023 (RCTs ≈ 0); Saunders 2016 (training = placebo); Sweetow 2006 controls improved; Cambridge 2022 (2 of 10 attributable); Park 2026 and Dornhoffer 2024 (uncontrolled pooling) |
+| F5 | Regression to the mean read as benefit for weak listeners | Smith 2016; Ferguson 2014 |
+| F6 | Transfer fades without continued practice; no maintenance plan | Whitton 2017; Lelo de Larrea-Mancera 2022 (1 mo); Anderson 2014 (6 mo); Reis 2021 (QoL); Reynard 2022 (partial) |
+| F7 | Attrition and low adherence | Saunders 2018 (36%); Lelo de Larrea-Mancera 2022 (21 of 54); rate RCT (48 of 125); ≈ 30% compliance in a clinical roll-out (2.1) |
+| F8 | Outcome tests too insensitive or near ceiling to show change | Anderson 2013 (QuickSIN ≈ 1 dB at baseline); Worschech 2021 (one stationary-noise test); Kerneis 2023 (unstable SIN data); Fallahnezhad 2023 (insensitive tests suspected) |
+| F9 | Overlap between training items and outcome items | Humes 2009 (50–80% lexical overlap) |
+| F10 | Self-report and everyday listening do not move | Humes 2019; Saunders 2016; Ingvalson 2012; Kerneis 2023; Henshaw 2022 |
+| F11 | Material too hard to learn from (no lexical foothold) | Bradlow 2023 (hardest talker); Fuhrmeister & Myers 2020 (interleaving a hard contrast) |
+| F12 | Item sets too small (fast but item-bound) or too large (slow) | Humes 2009 vs Burk & Humes (150 vs 600 words) |
+| F13 | Dose too short | Ingvalson 2012 (4 days) |
+| F14 | Personalisation that adds nothing measurable | Magits 2023 |
+| F15 | Single talker or few talkers; generalisation to new voices untested | Bradlow 2023; Baese-Berk 2013; app reviews asking for "more voices" (section 6) |
+| F16 | Learning of one challenge type assumed to cover another | Shechter Shvartzman 2022 (fast speech ≠ babble); Karawani 2016 |
+| F17 | Second task inside a trial disrupts perceptual learning | Baese-Berk & Samuel 2022 |
+| F18 | Neural change reported as success without behavioural transfer | rate RCT (phase locking at trained rates); Anderson 2014 (timing kept, SIN lost) |
+| F19 | Dull, repetitive content and buggy audio drive drop-out | 2025 trade interview (company admits older content was "dull"); Huang et al. 2025 survey; app reviews (section 6) |
+| F20 | Developer-run evaluations are the most positive | Sweetow 2006 (financial interest); company-linked claims (section 6) vs independent null (Saunders 2016) |
+| F21 | HA users and people with mild loss gain least | Fallahnezhad 2023 (0.34 and 0.09 vs ≈ 1.0) |
 
-## 5. Failure modes of earlier trainers (each linked to the studies that show it)
+## 6. Existing listening and auditory-training apps (internal comparison only)
 
-<!-- R1:FAILURES -->
+Names are trademarks of their owners, recorded for internal comparison only; none may appear in our app. Details come from store pages, a third-party app directory (checked by that directory in Nov 2026) and news pages, not from our own testing. Our search budget ran out before we could check general brain-training suites, musician ear-trainers and APD programmes directly.
 
-## 6. Existing listening / auditory-training apps and programs (internal comparison only; trademarks must not appear in our app)
-
-Names below are trademarks of their owners and are recorded only for internal comparison; none may appear in our app. Most details come from store pages and a third-party app directory (last checked by that directory in Nov 2026), not from hands-on testing. Our web-search budget ran out before we could check general-public brain-training suites, musician ear-trainers and APD programmes directly; those rows are marked.
-
-| Programme (owner) | Users | Exercises | How difficulty adapts | Game layer | Measurement | What it lacks (for our purposes) | Depth |
+| Programme (owner) | Users | Exercises | Difficulty | Game layer | Measurement | Gaps for our purposes | Depth |
 |---|---|---|---|---|---|---|---|
-| LACE / LACE Pro / "LACE AI Pro" (Neurotone; merged with Amptify) | HA users (esp. new), CI, "hidden hearing loss", APD | Sentences in babble with context clues, rapid (time-compressed) speech, competing talker, word memory / working memory, comprehension; ≈ 10,000 AI-generated items over 27 topic channels; AI avatar video for speechreading (planned/new); **voice cloning of a family member** from a 30–60 s sample | "adaptive" (adjusts to performance; parameter details not published in what we read; the original programme used SNR/rate staircases per the literature) | engagement features, clinician-sent encouragements; no documented game mechanics | progress shared with clinician; company claims ≈ 3 dB QuickSIN gains and fewer HA returns (company-linked data, methodology not shown) | Clinician-gated, paid, online-only; the largest independent RCT (VA, n = 279) found no benefit over placebo; company itself admitted older content was "dull"; users ask for more voices, less repetition, clearer progress feedback | [secondary report: trade-press interview 2025; third-party app directory] |
-| Angel Sound / i-Angel Sound (UCLA with a small speech-tech company and a foundation) | CI and HA users, anyone | Environmental sounds, words, phonetic-contrast word pairs (initial/medial/final consonant), numbers, dates, colours, telephone speech, musical instruments; speaking rate slow/normal/fast | manual: maximal/medium/minimal contrast or random | none beyond scores | run counts, mean/best scores, graphs per session | No noise/talker variety documented; last updated 2019; bugs (audio cut-offs, freezing); no untrained probes | [full text of store page] |
-| Amptify (formerly clEAR; Washington Univ. spin-off) | Older HA users, CI users | Auditory-training video games for word/sound recognition, auditory attention, working memory and processing speed; **training with recordings of a frequent communication partner's voice** (clEAR); 12–16-week curriculum of strategies, quizzes, real-life practice; human hearing-health coach; peer community | not described publicly | "fun" games, scores, community | progress data, coach insights | Paid membership (≈ US$64 listed); evidence reported as satisfaction (50% felt it helped adjustment), not controlled SIN outcomes | [full text of store page; university news pages] |
-| WordSuccess (Advanced Bionics) | HA and CI users | Similar-word discrimination in quiet or with user-added noise | placement test chooses a starting level; no in-practice adaptation documented | none | none documented (users report lost progress) | Audio failures, wrongly marked answers, no adaptive noise | [third-party app directory] |
-| Cochlear CoPilot (Cochlear Ltd) | Adult CI users of that brand | Listening exercises, telephone conversation practice by topic and level, recording your own everyday sounds for practice, communication tips | user-selected level | none | not described | Brand-locked, iPhone-only, sign-in problems, users want more voices and captions | [third-party app directory] |
-| ReDi (MED-EL) | Adult HA/implant users | Ready-made word/listening courses incl. noise courses; optional therapist link | selectable levels; users say starting levels too easy / poor fit | none | therapist can view responses | No automatic difficulty; no game layer; speech-recognition scoring errors reported | [third-party app directory] |
-| Hearoes (small company) | People with hearing loss, HA, CI | Environmental sounds, vowels/consonants, everyday sentences, auditory memory, speech in noise, comprehension, video speechreading scenes | daily focus or pathway; adaptivity not documented | gamified ("varied, repeatable games") | progress charts (users find them hard to read) | Subscription (≈ US$100/yr); unclear scoring; audio bugs | [third-party app directory] |
-| Hear Beyond (small company) | general | Sound-awareness games, auditory memory, speech in noise, localisation | not stated | games | not described | Bugs; "simplistic" games per reviews | [third-party app directory] |
-| Meludia (music company; offered via an implant maker) | CI rehabilitation, musicians | Structured music-listening exercises (web) | levels | course structure | — | No speech-in-noise content | [third-party app directory] |
-| Functional Listening (speech-therapy app company) | general | Comprehension of everyday spoken messages | — | — | — | Paid, few ratings | [third-party app directory] |
-| Voibook, TigerSpeech-family tools | HA/CI users | Syllable/word discrimination; speech recognition in noise | — | — | — | Mentioned by users in a 2025 HCI study as "traditional" | [secondary report: Huang et al. 2025] |
-| Research-grade but public tools | — | ReadMyQuips (audiovisual sentence-in-babble crossword puzzles), SPATS (syllable constituents + sentences in noise), Sound Express / CAST (phonemes, words, sentences, digits in noise, melodic contour), commercial adaptive "brain-fitness" suites (FM sweeps, syllable discrimination, sequence recall, story memory), Phonomena-style phoneme continua game | — | — | — | — | Known from trial reports above; products not checked directly |
-| NOT CHECKED (search budget exhausted): general brain-training suites with auditory exercises, musician ear-trainers (interval/EQ/frequency trainers), APD programmes (dichotic training, spatial "listening in spatialised noise" trainers for children), free web SIN trainers | — | — | — | — | — | — | — |
+| LACE / LACE Pro / LACE AI Pro (Neurotone; merged with Amptify) | HA users (esp. new), CI, APD, "hidden hearing loss" | Sentences in babble with context, rapid speech, competing talker, word/working memory, comprehension; ≈ 10,000 AI-generated items in 27 topic channels; avatar video for speechreading (new or planned); **voice cloning of a family member from a 30–60 s sample** | "adaptive" (parameters not published in what we read) | engagement features; clinician-sent encouragement | progress shared with clinician; company claims ≈ 3 dB QuickSIN and fewer HA returns (company-linked, methods not shown) | Clinician-gated, paid, online-only, SMS login; independent RCT null; users want more voices, less repetition, clearer feedback | [secondary report: 2025 trade interview; third-party app directory] |
+| i-Angel Sound (UCLA, a speech-tech company, a foundation) | CI and HA users, anyone | Environmental sounds, words, phoneme-contrast pairs (initial/medial/final), numbers, dates, colours, telephone speech, instruments; slow/normal/fast rate | manual: maximal/medium/minimal contrast or random | scores only | runs, mean/best scores, session graphs | No noise or talker variety documented; last update 2019; audio bugs; no untrained probes | [full text, App Store page] |
+| Amptify (formerly clEAR; university spin-off) | Older HA and CI users | Games for word/sound recognition, auditory attention, WM, processing speed; **partner-voice recordings** (clEAR); 12–16-week curriculum (strategies, quizzes, real-life practice); human coach; peer community | not described | "fun" games, scores, community | progress data, coach insights | Paid membership (≈ US$64); evidence so far is satisfaction (50% felt it helped), not controlled SIN | [full text, App Store page; university news pages] |
+| WordSuccess (Advanced Bionics) | HA and CI users | Similar-word discrimination in quiet or user-added noise | placement test only | none | none (users report lost progress) | Audio failures, mis-scored answers | [third-party app directory] |
+| Cochlear CoPilot (Cochlear) | That brand's adult CI users | Listening exercises, phone-conversation practice, own recorded sounds, tips | user-chosen level | none | not described | Brand-locked, iPhone-only, sign-in issues; users want more voices, captions | [third-party app directory] |
+| ReDi (MED-EL) | Adult HA/implant users | Word and listening courses incl. noise; optional therapist link | selectable levels; poor fit reported | none | therapist can view responses | No automatic difficulty or game layer; speech-scoring errors | [third-party app directory] |
+| Hearoes (small company) | Hearing loss, HA, CI | Environmental sounds, vowels/consonants, everyday sentences, memory, SIN, comprehension, video speechreading | daily focus or pathway | varied, repeatable games | progress charts, hard to read | Subscription ≈ US$100/yr; scoring unclear; audio bugs | [third-party app directory] |
+| Hear Beyond (small company) | general | Sound awareness, auditory memory, SIN, localisation | not stated | games | not described | Bugs; called simplistic | [third-party app directory] |
+| Meludia (music company, via an implant maker) | CI rehab, musicians | Structured music-listening exercises (web) | levels | course structure | — | No speech content | [third-party app directory] |
+| Functional Listening (speech-therapy app maker) | general | Comprehension of everyday spoken messages | — | — | — | Paid; few ratings | [third-party app directory] |
+| Others named in sources but not checked | — | A quip/caption-based audiovisual programme (3 controlled studies in 2.2); a syllable-to-sentence system (Miller 2008); a phoneme-to-digits CI suite (Fu 2004; Oba 2011); a commercial adaptive brain-fitness suite (3.1); a phoneme-continua game (Ferguson 2014); a syllable-discrimination app named by users in Huang et al. 2025 | — | — | — | Product pages not checked | [secondary report: the trials and reviews cited] |
 
-Cross-cutting observations (from the rows above plus the HCI study):
-- Almost no product measures **untrained** speech-in-noise performance; progress is shown on the trained exercises only. None offers alternate-form probes or exportable data.
-- Difficulty is mostly chosen by the user or set once by a placement test; only the clinician-gated product claims continuous adaptation.
-- Talker variety is a common complaint ("more voices"); the most distinctive feature in the field is training on a familiar partner's voice.
-- Reliability (audio dropouts, mis-scored answers, sign-in walls) is a major source of bad reviews — a cheap way to beat the field.
-- Users in a 2025 survey (Huang et al., n = 79) named monotonous exercises, interrupting or negative feedback and low confidence as barriers; younger users disliked dullness, older users wanted clear progress records; 58% ranked scientifically effective training as their top need [full text, institutional repository].
+Cross-cutting observations:
+- No product we saw measures **untrained** SIN, uses alternate-form probes, or exports data; progress is shown on trained exercises only.
+- Difficulty is mostly user-chosen or set once by a placement test; only the clinician-gated product claims continuous adaptation.
+- Requests for more voices are common; training on a familiar partner's voice is the field's most distinctive feature.
+- Reliability problems (missing audio, wrong scoring, sign-in walls) dominate bad reviews.
+- Huang et al. 2025 (survey n = 79 plus prototype study) [full text, institutional repository]: users named monotonous exercises, interrupting or negative feedback and low confidence as barriers; younger users disliked dullness; older users wanted clear progress records; 58% put scientifically effective training first. Existing apps were called "traditional".
 
-<!-- R1:APPS -->
+## 7. Promising or under-tested approaches
 
-## 7. Promising or under-tested approaches (2020–2026 and older ideas never properly tested)
+| Approach | Best evidence | Status |
+|---|---|---|
+| Closed-loop audiomotor games (act, predict the sound, notice mismatches) | Whitton 2017: ≈ +25 points words in noise vs placebo, n = 24, older HA users | Not replicated in what we found; faded without practice; game details confidential |
+| Mixed psychoacoustic phone game (spectro-temporal modulation, spatial discrimination, n-back; partly in noise) | Lelo de Larrea-Mancera 2022: between-group d = 0.68, own phones, remote | Young NH only; high attrition; gone at 1 month |
+| Familiar and real voices: partner-voice training, live partner conversations against a distractor, voice cloning | Tye-Murray 2016 (news report); Lowe ≈ 2022 (one between-group effect, d = 0.71); voice cloning in a 2025 commercial product | Cloning untested; live-voice trial underpowered |
+| Multi-accent / multi-talker exposure for unfamiliar talkers | Baese-Berk 2013; Bradlow 2023 | Lab-sized samples; never tested as long-term training |
+| Practice alternated with passive exposure | Wright 2015 | Not tested in SIN apps |
+| Serious games for SIN in CI users | Reynard 2022: −4 dB, −2.3 dB at 5 weeks, n = 15 | Game design details unread |
+| Group singing / choir | Dubinsky 2019 (≈ 1.3 dB, pitch gain mediated); Lo 2025 (unaided SIN, RCT) | Small or non-randomised; unaided only |
+| Combined auditory + cognitive load | Yusof 2019; Stropahl 2020; registered trial NCT07506408 on varying perceptual and cognitive demands of web-based training (title only) | Mixed; registered trial results pending |
+| Clear-item replay after each degraded trial | Bieber 2021 paradigm | Untested as a factor in SIN apps |
+| Rapid-learning rate as a probe of individual differences | Shechter Shvartzman 2022 | Specific to challenge type |
+| AI-generated items and synthetic talkers (unlimited non-repeating material) | 2025 commercial product | Untested; matters because learning is item-specific (F1, F12) |
+| Competing real voices as material (a cappella duets) | Picinini 2021, n = 10 | Tiny |
+| Gamified, narrative audiovisual training | Huang 2025 prototype (usability 85/100) | No outcome data |
 
-<!-- R1:PROMISING -->
+Gaps where we found **no controlled training study** in this pass (partly because the search budget ran out): speech at a distance / in reverberation (the one relevant outcome, reverberant sentences, did not respond to rate training); spatial-release training in adults over headphones; fast conversational speech in noise; dysarthric or otherwise atypical talkers in noise; audiovisual and lipreading training in adults; booster or maintenance schedules.
 
 ## 8. Important sources we could not open in full
 
-<!-- R1:ACCESS -->
+Ranked by how much an evidence-based design would lean on them.
+
+| # | Source | Why blocked | What we need from it |
+|---|---|---|---|
+| 1 | Whitton, Hancock, Shannon & Polley 2017, Curr Biol 27(21):3237; PMID 29056453; PMCID PMC5997394 | PMC bot-check; Europe PMC server error | Game mechanics, adaptive rules, stimuli/SNRs, speech tests and effect sizes, retention timeline, who benefited |
+| 2 | Reynard et al. 2022, J Clin Med 11:2880, doi:10.3390/jcm11102880 | permission request timed out | Game design, progression rules, SNR handling, adherence (positive serious-game RCT) |
+| 3 | Saunders et al. 2016, Ear Hear; PMID 26901263 | abstract only | Per-outcome effect sizes and CIs, compliance per arm, outcome tests |
+| 4 | Humes et al. 2019, Ear Hear 40(5):1043–1060, doi:10.1097/AUD.0000000000000688 | no full text in repository | Training protocol (talkers, noise, feedback, item set), sessions/hours, adherence, effect sizes |
+| 5 | Bieber & Gordon-Salant 2021, Hear Res (ScienceDirect pii S0378595520303257; PMCID PMC7880302) | publisher error; PMC bot-check | Synthesis on older adults learning accented, fast and noisy speech; retention |
+| 6 | Wright, Baese-Berk, Marrone & Bradlow 2015, JASA 138(2):928, doi:10.1121/1.4927411; PMCID PMC4545053 | abstract only | Ratio and timing of exposure vs practice, n, effect sizes |
+| 7 | Saunders et al. 2018, J Am Acad Audiol (blast-exposed veterans, near-normal hearing) | not located (search budget) | Arms, training content, dose, outcomes: the only RCT for normal audiograms with complaints |
+| 8 | Yusof et al. 2019 (auditory–cognitive training, APD) | not located | Training content and dose of a positive RCT |
+| 9 | Henshaw et al. 2022, Ear Hear 43(3):741, doi:10.1097/AUD.0000000000001096; PMCID PMC9007089 | PMC bot-check | Effect sizes, dose, adherence |
+| 10 | Magits et al. 2023, Ear Hear 44:477, doi:10.1097/AUD.0000000000001295 | not attempted after provenance blocks | How personalisation worked; why it added nothing |
+| 11 | Green, Faulkner & Rosen 2019, Trends Hear 23, doi:10.1177/2331216519843878 | permission request timed out | Connected-text procedure, adaptive rule, dose |
+| 12 | Stropahl, Besser & Launer 2020, Ear Hear 41(4):697; PMID 31613823 | only an evidence-map summary | Study-level details |
+| 13 | Tye-Murray, Spehar, Sommers & Barcroft 2016, JSLHR (frequent partners), and related talker-specificity and spaced-vs-massed papers | ASHA journal site returned errors | Effect sizes for partner vs generic voices; spacing results |
+| 14 | Lo et al. 2025, Semin Hear 46(2):125, doi:10.1055/s-0045-1811541 | publisher bot protection | SIN numbers per arm |
+| 15 | Zendel et al. 2019, Neurobiol Aging (preprint doi:10.1101/196030) | abstract only | n, effect sizes, other arms |
+| 16 | Reis et al. 2021, Trends Hear 25, doi:10.1177/23312165211025938 | not attempted | Training content; visual vs non-visual comparison |
+| 17 | Cambridge, Taylor et al. 2022, Int J Audiol 61(11):896 | only an evidence-map summary | Which 2 studies showed training-attributable gains |
+| 18 | Review of auditory training mobile apps, ASHA Perspectives 2018, doi:10.1044/persp3.SIG7.12 | paywall | App names and feature tables |
+| 19 | NCT07506408 registry record | registry page renders by script; API URL not permitted | Arms, demands manipulated, outcomes |
+| 20 | Smith et al. 2016 JSLHR; Chisolm et al. 2013 Am J Audiol | abstract only | Full models; compliance definitions |
+
+Not reached at all (web-search budget exhausted after 24 searches; listed so a follow-up pass can target them): learning with identical stimuli as evidence for non-specific learning (Amitay et al. 2006); short vs long sessions (Molloy et al. 2012); lexical feedback and clear-then-degraded presentation (Davis et al. 2005; Sohoglu & Davis 2016); Bradlow & Bent 2008 (only via Baese-Berk 2013); perceptual learning of dysarthric speech (Borrie et al.); vocoded-speech training with words vs sentences (Stacey & Summerfield 2007/2008; Loebach & Pisoni 2008); spatial-processing training (Cameron & Dillon); audiovisual and lipreading training (Moradi et al. 2017; Bernstein et al.); WM and visual-memory training nulls in older and CI listeners (Wayne et al. 2016; Oba et al. 2013); reverberation adaptation (Brandewie & Zahorik 2010); dose and long-term studies (Burk & Humes 2008; Humes et al. 2014); listening-effort outcomes (Kuchinsky et al. 2014); dichotic training for adults; general brain-training suites, musician ear-trainers and APD programme product pages.
 
 ## 9. Reference list
 
-<!-- R1:REFS -->
+Reviews and meta-analyses
+- Henshaw H, Ferguson MA (2013). Efficacy of individual computer-based auditory training for people with hearing loss: a systematic review of the evidence. PLOS ONE 8(5):e62836. doi:10.1371/journal.pone.0062836
+- Fallahnezhad T, Pourbakht A, Toufan R (2023). The effect of computer-based auditory training on speech-in-noise perception in adults: a systematic review and meta-analysis. Indian J Otolaryngol Head Neck Surg 75(4):4198–4211. doi:10.1007/s12070-023-03920-0
+- Lawrence BJ, Jayakody DMP, Henshaw H, Ferguson MA, Eikelboom RH, Loftus AM, Friedland PL (2018). Auditory and cognitive training for cognition in adults with hearing loss: a systematic review and meta-analysis. Trends in Hearing 22. doi:10.1177/2331216518792096
+- Park S, Ma S, Joo J, Ha S, Yoon T-J, Han W (2026). Efficacy of self-directed auditory rehabilitation in individuals with hearing loss: a systematic review and meta-analysis. J Audiol Otol 30(1):23–33. doi:10.7874/jao.2025.00591
+- Stropahl M, Besser J, Launer S (2020). Auditory training supports auditory rehabilitation: a state-of-the-art review. Ear Hear 41(4):697–704. PMID 31613823. Summary: https://apps.asha.org/EvidenceMaps/Articles/ArticleSummary/eb746906-f4a7-ed11-8143-005056834e2b
+- Dornhoffer JR, Chidarala S, Patel T, Khandalavala KR, Nguyen SA, Schvartz-Leyzac KC, Dubno JR, Carlson ML, Moberly AC, McRackan TR (2024). Systematic review of auditory training outcomes in adult cochlear implant recipients and meta-analysis of outcomes. J Clin Med 13(2):400. doi:10.3390/jcm13020400
+- Cambridge G, Taylor T, et al. (2022). Auditory training for adults with cochlear implants: a systematic review. Int J Audiol 61(11):896–904. Summary: https://apps.asha.org/EvidenceMaps/Articles/ArticleSummary/47d46678-f3a7-ed11-8143-005056834e2b
+- Crum R, Chowsilpa S, Kaski D, Giunti P, Bamiou D-E, Koohi N (2024). Hearing rehabilitation of adults with auditory processing disorder: a systematic review and meta-analysis of current evidence-based interventions. Front Hum Neurosci 18. doi:10.3389/fnhum.2024.1406916
+- Hennessy S, Mack WJ, Habibi A (2022). Speech-in-noise perception in musicians and non-musicians: a multi-level meta-analysis. Hear Res 416:108442. doi:10.1016/j.heares.2022.108442
+- Maillard E, Joyal M, Murray MM, Tremblay P (2023). Are musical activities associated with enhanced speech perception in noise in adults? A systematic review and meta-analysis. Curr Res Neurobiol 4:100083. https://cibm.ch/research/publications/are-musical-activities-associated-with-enhanced-speech-perception-in-noise-in-adults-a-systematic-review-and-meta-analysis/
 
-## Appendix A. Working log (raw notes per source, appended as read)
+Trials and studies
+- Saunders GH, et al. (2016). A randomized control trial: supplementing hearing aid use with Listening and Communication Enhancement (LACE) auditory training. Ear Hear. PMID 26901263. https://www.pubmed.gov/26901263/
+- Smith SL, Saunders GH, Chisolm TH, Frederick M, Bailey BA (2016). Examination of individual differences in outcomes from a randomized controlled clinical trial comparing formal and informal individual auditory training programs. JSLHR 59(4):876–886. doi:10.1044/2016_JSLHR-H-15-0162
+- Chisolm TH, et al. (2013). Learning to listen again: the role of compliance in auditory training for adults with hearing loss. Am J Audiol 22(2):339–342. PMID 24018575
+- Humes LE, Skinner KG, Kinney DL, Rogers SE, Main AK, Quigley TM (2019). Clinical effectiveness of an at-home auditory training program: a randomized controlled trial. Ear Hear 40(5):1043–1060. doi:10.1097/AUD.0000000000000688
+- Ferguson MA, Henshaw H, Clark DPA, Moore DR (2014). Benefits of phoneme discrimination training in a randomized controlled trial of 50- to 74-year-olds with mild hearing loss. Ear Hear 35(4). PMCID PMC4072445. https://pmc.ncbi.nlm.nih.gov/articles/PMC4072445
+- Henshaw H, Heinrich A, Tittle A, Ferguson M (2022). Cogmed training does not generalize to real-world benefits for adult hearing aid users: results of a blinded, active-controlled randomized trial. Ear Hear 43(3):741–763. doi:10.1097/AUD.0000000000001096
+- Lowe SC, Henshaw H, Wild J, Ferguson MA (≈ 2022). Evaluation of home-delivered live-voice auditory training with communication partners for adult hearing aid users: a randomised controlled trial. ISRCTN31892374. https://nottingham-repository.worktribe.com/OutputFile/16798287
+- Whitton JP, Hancock KE, Shannon JM, Polley DB (2017). Audiomotor perceptual training enhances speech intelligibility in background noise. Curr Biol 27(21). PMID 29056453. News report used: https://hms.harvard.edu/news/game-changer
+- Anderson S, White-Schwoch T, Parbery-Clark A, Kraus N (2013). Reversal of age-related neural timing delays with training. PNAS 110(11):4357–4362. https://brainvolts.northwestern.edu/wp-content/uploads/boxtrx/Anderson_pnas2013.pdf
+- Anderson S, White-Schwoch T, Choi HJ, Kraus N (2014). Partial maintenance of auditory-based cognitive training benefits in older adults. Neuropsychologia 62:286–296. https://hesp.umd.edu/sites/hesp.umd.edu/files/pubs/Anderson_Neuropsychologia_2014.pdf
+- Anderson S, White-Schwoch T, Choi HJ, Kraus N (2013). Training changes processing of speech cues in older adults with hearing loss. Front Syst Neurosci 7:97. doi:10.3389/fnsys.2013.00097
+- Karawani H, Bitan T, Attias J, Banai K (2016). Auditory perceptual learning in adults with and without age-related hearing loss. Front Psychol 6. doi:10.3389/fpsyg.2015.02066
+- Rate-discrimination training RCT (2021 preprint). medRxiv. doi:10.1101/2021.11.29.21266998
+- Lelo de Larrea-Mancera ES, Philipp MA, Stavropoulos T, Carrillo AA, Cheung S, Koerner TK, Molis MR, Gallun FJ, Seitz AR (2022). Training with an auditory perceptual learning game transfers to speech in competition. J Cogn Enhanc. PMCID PMC8453468. Preprint: doi:10.1101/2021.01.26.428343
+- Saunders et al. (2018) and Yusof et al. (2019) and Picinini et al. (2021): as cited in Crum et al. 2024.
+- Baese-Berk MM, Bradlow AR, Wright BA (2013). Accent-independent adaptation to foreign accented speech. JASA 133(3):EL174–EL180. https://scispace.com/pdf/accent-independent-adaptation-to-foreign-accented-speech-3gpuoewmlj.pdf
+- Bradlow AR, Bassard AM, Paller KA (2023). Generalized perceptual adaptation to second-language speech: variability, similarity, and intelligibility. JASA 154(3):1601–1613. doi:10.1121/10.0020914
+- Bieber RE (2021). Influence of supportive context and stimulus variability on rapid adaptation to non-native speech. Doctoral dissertation, University of Maryland. https://core.ac.uk/download/480384596.pdf
+- Shechter Shvartzman L, Lavie L, Banai K (2022). Speech perception in older adults: an interplay of hearing, cognition, and learning? Front Psychol 13:816864. doi:10.3389/fpsyg.2022.816864
+- Worschech F, Marie D, Jünemann K, Sinke C, Krüger THC, Großbach M, Scholz DS, Abdili L, Kliegel M, James CE, …, Altenmüller E (2021). Improved speech in noise perception in the elderly after 6 months of musical instruction. Front Neurosci. doi:10.3389/fnins.2021.696240
+- Zendel BR, West G, Belleville S, Peretz I (2019). Musical training improves the ability to understand speech-in-noise in older adults. Neurobiol Aging. Preprint: doi:10.1101/196030
+- Dubinsky E, Wood EA, Nespoli G, Russo FA (2019). Short-term choir singing supports speech-in-noise perception and neural pitch strength in older adults with age-related hearing loss. Front Neurosci 13:1153. doi:10.3389/fnins.2019.01153
+- Lo CY, Dubinsky E, Gilmore SA, Wright-Whyte K, Singh G, Russo FA (2025). Choir singing and music appreciation training enhances unaided speech-in-noise perception and frequency following responses for older adult hearing aid users: a randomized controlled trial. Semin Hear 46(2):125–140. doi:10.1055/s-0045-1811541
+- Reynard P, Attina V, Idriss S, Hermann R, Barilly C, Veuillet E, Joly CA, Thai-Van H (2022). Effect of serious gaming on speech-in-noise intelligibility in adult cochlear implantees: a randomized controlled study. J Clin Med 11:2880. doi:10.3390/jcm11102880
+- Magits S, Boon E, De Meyere L, Dierckx A, Vermaete E, Francart T, Verhaert N, Wouters J, van Wieringen A (2023). Comparing the outcomes of a personalized versus nonpersonalized home-based auditory training program for cochlear implant users. Ear Hear 44:477–493. doi:10.1097/AUD.0000000000001295
+- Reis M, McMahon CM, Távora-Vieira D, Humburg P, Boisvert I (2021). Effectiveness of computer-based auditory training for adult cochlear implant users: a randomized crossover study. Trends Hear 25. doi:10.1177/23312165211025938
+- Green T, Faulkner A, Rosen S (2019). Computer-based connected-text training of speech-in-noise perception for cochlear implant users. Trends Hear 23. doi:10.1177/2331216519843878
+- Kerneis S, Galvin JJ III, Borel S, Baqué J, Fu Q-J, Bakhos D (2023). Preliminary evaluation of computer-assisted home training for French cochlear implant recipients. PLOS ONE 18(4). https://escholarship.org/content/qt76d4w8pj/qt76d4w8pj.pdf
+- Schumann (2015), Oba, Fu & Galvin (2011), Burk et al. (2006), Burk & Humes (2008), Humes et al. (2009), Stecker et al. (2006), Zhang et al. (2012), Ingvalson et al. (2012), Stacey et al. (2010), Sweetow & Henderson Sabes (2006), Miller et al. (2008), Fu et al. (2004), Tyler et al. (2010): as cited in Henshaw & Ferguson 2013 and Dornhoffer et al. 2024.
+- Tye-Murray N, Spehar B, Sommers M, Barcroft J (2016). Auditory training with frequent communication partners. JSLHR. News report used: https://source.washu.edu/2017/04/auditory-training-loved-ones-voice-helps-patients-hearing-loss/
 
-<!-- R1:LOG -->
+Learning-schedule studies
+- Wright BA, Baese-Berk MM, Marrone N, Bradlow AR (2015). Enhancing speech learning by combining task practice with periods of stimulus exposure without practice. JASA 138(2):928–937. doi:10.1121/1.4927411
+- Fuhrmeister P, Myers EB (2020). Desirable and undesirable difficulties: influences of variability, training schedule, and aptitude on nonnative phonetic learning. Atten Percept Psychophys 82:2049–2065. https://par.nsf.gov/servlets/purl/10177429
+- Baese-Berk MM, Samuel AG (2022). Just give it time: differential effects of disruption and delay on perceptual learning. Atten Percept Psychophys. doi:10.3758/s13414-022-02463-w
+
+Apps, products and design studies
+- Huang Q, Stawarz K, Zhao L, Yang S, Xie W, Song F, Liu H (2025). Applying cross-modal plasticity principles in auditory training applications. Int J Hum-Comput Stud 203:103570. https://orca.cardiff.ac.uk/id/eprint/179419/1/1-s2.0-S1071581925001272-main.pdf
+- Trade interview on a commercial programme's AI version (2025): https://hearinghealthmatters.org/thisweek/2025/aron-lace-ai-pro-auditory-training
+- Third-party app directory, hearing-training category: https://www.hearingtracker.com/apps/hearing-training (pages for lace-pro, wordsuccess, cochlear-copilot, redi, hearoes, hear-beyond, i-angel-sound)
+- i-Angel Sound App Store page: https://apps.apple.com/us/app/i-angel-sound/id839199212
+- Amptify App Store page: https://apps.apple.com/ca/app/amptify/id1508135886 ; university news: https://oto.wustl.edu/improving-hearing-aid-benefits-through-digital-training/
+- Review of auditory training mobile apps for adults with hearing loss (2018). Perspectives of the ASHA SIGs 3(7):12–23. doi:10.1044/persp3.SIG7.12 (not opened)
+- ClinicalTrials.gov NCT07506408: randomised study of web-based auditory training with varying perceptual and cognitive demands (title only)
+
+## 10. Method and access notes
+- 24 web searches and about 60 page fetches by this agent on 2026-11-26 (UTC); the shared search budget then ran out, which is why some classic sources were not reached (section 8).
+- PubMed Central article pages often returned a bot-check page, so several open-access papers stayed unread; we did not try to get around bot checks. Some publisher sites (ASHA journals, ScienceDirect, Thieme) refused or errored; some DOI and API links were not permitted.
+- Where a review's table gave per-study numbers, those are tagged as secondary reports of that review. Effect sizes are as reported by the source; we computed only simple differences of reported means (marked "net").
+- No papers or downloads were saved in the repository.
