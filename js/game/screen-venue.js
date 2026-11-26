@@ -32,13 +32,16 @@
     return G.ui.levelChart({ title: 'Your earshot here over time', sub: 'After each set with this venue’s conditions. Higher is harder.',
       ex: s.venue.head.ex, dial: s.venue.head.dial, points: h.map(function (p) { return { t: p[0], y: p[1] }; }) });
   }
-  function alsoList(v) {
+  function alsoList(v, open) {
     if (!v.also.length) return null;
+    var S = ES.ui.session, can = function (ex) { return open && S && S.supports && S.supports.plan && (typeof S.runnable !== 'function' || S.runnable(ex)); };
     return [el('h2', { class: 'g-sec' }, 'Also here'), el('ul', { class: 'g-also' }, v.also.map(function (c) {
       var e = G.venues.condEarshot(c), d = G.core.dialDef(c.ex, c.dial);
-      var val = e.status === 'none' ? 'not measured yet' : e.status === 'below' ? 'not yet' : e.text;
-      return el('li', null, [el('span', null, [el('span', { class: 'g-vname' }, c.label), el('span', { class: 'g-vdesc' }, G.venues.exName(c.ex) + ' · ' + (d ? d.label.toLowerCase() : c.dial))]),
-        el('span', { class: 'g-vval' + (e.status === 'none' || e.status === 'below' ? ' is-none' : '') }, val)]);
+      var val = e.status === 'none' ? 'not measured yet' : e.text;
+      var play = can(c.ex) ? ES.ui.button('Play', { small: true, attrs: { 'data-play-also': c.ex + '.' + c.dial, 'aria-label': 'Play a set: ' + c.label },
+        onClick: function () { G.ui.startPlan(G.venues.plan(v.id, { cond: c })); } }) : null;
+      return el('li', { class: play ? 'has-play' : '' }, [el('span', null, [el('span', { class: 'g-vname' }, c.label), el('span', { class: 'g-vdesc' }, G.venues.exName(c.ex) + ' · ' + (d ? d.label.toLowerCase() : c.dial))]),
+        el('span', { class: 'g-vval' + (e.status === 'none' || e.status === 'below' ? ' is-none' : '') }, val), play]);
     }))];
   }
   function regulars(v) {
@@ -71,7 +74,7 @@
       s.open ? earshotBlock(s) : lockBlock(s),
       el('div', { class: 'g-actions' }, playButton(s)),
       s.open ? historyChart(s) : null,
-      alsoList(v),
+      alsoList(v, s.open),
       regulars(v),
       ES.ui.w.footer()
     ]));

@@ -68,6 +68,8 @@
       el('p', { class: 'g-sub' }, 'A card fills in when you meet its voice, and turns known when you can pick it out by ear. Voices grow familiar within the first hour of listening to them.'),
       cards.length ? el('p', { class: 'g-cast-count' }, n.met + ' of ' + n.total + ' met · ' + n.known + ' known') : null,
       body,
+      ES.ui.screens['voices-own'] ? el('p', { class: 'g-note', style: 'margin-top:16px' }, [el('a', { href: '#voices-own', 'data-go': 'voices-own' }, 'Add a voice from your life'),
+        ' \u00b7 recordings stay on this device and are never exported.']) : null,
       ES.ui.w.footer()
     ]));
   }

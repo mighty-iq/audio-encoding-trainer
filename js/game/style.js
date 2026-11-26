@@ -63,6 +63,7 @@
     '.g-also{display:grid;gap:0;margin:0;padding:0;list-style:none;border-top:1px solid var(--rule)}',
     '.g-also li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px 2px;border-bottom:1px solid var(--rule);align-items:center}',
     '.g-also .g-vval{font-size:var(--fs-1)}',
+    '.g-also li.has-play{grid-template-columns:minmax(0,1fr) auto auto}', '.g-also .btn-small{min-height:40px;padding:0 12px}',
     '.g-regulars{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}',
     '.g-regulars li{border:1px solid var(--rule);border-radius:var(--r-1);padding:6px 10px;background:var(--surface);font-size:var(--fs-1)}',
     '.g-regulars li.is-unmet{color:var(--ink-3);border-style:dashed}',

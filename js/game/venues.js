@@ -194,7 +194,7 @@
     var cond = opts.cond || v.head, meta = (E().dialMeta || {})[cond.ex] || {}, ck = K().ctxKey(cond.ex);
     var d = K().dialDef(cond.ex, cond.dial);
     var set = { exId: cond.ex, trials: meta.setTrials || 20, kind: 'venue', venue: v.id, pin: pinsFor(cond, ck), focus: cond.dial,
-      family: d && d.family ? d.family : null, title: v.name + ' · ' + exName(cond.ex), interlude: null };
+      family: d && d.family ? d.family : null, title: v.name + ' · ' + (opts.cond && cond.label ? cond.label : exName(cond.ex)), interlude: null };
     return { kind: 'venue', title: set.title, sets: [set], done: { name: 'venue', params: { id: v.id, after: true } } };
   }
   function exName(ex) {

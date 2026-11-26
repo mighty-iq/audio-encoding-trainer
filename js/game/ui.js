@@ -37,12 +37,13 @@
     for (var v = lo; v <= hi + 1e-9; v += step) {
       s.appendChild(svg('line', { class: 'gc-grid', x1: L, x2: L + pw, y1: Y(v), y2: Y(v) }));
       var txt = label(v * dir);
-      if (txt.length <= 9) s.appendChild(svg('text', { class: 'gc-tick', x: L - 6, y: Y(v) + 4, 'text-anchor': 'end' }, txt));
+      if (txt.length <= 7) s.appendChild(svg('text', { class: 'gc-tick', x: L - 6, y: Y(v) + 4, 'text-anchor': 'end' }, txt));
+      else if (Math.abs(v - lo) < 1e-9 || Math.abs(v - hi) < 1e-9) s.appendChild(svg('text', { class: 'gc-tick', x: L + 3, y: Y(v) - 4 }, txt));
     }
     s.appendChild(svg('line', { class: 'gc-axis', x1: L, x2: L + pw, y1: T + ph, y2: T + ph }));
     s.appendChild(svg('text', { class: 'gc-tick', x: L, y: H - 4 }, dateText(pts[0].t)));
     if (pts.length > 1) s.appendChild(svg('text', { class: 'gc-tick', x: L + pw, y: H - 4, 'text-anchor': 'end' }, dateText(pts[pts.length - 1].t)));
-    s.appendChild(svg('text', { class: 'gc-tick', x: 2, y: 10 }, '\u2191 harder'));
+    s.appendChild(svg('text', { class: 'gc-tick', x: L + pw, y: 10, 'text-anchor': 'end' }, '\u2191 harder'));
     if (pts.some(function (p) { return p.s; })) {
       var up = pts.map(function (p) { return X(p.t) + ',' + Y((p.y + (p.s || 0) * (dir > 0 ? 1 : -1)) * dir); });
       var dn = pts.slice().reverse().map(function (p) { return X(p.t) + ',' + Y((p.y - (p.s || 0) * (dir > 0 ? 1 : -1)) * dir); });
