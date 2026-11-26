@@ -60,13 +60,13 @@ The table below is generated from `data/manifest.js` by `tools/audio/report.py` 
 current build ships; a source that is not listed there is not in the build.
 
 <!-- ships:start -->
-_What ships in this build (generated 2026-11-26 21:03 UTC)._
+_What ships in this build (generated 2026-11-26 22:23 UTC)._
 
 | Source | Licence | Clips | Seconds | Packs | Use |
 |---|---|---|---|---|---|
-| Kokoro-82M v1.0 by hexgrad | Apache-2.0 | 514 | 991 | babble, cast, probe, starter, words2 | Lab probes and training |
-| Piper voice en_US-libritts-high, trained on LibriTTS | CC BY 4.0 (training data) | 112 | 167 | babble, words2 | training |
-| AudioMNIST (Becker et al.) | MIT | 80 | 51 | probe | Lab probes |
+| Kokoro-82M v1.0 by hexgrad | Apache-2.0 | 655 | 1292 | babble, cast, echo, probe, starter, strange, words2 | Lab probes and training |
+| Piper voice en_US-libritts-high, trained on LibriTTS | CC BY 4.0 (training data) | 392 | 878 | babble, cast, echo, far, repair, strange, words2 | training |
+| AudioMNIST (Becker et al.) | MIT | 75 | 48 | probe | Lab probes |
 | CREMA-D (Cao et al., 2014) | ODbL 1.0 / DbCL 1.0 | 94 | 234 | probe | Lab probes |
 | DEMAND noise database via Microsoft MS-SNSD | CC BY-SA 3.0 | 7 | 70 | beds, probe | Lab probes and training |
 | Freesound clips via Microsoft MS-SNSD | CC0 1.0 | 2 | 20 | beds | training |

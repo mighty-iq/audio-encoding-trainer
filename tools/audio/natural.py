@@ -11,13 +11,13 @@ import sys
 
 sys.path.insert(0, __import__('os').path.dirname(__file__))
 import asr  # noqa: E402
-from common import (CORPORA, REPO, SR, Log, Results, active_level_db, load_audio, mp3_decode, mp3_encode,  # noqa: E402
-                    save_clip, trim, wav_path)
+from common import (CORPORA, REPO, SR, Log, Results, active_level_db, code_level, load_audio, mp3_decode,  # noqa: E402
+                    mp3_encode, save_clip, trim, wav_path)
 
 
 def shipped(x):
     """The clip as the app will decode it (MP3 round trip); every recogniser check runs on this."""
-    return mp3_decode(mp3_encode(x))
+    return mp3_decode(mp3_encode(code_level(x)))
 
 META = REPO / 'tools' / 'audio' / 'natural_voices.json'
 DIGITS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']

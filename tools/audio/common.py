@@ -197,7 +197,20 @@ def peak_normalise(x, peak_db=-1.0):
 
 # ---------------------------------------------------------------- MP3 (ffmpeg / libmp3lame)
 
-MP3_VERSION = 'v2'      # bump when the encoder settings change (invalidates cached MP3s)
+MP3_VERSION = 'v3'      # bump when the encoder settings change (invalidates cached MP3s)
+CODE_LEVEL = -24.0      # active level (dBFS) every clip is scaled to before encoding
+
+
+def code_level(x, kind='speech'):
+    """Scale a clip to CODE_LEVEL active level (beds: RMS) with the peak kept at or below -1 dBFS, so quiet
+    recordings are not thinned by the encoder's absolute-threshold model; levels are re-measured after decoding."""
+    x = np.asarray(x, dtype=np.float32)
+    lv = rms_db(x) if kind == 'bed' else active_level_db(x)
+    g = 10 ** ((CODE_LEVEL - lv) / 20)
+    pk = float(np.max(np.abs(x))) * g if len(x) else 0.0
+    if pk > 10 ** (-1 / 20):
+        g *= 10 ** (-1 / 20) / pk
+    return (x * g).astype(np.float32)
 
 
 def mp3_encode(x, kbps=MP3_KBPS):

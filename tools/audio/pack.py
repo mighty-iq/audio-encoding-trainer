@@ -12,8 +12,8 @@ import sys
 
 sys.path.insert(0, __import__('os').path.dirname(__file__))
 import plan as P  # noqa: E402
-from common import (MP3_VERSION, SR, STAGE, WORK, Log, Results, active_level_db, load_audio, mp3_decode,  # noqa: E402
-                    mp3_encode, norm_words, utc_now, wav_path, write_js)
+from common import (MP3_VERSION, SR, STAGE, WORK, Log, Results, active_level_db, code_level, load_audio,  # noqa: E402
+                    mp3_decode, mp3_encode, norm_words, rms_db, utc_now, wav_path, write_js)
 
 DBS = ['words', 'sentences', 'natural', 'beds']
 MANIFEST_VERSION = 1
@@ -66,7 +66,7 @@ def wav_hash(cid):
     return MP3_VERSION + hashlib.sha256(wav_path(cid).read_bytes()).hexdigest()[:14]
 
 
-def encode(cid, cache):
+def encode(cid, cache, kind='speech'):
     """(mp3 bytes, decoded float audio) for a clip; cached under ../stimwork/mp3 by WAV hash."""
     h = wav_hash(cid)
     mp = WORK / 'mp3' / f'{cid}.{h}.mp3'
@@ -76,7 +76,7 @@ def encode(cid, cache):
         mp.parent.mkdir(parents=True, exist_ok=True)
         for old in mp.parent.glob(f'{cid}.*.mp3'):
             old.unlink()
-        data = mp3_encode(load_audio(wav_path(cid)))
+        data = mp3_encode(code_level(load_audio(wav_path(cid)), kind))
         mp.write_bytes(data)
     key = f'{cid}.{h}'
     if key in cache:
@@ -94,12 +94,13 @@ def main(argv):
     packs, manifest, stats, rejects = {}, {}, {}, []
     for r in rows():
         cid = r['id']
-        data, y, m = encode(cid, cache)
+        data, y, m = encode(cid, cache, 'bed' if r['kind'] == 'bed' else 'speech')
         key = f'{cid}.{wav_hash(cid)}'
         if m is None or (check_asr and 'asr' not in m):
             if y is None:
                 y = mp3_decode(data)
-            m = {'id': key, 'dur': round(len(y) / SR, 3), 'adb': round(active_level_db(y), 2)}
+            m = {'id': key, 'dur': round(len(y) / SR, 3),
+                 'adb': round(rms_db(y) if r['kind'] == 'bed' else active_level_db(y), 2)}
             if check_asr and r['kind'] not in ('bed', 'rir'):
                 import asr
                 rec = rec or asr.recogniser('parakeet')

@@ -1,8 +1,9 @@
 """Build-time intelligibility in speech-shaped noise (an objective proxy, not a human norm):
 - tier (1-3) for accented and non-native voices: recogniser word accuracy on up to 10 of the voice's
   sentences at 0 dB SNR, split into thirds among those voices (1 = clearest); tools/audio/voice_tiers.json;
-- diff (dB) for matrix probe words: accuracy at -9, -6 and -3 dB SNR over three noise seeds, turned into a level
-  offset with a slope of 10 %/dB and capped at +-3 dB (db 'intel'; pack.py copies it into the manifest).
+- diff (dB) for matrix probe words: recogniser accuracy at 0, +3 and +6 dB SNR (around the recogniser's own 50 %
+  point; it needs about 10 dB more SNR than people) over three noise seeds, turned into a level offset with a
+  slope of 10 %/dB and capped at +-3 dB (db 'intel'; pack.py copies it into the manifest).
 Usage: python3 -I tools/audio/intel.py tiers|matrix
 """
 import json
@@ -75,19 +76,21 @@ def matrix(log):
     res = Results('intel')
     words = [r for r in Results('words').values() if r.get('ok') and 'matrix' in (r.get('tags') or [])]
     for r in words:
-        if r['id'] in res:
+        if (res.get(r['id']) or {}).get('v') == 2:
             continue
         x = load_audio(wav_path(r['id']))
-        hits = [accuracy(rec, r['text'], mix(x, snr, seed)) for snr in (-9.0, -6.0, -3.0) for seed in (1, 2, 3)]
-        res.put({'id': r['id'], 'p': round(float(np.mean(hits)), 3)})
+        hits = [accuracy(rec, r['text'], mix(x, snr, seed)) for snr in (0.0, 3.0, 6.0) for seed in (1, 2, 3)]
+        res.put({'id': r['id'], 'p': round(float(np.mean(hits)), 3), 'v': 2})
     by_voice = {}
     for r in words:
         by_voice.setdefault(r['voice'], []).append(r['id'])
     for v, ids in by_voice.items():
-        ps = [res.get(i)['p'] for i in ids if res.get(i)]
+        ps = [res.get(i)['p'] for i in ids if (res.get(i) or {}).get('v') == 2]
         mean = float(np.mean(ps))
         for i in ids:
             row = res.get(i)
+            if (row or {}).get('v') != 2:
+                continue
             row['diff'] = round(float(np.clip((mean - row['p']) / 0.10, -3, 3)), 1)
             res.put(row)
         log(v, f'mean p {mean:.2f} over {len(ps)} words')

@@ -72,6 +72,51 @@ def candidates(row):
     return out
 
 
+def extra_takes(v, missing, rec, log, per_word=3):
+    """New matrix sentences (same voice) that contain each missing word, rendered and cut for that word only."""
+    import random
+    import render_phrases as RP
+    out = []
+    eng = tts.engine('kokoro')
+    for w in missing:
+        slot = SLOT_OF[w]
+        rng = random.Random(f'extra-{v}-{w}')
+        for k in range(per_word):
+            words = [w if s_ == slot else rng.choice(CP.MATRIX[s_]) for s_ in CP.SLOTS]
+            text = f'{words[0].capitalize()} {" ".join(words[1:])}.'
+            for sp in (1.0, 0.95):
+                x, spans = eng.synth_timed(text, v, speed=sp)
+                y0, off = RP.trim_with_offset(x)
+                row = {'id': f'extra.{v}.{w}.{k}', 'words': words,
+                       'wt': RP.word_times({'text': text, 'words': words}, spans, off, [], len(y0) / SR)}
+                if not row['wt']:
+                    continue
+                got = None
+                for ww, y, _ in candidates_from(y0, row):
+                    if ww == w:
+                        heard, _ = rec.run(shipped(y))
+                        if closed_ok(w, heard):
+                            got = (w, y, f'extra:{text}', heard)
+                if got:
+                    out.append(got)
+                    break
+            if any(o[0] == w for o in out):
+                break
+        log(v, w, 'extra take', 'found' if any(o[0] == w for o in out) else 'none')
+    return out
+
+
+def candidates_from(x, row):
+    wt, words = row['wt'], row['words']
+    out = []
+    for k, w in enumerate(words):
+        a = 0 if k == 0 else refine(x, (wt[k - 1][1] + wt[k][0]) / 2)
+        b = len(x) if k == len(words) - 1 else refine(x, (wt[k][1] + wt[k + 1][0]) / 2)
+        if b - a >= int(0.12 * SR):
+            out.append((w, fade(trim(x[a:b], pad=0.02), SR, 6.0, 8.0), row['id']))
+    return out
+
+
 def main():
     log = Log('cut-matrix')
     import render_phrases
@@ -98,6 +143,11 @@ def main():
                 q = edges(y)
                 if w not in best or q < best[w][0]:
                     best[w] = (q, y, src, heard)
+        missing = [w for w in sorted(SLOT_OF) if w not in best
+                   and not (res.get(f'kokoro.{v}.word.{w}', {}).get('ok') and wav_path(f'kokoro.{v}.word.{w}').exists())]
+        for w, y, src, heard in extra_takes(v, missing, rec, log):
+            if w not in best or edges(y) < best[w][0]:
+                best[w] = (edges(y), y, src, heard)
         for w in sorted(SLOT_OF):
             cid = f'kokoro.{v}.word.{w}'
             if res.get(cid, {}).get('ok') and wav_path(cid).exists():

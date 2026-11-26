@@ -1,0 +1,62 @@
+{
+ "kokoro.ef_dora": {
+  "acc0dB": 0.98,
+  "tier": 1
+ },
+ "kokoro.em_alex": {
+  "acc0dB": 0.719,
+  "tier": 1
+ },
+ "kokoro.ff_siwis": {
+  "acc0dB": 0.487,
+  "tier": 3
+ },
+ "kokoro.hf_alpha": {
+  "acc0dB": 0.373,
+  "tier": 3
+ },
+ "kokoro.hf_beta": {
+  "acc0dB": 0.363,
+  "tier": 3
+ },
+ "kokoro.hm_omega": {
+  "acc0dB": 0.55,
+  "tier": 2
+ },
+ "kokoro.hm_psi": {
+  "acc0dB": 0.7,
+  "tier": 2
+ },
+ "kokoro.if_sara": {
+  "acc0dB": 0.627,
+  "tier": 2
+ },
+ "kokoro.im_nicola": {
+  "acc0dB": 0.62,
+  "tier": 2
+ },
+ "kokoro.jf_alpha": {
+  "acc0dB": 0.714,
+  "tier": 1
+ },
+ "kokoro.jm_kumo": {
+  "acc0dB": 0.5,
+  "tier": 3
+ },
+ "kokoro.pf_dora": {
+  "acc0dB": 0.88,
+  "tier": 1
+ },
+ "kokoro.pm_alex": {
+  "acc0dB": 0.833,
+  "tier": 1
+ },
+ "kokoro.zm_yunjian": {
+  "acc0dB": 0.647,
+  "tier": 2
+ },
+ "kokoro.zm_yunxi": {
+  "acc0dB": 0.467,
+  "tier": 3
+ }
+}

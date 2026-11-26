@@ -151,8 +151,8 @@ def build_vocab(log, man=None):
            'phrases': with_audio(CF.items(), texts),
            'repair': with_audio(CR.sentences(), texts),
            'echo': with_audio(CE.items(), texts), 'echoValues': CE.values(),
-           'intros': {vid: c['intro'] for vid, c in P.cast().items()
-                      if ' '.join(norm_words(c['intro'])) in texts or not man},
+           'intros': {e['voice']: e['text'] for e in sorted((man or {}).get('clips', {}).values(),
+                                                              key=lambda e: e['text']) if e['kind'] == 'intro'},
            'stories': with_audio(CP.vocab('stories'), texts), 'matrix': CP.vocab('matrix'),
            'twovoices': with_audio(CP.vocab('twovoices'), texts)}
     write_js(STAGE / 'data' / 'vocab.js', 'window.ES = window.ES || {}; ES.data = ES.data || {}; ES.data.vocab', voc)

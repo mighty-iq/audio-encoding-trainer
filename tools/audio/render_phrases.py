@@ -14,8 +14,8 @@ sys.path.insert(0, __import__('os').path.dirname(__file__))
 import asr  # noqa: E402
 import jobs as J  # noqa: E402
 import tts  # noqa: E402
-from common import (SR, Log, Results, active_level_db, fade, mp3_decode, mp3_encode, norm_words, save_clip,  # noqa: E402
-                    speech_bounds, wav_path)
+from common import (SR, Log, Results, active_level_db, code_level, fade, mp3_decode, mp3_encode, norm_words,  # noqa: E402
+                    save_clip, speech_bounds, wav_path)
 
 SPEEDS = [1.0, 0.95, 1.05]
 PAD = 0.03
@@ -50,9 +50,13 @@ def render_variant(it, rec, res, log):
         else:
             x, spans = eng.synth(say, it['voice'], speed=sp), None
         y, off = trim_with_offset(x)
-        heard, hw = rec.run(mp3_decode(mp3_encode(y)))      # judge the audio as it will ship
+        heard, hw = rec.run(mp3_decode(mp3_encode(code_level(y))))      # judge the audio as it will ship
         sc = asr.score(it.get('asr_text', say), heard, it.get('keywords'))
-        ok = sc['ok'] or (it.get('wer_max', 0) > 0 and sc['wer'] <= it['wer_max'] and sc['kw_ok'])
+        name_ok = True
+        if it.get('name'):            # intros: the name must be heard within two phonemes of its spelling
+            import cut_matrix
+            name_ok = any(cut_matrix.ipa_dist(it['name'].lower(), w) <= 2 for w in norm_words(heard))
+        ok = sc['ok'] or (it.get('wer_max', 0) > 0 and sc['wer'] <= it['wer_max'] and sc['kw_ok'] and name_ok)
         if not ok:
             log(it['id'], 'miss', sp, ' '.join(sc['errs']), '| heard:', heard[:120])
             continue

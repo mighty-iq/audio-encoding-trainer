@@ -24,3 +24,12 @@
   audiomnist/cremad/librivox. Resume: rerun the chain (every step skips finished clips). After it: render_phrases
   starter (retries the 24), pack.py --asr, registry.py, intel.py tiers + matrix, pack.py --asr, registry.py,
   validate.py --publish, docs, commit.
+
+## 2026-11-26 21:13 UTC — stage 1 published (2a01b8c); stage 2 rendering
+- Stage 1: 810 clips, 66 voices, 4.99 MB: call-sign phrases 239 + 79 + 94 (12 + 10 Kokoro, 20 Piper), 34 babble,
+  9 beds, probes: matrix words (now 49/50/49/50 per voice after a closed-set re-cut and extra takes), 10 stories,
+  80 AudioMNIST digits (8 talkers), 94 CREMA-D sentences (8 actors), probe cafe bed. credits.js shipped.
+- Matrix words changed to share nothing with the British English matrix (Hall 2006); ids are now mxv2-*.
+- Running: ../stimwork/chain4.sh stage 2 (intros + cast call-signs, SUS, Repair, Echo, Far on Piper), then stage 3
+  (LibriVox, retries). Packs now level-normalise clips before encoding (MP3_VERSION v3: everything re-encoded).
+- Budget watch: about 8.4-8.6 MB projected; trim CREMA-D texts or LibriVox at the end if over 8.5 MB.

@@ -13,7 +13,7 @@ from natural import fetch, shipped
 from registry import f0_median
 
 BASE = 'https://media.githubusercontent.com/media/microsoft/DNS-Challenge/interspeech2020/master/'
-N_READERS = 14
+N_READERS = 10
 PER_READER = 1
 MIN_S, MAX_S = 2.2, 6.5
 

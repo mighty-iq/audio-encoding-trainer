@@ -106,8 +106,11 @@ def job_intros():
     out = cast_callsign_items()
     for vid, c in P.cast().items():
         src, v = vid.split('.', 1)
+        line = c['intro'].split('. ', 1)[1]
         out.append({'id': f'{vid}.intro.{c["name"].lower()}', 'src': src, 'voice': v, 'kind': 'intro',
-                    'text': c['intro'], 'pack': 'cast', 'set': 'train', 'item': 'intro', 'tags': ['cast', c['venue']]})
+                    'text': c['intro'], 'pack': 'cast', 'set': 'train', 'item': 'intro', 'tags': ['cast', c['venue']],
+                    'name': c['name'], 'wer_max': 0.2,
+                    'alts': [{'id': f'{vid}.intro.{c["name"].lower()}-2', 'text': f'Hello, my name is {c["name"]}. {line}'}]})
     return out
 
 
