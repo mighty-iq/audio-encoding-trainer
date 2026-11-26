@@ -177,6 +177,41 @@
     return d.kind === 'ord' ? d.dir * (Math.floor(e.x + 1e-9) - Math.floor(best + 1e-9)) >= 1 : d.dir * (e.x - best) >= 1 - 1e-9;
   }
 
+  // ---- levels over time (Progress): one point per session and dial, from the session's last set of the exercise.
+  // Only entries that carry the engine's estimates count (flow entries with `sd`, or summaries with `dials`):
+  // fallback entries hold a trial's level, not an estimate, and weekly runs sit at fixed levels.
+  function endValues(e) {
+    var out = {};
+    if (!e || !e.end || typeof e.end !== 'object') return null;
+    if (Array.isArray(e.end.dials)) { e.end.dials.forEach(function (x) { if (x && typeof x.m === 'number' && x.n > 0) out[x.id] = { y: x.m, s: x.s }; }); return out; }
+    if (!e.sd) return null;
+    Object.keys(e.end).forEach(function (k) { if (typeof e.end[k] === 'number' && isFinite(e.end[k])) out[k] = { y: e.end[k], s: typeof e.sd[k] === 'number' ? e.sd[k] : null }; });
+    return out;
+  }
+  /** {ex: {ctxKey: {dial: [{t, y, s}]}}} from the log, oldest first. */
+  function series(log) {
+    var out = {}, ss = ((log && log.sessions) || []).filter(function (x) { return x && x.start && !x.demo; }).slice().sort(function (a, b) { return a.start - b.start; });
+    ss.forEach(function (sess) {
+      var lastBy = {};
+      (sess.sets || []).forEach(function (e) { if (e && e.ex && e.kind !== 'weekly' && endValues(e)) lastBy[e.ex + '|' + (e.ctxKey || e.ex)] = e; });
+      Object.keys(lastBy).forEach(function (k) {
+        var e = lastBy[k], ex = e.ex, ck = e.ctxKey || ex, vals = endValues(e), t = sess.end || sess.start;
+        Object.keys(vals).forEach(function (dial) {
+          if (!K().dialDef(ex, dial)) return;
+          var a = ((out[ex] = out[ex] || {})[ck] = out[ex][ck] || {})[dial] = (out[ex][ck][dial] || []);
+          a.push({ t: t, y: vals[dial].y, s: vals[dial].s });
+        });
+      });
+    });
+    return out;
+  }
+  /** The hardest level a series reached (dial units). */
+  function bestOf(ex, dial, pts) {
+    var d = K().dialDef(ex, dial), b = null;
+    (pts || []).forEach(function (p) { if (b === null || d.dir * (p.y - b) > 0) b = p.y; });
+    return b;
+  }
+
   ES.game.milestones = { MIN_N: MIN_N, LADDERS: LADDERS, all: all, reached: reached, check: check, reachedList: reachedList, nextUp: nextUp,
-    snapshot: snapshot, levelUps: levelUps, venueBetter: venueBetter };
+    snapshot: snapshot, levelUps: levelUps, venueBetter: venueBetter, series: series, endValues: endValues, bestOf: bestOf };
 })(typeof window !== 'undefined' ? window : globalThis);

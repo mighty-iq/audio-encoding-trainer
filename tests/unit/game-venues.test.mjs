@@ -90,19 +90,19 @@ export const tests = {
     assert.deepEqual(s.pin, { talkers: 1, similar: 1 }, 'no spatial pin without headphones');
     assert.deepEqual(p.done, { name: 'venue', params: { id: 'bar', after: true } });
   },
-  async 'FALLBACK venue maker: pins hold, warm-ups first, trials are real TrialSpecs'(ES0, assert, env) {
+  async 'a venue set runs through the engine with the venue’s pins held'(ES0, assert, env) {
     const ES = await spawnGame(env);
     crowdAt(ES, 20, 3, 1);
-    const p = ES.game.venues.plan('restaurant'), make = ES.game.venueFallback.maker(ES.game.data.venue('restaurant').head, p.sets[0]);
-    const results = [];
-    for (let i = 0; i < 8; i++) {
-      const t = make(i, { results, headphones: false });
-      assert.equal(t.ex, 'crowd');
-      assert.equal(t.setting.dials.talkers, 0);
-      assert.equal(t.setting.focus, 'tmr');
-      assert.ok(t.question.slots.length === 2 && t.audio.parts.length > 1);
-      if (i < 2) assert.ok(t.setting.warmup);
-      results.push({ correct: i % 3 !== 0, prop: i % 3 ? 1 : 0 });
+    const s = ES.game.venues.plan('restaurant').sets[0], E = ES.engine;
+    assert.ok(E.controller.supports && E.controller.supports.pin, 'the engine honours pins');
+    const sc = E.flow.start(s.exId, { mode: 'edge', seed: 'venue-test', headphones: false, kind: s.kind, pin: s.pin, focus: s.focus, trials: 8 });
+    let spec, i = 0;
+    while ((spec = E.flow.next(sc))) {
+      assert.equal(spec.setting.dials.talkers, 0, 'talkers pinned');
+      assert.ok(spec.setting.dials.similar <= 1, 'similarity pinned (or eased by the floor)');
+      const picks = spec.question.slots.map((x) => (i % 3 ? x.answer : x.options.find((o) => o !== x.answer)));
+      E.flow.answer(sc, spec, { picks }); i++;
     }
+    assert.equal(i, 8);
   }
 };

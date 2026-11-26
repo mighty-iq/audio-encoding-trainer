@@ -96,6 +96,9 @@
       var m = news.milestones[news.milestones.length - 1], more = news.milestones.length - 1;
       ES.hooks.emit('milestone', { title: 'Milestone: ' + m.name, text: m.text + (more > 0 ? ' (and ' + more + ' more)' : '') });
     }
+    // a new best at a venue reaches the Chimera invitation too, unless the engine's own best already did (shell `pb`)
+    var vb = news.venueBest.filter(function (b) { return b.text.indexOf('New best') === 0; })[0];
+    if (vb && p && p.set && !p.set.pb) ES.hooks.emit('pb', { title: 'New personal best', text: vb.text, venue: vb.id });
     return news;
   }
   function newsFor(index, sid) {

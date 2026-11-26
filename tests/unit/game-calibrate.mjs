@@ -25,7 +25,7 @@ export function simulate({ learners = N, days = DAYS, type = null, seed = 'cal',
     const lr = E.learner.create(null, () => now);
     lr.state.seed = 'cal' + li;
     G.core.setLearner(lr);
-    const log = { sessions: [] }, opened = {}, rec = { venues: {} }, series = [];
+    const log = { sessions: [] }, opened = {}, rec = { v: 1, venues: {}, cast: {}, badges: {}, pbs: {}, weekly: {} }, series = [];
     const synth = (ex, setting, ctx, sc) => (ex === 'voices' || sc.i % synthEvery === 7) ? E.items[ex].make(sc.rng.fork('m' + sc.i), setting, ctx) : synthSpec(ES, ex, setting, ctx, sc.rng.fork('s' + sc.i));
     let sid = 0;
     for (let day = 0; day < days; day++) {
@@ -43,11 +43,20 @@ export function simulate({ learners = N, days = DAYS, type = null, seed = 'cal',
       sess.end = now;
       log.sessions.push(sess);
       const states = G.venues.state({ rec });
-      states.forEach((s) => { if (s.open && !rec.venues[s.id]) { rec.venues[s.id] = { open: now }; opened[s.id] = log.sessions.length; } });
+      states.forEach((s) => {
+        const sv = rec.venues[s.id] = rec.venues[s.id] || {};
+        if (s.open && !sv.open) { sv.open = now; opened[s.id] = log.sessions.length; }
+        const e = s.earshot;
+        if (e && (e.status === 'in' || e.status === 'beyond')) {
+          sv.h = (sv.h || []).concat([[now, e.x]]).slice(-80);
+          if (G.milestones.venueBetter(s.venue, e, sv.best)) { sv.best = e.x; sv.bestAt = now; }
+        }
+      });
+      G.milestones.check(rec, { venues: G.venues.state({ rec }) }).forEach((m) => { rec.badges[m.id] = now; });
       series.push(Object.fromEntries(states.map((s) => [s.id, s.earshot.status === 'none' ? null : s.earshot.x])));
       if (onSession) onSession({ li, S, lr, log, now, states });
     }
-    out.push({ li, type: S.type, sessions: log.sessions.length, opened, series, lr, log });
+    out.push({ li, type: S.type, sessions: log.sessions.length, opened, series, lr, log, rec });
   }
   G.core.setLearner(null);
   return { ES, runs: out };
@@ -74,7 +83,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(im
   if (args.includes('--fixture')) {
     const pick = runs.filter((r) => r.type === 'improver').sort((a, b) => b.sessions - a.sessions)[0] || runs[0];
     const file = path.join(ROOT, 'tests', 'fixtures', 'game-longterm.js');
-    const body = { learner: pick.lr.toJSON(), log: pick.log, t0: DAY0, t1: pick.log.sessions[pick.log.sessions.length - 1].end };
+    const body = { learner: pick.lr.toJSON(), log: pick.log, game: pick.rec, t0: DAY0, t1: pick.log.sessions[pick.log.sessions.length - 1].end };
     fs.writeFileSync(file, '/* Simulated long-term profile for the game layer\'s browser tests (tests/unit/game-calibrate.mjs --fixture):\n' +
       '   a simulated "improver" learner (tests/sim/learners.mjs) after ' + DAYS + ' days of Edge sessions through the engine\'s planner and\n' +
       '   flow. No real player data. Times are shifted at load so the last session ends one day before "now". */\n' +

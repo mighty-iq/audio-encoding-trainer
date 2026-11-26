@@ -4,7 +4,7 @@
    only once that dial has data from the player's own trials (n ≥ MIN_N); a fresh profile shows nothing invented.
    Openings: a venue opens when the venue before it on its line reaches `opens.at` and the venue itself is within
    reach (its own earshot exists); an opening is stored and never undone (a break or a bad day closes nothing). plan(id): a set at the venue, adaptive on its headline dial with
-   the other dials pinned (needs the shell's start(opts); the engine's `pin` support, else a marked FALLBACK). */
+   the other dials pinned (the shell's start(opts) passes plan.pin and plan.focus to the engine's flow.start). */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -149,7 +149,7 @@
       parts.push(speechVsNoise(p.noise || 0));
     } else if (ex === 'strange') {
       var d = K().dialDef(ex, cond.dial);
-      parts.push(d ? d.label : cond.dial);
+      parts.push(d && d.levels ? d.levels[d.min] + ' → ' + d.levels[d.max] : cond.dial);
     } else {
       Object.keys(p).forEach(function (k) { var t = lvl(ex, k, p[k]); if (t) parts.push(t); });
     }
@@ -183,7 +183,6 @@
     var d = K().dialDef(cond.ex, cond.dial);
     var set = { exId: cond.ex, trials: meta.setTrials || 20, kind: 'venue', venue: v.id, pin: pinsFor(cond, ck), focus: cond.dial,
       family: d && d.family ? d.family : null, title: v.name + ' · ' + exName(cond.ex), interlude: null };
-    if (!supports().pin && ES.game.venueFallback) set.make = ES.game.venueFallback.maker(cond, set);   // FALLBACK
     return { kind: 'venue', title: set.title, sets: [set], done: { name: 'venue', params: { id: v.id, after: true } } };
   }
   function exName(ex) {
