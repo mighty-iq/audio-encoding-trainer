@@ -110,7 +110,9 @@
     L.push('  ' + dv.platform + ' · lang ' + dv.lang + ' · tz ' + dv.tz + ' (UTC' + dv.utcOffset + ') · page ' + dv.page + ' · iframe ' + (dv.iframe ? 'yes' : 'no'));
     L.push('Storage: ' + st.mode + (st.reason ? ' (' + st.reason + ')' : '') + ' · ' + Math.round((st.bytes || 0) / 1024) + ' KB · ' +
       (st.saved ? 'saved' : 'NOT saved' + (st.lastError ? ' (' + st.lastError + ')' : '')) + (st.nearFull ? ' · near full' : ''));
-    L.push('Audio: ' + (au ? au.sampleRate + ' Hz · base ' + au.baseMs + ' ms · output ' + au.outMs + ' ms · ' + au.state + (au.engine ? ' · ' + au.engine : '') : 'not started'));
+    var nat = (ES.audio && ES.audio.native) || null;
+    L.push('Audio: ' + (au ? au.sampleRate + ' Hz · base ' + au.baseMs + ' ms · output ' + au.outMs + ' ms · ' + au.state + (au.engine ? ' · ' + au.engine : '') : 'not started') +
+      ' · HRTF ' + (nat && nat.hrtfOk === true ? 'ok' : nat && nat.hrtfOk === false ? 'failed (head model used)' : 'not probed'));
     var fr = (rec.frames || []).slice(-6);
     L.push('Frames (' + fr.length + '): ' + (fr.map(function (f) {
       return f.where + ' mean ' + f.mean + ' p95 ' + f.p95 + ' max ' + f.max + ' >20ms ' + f.over20 + '/' + f.n;

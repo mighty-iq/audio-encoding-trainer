@@ -64,6 +64,12 @@ lab `js/lab/**`; game `js/game/**`. Each will get its own brief.
 - `ES.audio.render(spec, {seed})` → `Promise<{buffer, report}>`; `report = {snrDb, tmrDb, outDb, peakDb, ms}`.
   Renders offline (OfflineAudioContext) into one stereo buffer; output active level = `spec.out.db` (default −20),
   peak ≤ −1 dBFS; levels are exact to ±0.25 dB. `ES.audio.play(buffer)→{stop, ended:Promise}` plays it once.
+- Spec additions implemented by audio (2026-11-26): `part.dist` (m, direct-path distance), `room.levels`
+  ('ear' default: levels re the listener, DRR = 20·log10(dc/dist), air loss beyond 10 m; 'source' option), `room.ir`
+  (supplied impulse response for held-out probe rooms), bed `ltas` / `from` / `fadeMs`, fx `{type:'highpass', f}` and
+  `{type:'mask', t0, t1, fill, db}`; `report` adds per-stem measured levels. `ES.audio.warm()` prebuilds the HRIR and
+  FFT tables (called once after the first unlock); `ES.audio.native.hrtfOk` records whether browser HRTF works (else
+  the ITD/ILD head model is used).
 - `ES.audio.live` (Seek only): `scene({bed, target, decoys})` → `{start(), stop(), listener(x,y,headingDeg)}`.
 
 ## 5. Engine API (engine)
