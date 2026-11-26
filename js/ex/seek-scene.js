@@ -1,7 +1,7 @@
 /* Earshot — Seek's scene (split from js/ex/seek.js, which holds the exercise module, its set loop and the
    integration shims). One scene: [a preview of the voice when there are decoys] → search → word → feedback.
    The floor plan is −1…1 field units, 10 m per unit, you start at the bottom. Grab yourself (pointer down near
-   the white dot) and drag: the live scene (ES.audio.live) follows, the voice growing louder as you close in
+   your dot) and drag: the live scene (ES.audio.live) follows, the voice growing louder as you close in
    (1/distance). Releasing after a move is the answer point; then tap the word; then the reveal (the voice in red
    with its found ring, decoys in blue with their words, your path) and two replays. Head-turn view (spec
    audio.live.headTurn): a knob on your ring turns your head; releasing the knob never answers. Keyboard: arrows
@@ -49,7 +49,7 @@
   /* ---- the floor plan ---- */
   function fieldView(found, start, turn) {
     var u = U(), svg = u.svg('svg', { viewBox: '-100 -100 200 200', class: 'field sk-field', role: 'application', tabindex: '0', preserveAspectRatio: 'xMidYMid meet',
-      'aria-label': 'Search field, 20 m across. Drag the white dot, or use the arrow keys to walk and Enter to answer' + (turn ? '; Q and E turn your head' : '') + '.' });
+      'aria-label': 'Search field, 20 m across. Drag your dot, or use the arrow keys to walk and Enter to answer' + (turn ? '; Q and E turn your head' : '') + '.' });
     svg.appendChild(u.svg('rect', { class: 'sk-floor', x: -F, y: -F, width: 2 * F, height: 2 * F, rx: 3 }));
     for (var i = -3; i <= 3; i++) {
       var g = i * F / 4;
@@ -71,6 +71,7 @@
     if (knob) rot.appendChild(knob);
     you.appendChild(rot);
     you.appendChild(u.svg('circle', { class: 'sk-dot', cx: 0, cy: 0, r: 4.8 }));
+    you.appendChild(u.svg('text', { class: 'sk-small sk-you-lab', x: 0, y: 15, 'text-anchor': 'middle' }, 'you'));
     svg.appendChild(you);
     return { svg: svg, reveal: reveal, you: you,
       place: function (p, h) { var q = sv(p.x, p.y); you.setAttribute('transform', 'translate(' + q.x + ' ' + q.y + ')'); rot.setAttribute('transform', 'rotate(' + Math.round(h || 0) + ')'); } };
@@ -136,7 +137,7 @@
     var u = U(), live = spec.audio.live || {}, start = live.start || { x: 0, y: -0.9 }, turn = !!live.headTurn && !cfg.practice;
     var locSlot = spec.question.slots[0], wordSlot = spec.question.slots[1], ans = locSlot.answer, found = +ans.r || 0.15;
     var st = { phase: '', pos: { x: start.x, y: start.y }, h: 0, moved: 0, path: [[start.x, start.y]], scene: null, grab: null, player: null,
-      paused: false, held: false, done: false, t0: 0, t1: 0, searchMs: 0, release: null, panel: null, tok: 0 };
+      paused: false, held: false, done: false, t0: 0, t1: 0, searchMs: 0, release: null, panel: null, tok: 0, lastT: 0, earMs: 0, allMs: 0 };
     var resolveDone, done = new Promise(function (r) { resolveDone = r; });
     u.clear(host);
     var fv = fieldView(found, start, turn), svg = fv.svg, inv = null, scale = 1;
@@ -168,8 +169,8 @@
       play(oneClip(spec, clip, 1, null, 0), function () { if (!st.done && !st.paused) search(); });
     }
     function search() {
-      phase('search', 'Grab the white dot (or press an arrow key) to start listening.');
-      prompt.textContent = cfg.practice ? 'Practice: put your finger on the white dot (you) and drag. The voice gets louder as you get closer. Let go where it is loudest.'
+      phase('search', 'Grab your dot (or press an arrow key) to start listening.');
+      prompt.textContent = cfg.practice ? 'Practice: put your finger on your dot (marked “you”) and drag. The voice gets louder as you get closer. Let go where it is loudest.'
         : (decoys() ? 'Find the voice from the preview. ' : 'Find the voice calling one word. ') + 'Drag yourself toward it and let go where it is loudest.' + (turn ? ' The knob on your ring turns your head.' : '');
       u.clear(actions);
       if (decoys() && previewClip(spec)) actions.appendChild(ES.ui.button('Hear the voice to find', { kind: 'secondary', cls: 'sk-again', onClick: function () { if (!st.scene && st.phase === 'search') preview(); } }));
@@ -181,21 +182,34 @@
       status.textContent = 'Listening… let go where it is loudest.';
       quiet(true);
       if (!st.t0) st.t0 = Date.now();
+      st.lastT = Date.now();
       try {
         st.scene = sceneCfg(spec, st.pos, st.h);
         st.scene.start().catch(function (e) { report('scene', e); status.textContent = 'Sound is unavailable here: answer anyway to walk through.'; });
       } catch (e) { report('scene', e); st.scene = { listener: function () {}, stop: function () {} }; status.textContent = 'Sound is unavailable here: answer anyway to walk through.'; }
     }
+    /** Head-turn practice: time with the voice 15–70° to one side of your nose (one ear toward it), counted while
+        the scene plays and you are more than 1.5 × MIN_D from the voice (right next to it the direction means little). */
+    function track() {
+      var now = Date.now(), dx = ans.x - st.pos.x, dy = ans.y - st.pos.y;
+      if (st.lastT && st.scene && Math.sqrt(dx * dx + dy * dy) * M_PER_UNIT > MIN_D * 1.5) {
+        var b = Math.abs((((Math.atan2(dx, dy) * 180 / Math.PI - st.h) % 360) + 540) % 360 - 180), dt = now - st.lastT;
+        st.allMs += dt;
+        if (b >= 15 && b <= 70) st.earMs += dt;
+      }
+      st.lastT = now;
+    }
     function moveTo(x, y) {
       var nx = clamp(x, -0.97, 0.97), ny = clamp(y, -0.97, 0.97), dx = nx - st.pos.x, dy = ny - st.pos.y, d = Math.sqrt(dx * dx + dy * dy);
       if (d < 0.002) return;
+      track();
       st.pos.x = nx; st.pos.y = ny; st.moved += d;
       var last = st.path[st.path.length - 1];
       if (Math.abs(last[0] - nx) + Math.abs(last[1] - ny) > 0.02) st.path.push([Math.round(nx * 1000) / 1000, Math.round(ny * 1000) / 1000]);
       fv.place(st.pos, st.h);
       if (st.scene) st.scene.listener(st.pos.x, st.pos.y, st.h);
     }
-    function turnTo(h) { st.h = ((h % 360) + 540) % 360 - 180; fv.place(st.pos, st.h); if (st.scene) st.scene.listener(st.pos.x, st.pos.y, st.h); }
+    function turnTo(h) { track(); st.h = ((h % 360) + 540) % 360 - 180; fv.place(st.pos, st.h); if (st.scene) st.scene.listener(st.pos.x, st.pos.y, st.h); }
     function local(e) { var p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(inv); }
     svg.addEventListener('pointerdown', function (e) {
       if (st.phase !== 'search' || st.paused || st.grab || (e.pointerType === 'mouse' && e.button !== 0)) return;
@@ -206,7 +220,7 @@
       var dYou = Math.hypot(p.x - y.x, p.y - y.y) * scale, dKnob = turn ? Math.hypot(p.x - (y.x + Math.sin(r) * KNOB), p.y - (y.y - Math.cos(r) * KNOB)) * scale : Infinity;
       if (turn && dKnob <= 30 && dKnob < dYou) st.grab = { id: e.pointerId, kind: 'turn' };
       else if (dYou <= GRAB_PX) st.grab = { id: e.pointerId, kind: 'walk', ox: st.pos.x - p.x / F, oy: st.pos.y + p.y / F };
-      else { status.textContent = 'Grab the white dot (you), then drag.'; return; }
+      else { status.textContent = 'Grab your dot, marked “you”, then drag.'; return; }
       e.preventDefault();
       try { svg.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
       begin();
@@ -240,6 +254,7 @@
     function commit() {
       if (st.phase !== 'search') return;
       st.grab = null;
+      track();
       stopScene();
       st.searchMs = st.t0 ? Date.now() - st.t0 : 0;
       st.release = { x: Math.round(st.pos.x * 1000) / 1000, y: Math.round(st.pos.y * 1000) / 1000, h: Math.round(st.h) };
@@ -255,7 +270,7 @@
     }
     function onWord(resp) {
       var response = { picks: [{ x: st.release.x, y: st.release.y }, resp.picks[0]], idx: [null, resp.idx[0]], rts: [st.searchMs, resp.rts[0]],
-        ms: st.searchMs + (Date.now() - st.t1), heading: st.release.h };
+        ms: st.searchMs + (Date.now() - st.t1), heading: st.release.h, ear: turn && st.allMs ? Math.round(1000 * st.earMs / st.allMs) / 1000 : null };
       var res = null;
       try { res = cfg.score(spec, response); } catch (e) { report('score', e); }
       if (!res || !res.slots) res = E().score(spec, response);
@@ -269,19 +284,18 @@
       return hit ? ', at a decoy calling “' + hit + '”' : '';
     }
     function turnLine() {
-      var a = Math.atan2(ans.x - st.release.x, ans.y - st.release.y) * 180 / Math.PI - st.release.h;
-      a = ((a % 360) + 540) % 360 - 180;
-      var m = Math.round(Math.abs(a)), side = a > 0 ? 'right' : 'left';
-      if (m < 15) return 'You faced the voice squarely. Turning so it sits about 30° to one side gives the ear facing it a clearer copy.';
-      if (m <= 70) return 'The voice sat ' + m + '° to your ' + side + ': your ' + side + ' ear faced it.';
-      return 'The voice ended up ' + m + '° to your ' + side + (m > 110 ? ', behind you' : '') + '. About 30° to one side keeps it in front of the ear facing it.';
+      if (st.allMs < 1500) return 'With the knob, turn so the voice sits about 30° to one side: the ear facing it gets a clearer copy.';
+      var f = Math.round(100 * st.earMs / st.allMs);
+      return 'One ear faced the voice for ' + f + ' % of your search (the voice 15 to 70° to one side).' +
+        (f < 30 ? ' Turn with the knob so it sits about 30° to one side: that ear gets a clearer copy.' : ' That ear got the clearer copy.');
     }
     function feedback(res, response) {
       phase('feedback', '');
       drawReveal(fv, spec, st.path.concat([[st.release.x, st.release.y]]), st.release);
+      fv.you.setAttribute('visibility', 'hidden');            // the cross marks where you stopped
       var loc = res.slots[0] || {}, w = res.slots[1] || {}, lines = [];
       var dM = Math.round(Math.hypot(st.release.x - ans.x, st.release.y - ans.y) * M_PER_UNIT * 10) / 10;
-      lines.push(loc.correct ? 'Found: you stopped ' + fmtM(dM) + ' from the voice.' : 'The voice was ' + fmtM(dM) + ' from where you stopped' + nearDecoy() + '.');
+      lines.push(loc.correct ? (dM < 0.5 ? 'Found: you stopped right at the voice.' : 'Found: you stopped ' + fmtM(dM) + ' from the voice.') : 'The voice was ' + fmtM(dM) + ' from where you stopped' + nearDecoy() + '.');
       if (w.correct) lines.push('It was calling “' + w.answer + '”.');
       else if (w.foil === 'masker') lines.push('“' + w.picked + '” was a decoy’s word; the voice you were after called “' + w.answer + '”.');
       else if (w.foil === 'neighbour') lines.push('“' + w.picked + '” sounds like “' + w.answer + '”, the word it was calling.');
@@ -306,7 +320,7 @@
     }
     function finish(out) { if (st.done) return; st.done = true; stopPlayer(); stopScene(); if (st.panel && out.aborted) st.panel.destroy(); resolveDone(out); }
     if (decoys() && !cfg.practice) preview(); else search();
-    return {
+    var handle = {
       done: done, spec: spec,
       state: function () { return st.paused ? 'paused' : st.phase; },
       pause: function () {
@@ -319,11 +333,14 @@
         if (!st.paused || st.done) return;
         st.paused = false;
         if (st.phase === 'preview') preview();
-        else if (st.phase === 'search') { status.textContent = st.t0 ? 'Paused. Grab the white dot to listen again.' : 'Grab the white dot (or press an arrow key) to start listening.'; Array.prototype.forEach.call(actions.querySelectorAll('button'), function (b) { b.disabled = false; }); }
+        else if (st.phase === 'search') { status.textContent = st.t0 ? 'Paused. Grab your dot to listen again.' : 'Grab your dot (or press an arrow key) to start listening.'; Array.prototype.forEach.call(actions.querySelectorAll('button'), function (b) { b.disabled = false; }); }
       },
       abort: function () { finish({ aborted: true }); },
-      peek: function () { return { phase: st.phase, pos: { x: st.pos.x, y: st.pos.y }, h: st.h, answer: ans, word: wordSlot.answer, turn: turn, listening: !!st.scene, paused: st.paused }; }
+      peek: function () { return { phase: st.phase, pos: { x: st.pos.x, y: st.pos.y }, h: st.h, answer: ans, word: wordSlot.answer, turn: turn, listening: !!st.scene, paused: st.paused,
+        options: (wordSlot.options || []).map(String), decoys: (live.decoys || []).length, practice: !!cfg.practice }; }
     };
+    if (ES.ex._seekScene) ES.ex._seekScene.current = handle;   // the running scene (tests and playtest reports read it)
+    return handle;
   }
 
 

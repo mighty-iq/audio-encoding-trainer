@@ -34,7 +34,7 @@
     helpData: function () {
       var d = K() && K().dialOf('seek', 'size'), v = d && d.values;
       return {
-        goal: 'A voice keeps calling one word somewhere in a noisy room. Put your finger on the white dot (you) and drag. The voice gets louder as you get closer. Let go where it is loudest, then tap the word it was calling.',
+        goal: 'A voice keeps calling one word somewhere in a noisy room. Put your finger on your dot (marked “you”) and drag. The voice gets louder as you get closer. Let go where it is loudest, then tap the word it was calling.',
         dials: {
           snr: 'How loud the voice is against the noise when you stand 1 m from it. From farther away it is quieter: about 6 dB less each time the distance doubles.',
           decoys: 'Other voices calling other words. A preview tells you which voice to find.',
@@ -110,7 +110,7 @@
   M.openHelp = function (opts) { addCards(); return K().openHelp(M, opts); };
   M.tutorial = { steps: [
     { kind: 'caption', minMs: 3000, then: 'tap', text: 'Somewhere in a noisy room a voice keeps calling one word. You cannot see it: find it by ear.' },
-    { kind: 'caption', minMs: 3000, then: 'tap', text: 'Put your finger on the white dot (you) and drag. The voice gets louder as you get closer. Let go where it is loudest. On a keyboard: arrow keys walk, Enter answers.' },
+    { kind: 'caption', minMs: 3000, then: 'tap', text: 'Put your finger on your dot (marked “you”) and drag. The voice gets louder as you get closer. Let go where it is loudest. On a keyboard: arrow keys walk, Enter answers.' },
     { kind: 'caption', minMs: 3000, then: 'tap', text: 'Then tap the word it was calling. First comes one practice scene with a big, easy target.' }
   ] };
   // Sources: R3 §10 (free field −6 dB per doubling of distance; the scene uses exactly 1/distance), §3 (Grange &
