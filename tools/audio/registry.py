@@ -115,8 +115,18 @@ def closest(word, pool, n):
     return [w for _, w in d[:n]]
 
 
-def build_vocab(log):
+def with_audio(items, texts):
+    """Only items that have at least one clip (matched by normalised text), so the app never picks an item
+    it cannot play; the engine's adapter falls back (e.g. Far to call-sign phrases) while a list is empty."""
+    from common import norm_words
+    return [it for it in items if ' '.join(norm_words(it['text'])) in texts]
+
+
+def build_vocab(log, man=None):
     import content_cast  # noqa: F401  (cast text comes from the plan)
+    from common import norm_words
+    texts = {' '.join(norm_words(e['text'])) for e in (man or {}).get('clips', {}).values()
+             if e['kind'] in ('phrase', 'sentence', 'story', 'intro')}
     import content_echo as CE
     import content_phrases as CF
     import content_probe as CP
@@ -128,12 +138,14 @@ def build_vocab(log):
     nb.update({n: closest(n, cw.NAMES, 3) for n in cw.NAMES})
     voc = {'names': cw.NAMES, 'numbers': cw.NUMBERS, 'nouns': cw.NOUNS, 'rhymes': cw.RHYMES, 'family': fam_of,
            'neighbours': nb,
-           'sus': CS.items(), 'susPools': CS.pools(),
-           'phrases': CF.items(),
-           'repair': CR.sentences(),
-           'echo': CE.items(), 'echoValues': CE.values(),
-           'intros': {vid: c['intro'] for vid, c in P.cast().items()},
-           'stories': CP.vocab('stories'), 'matrix': CP.vocab('matrix'), 'twovoices': CP.vocab('twovoices')}
+           'sus': with_audio(CS.items(), texts), 'susPools': CS.pools(),
+           'phrases': with_audio(CF.items(), texts),
+           'repair': with_audio(CR.sentences(), texts),
+           'echo': with_audio(CE.items(), texts), 'echoValues': CE.values(),
+           'intros': {vid: c['intro'] for vid, c in P.cast().items()
+                      if ' '.join(norm_words(c['intro'])) in texts or not man},
+           'stories': with_audio(CP.vocab('stories'), texts), 'matrix': CP.vocab('matrix'),
+           'twovoices': with_audio(CP.vocab('twovoices'), texts)}
     write_js(STAGE / 'data' / 'vocab.js', 'window.ES = window.ES || {}; ES.data = ES.data || {}; ES.data.vocab', voc)
     log(f"vocab: {len(voc['nouns'])} nouns, {len(voc['sus'])} sus, {len(voc['phrases'])} phrases, "
         f"{len(voc['repair'])} repair, {len(voc['echo'])} echo, {len(voc['stories'])} stories")
@@ -177,7 +189,7 @@ def main():
     log = Log('registry')
     man = read_manifest()
     build_voices(man, log)
-    build_vocab(log)
+    build_vocab(log, man)
     build_ltas(man, log)
 
 
