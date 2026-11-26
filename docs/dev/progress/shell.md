@@ -61,3 +61,17 @@ Next: run storage/srcdoc/ui suites; look at their screenshots; final full run; c
   real results, sandboxed trial with Not-saved chip, storage-full banner, copy box, blocked banner.
 Open for the lead: CLAUDE.md commands could list `node tools/build-index.mjs` (regenerate the script block after new
 files land; `--check` in CI); Far rooms: the picture draws room {w, d, cx, cy} in metres (cy default 0.18·d ahead).
+
+## 2026-11-26 19:24 UTC — done (wave 1 shell) and integration round
+- Lead's blocker fixed (7d6081f): tutorial practice scored with plain ES.engine.score; the set's flow opens after
+  the tutorial; regression test in shell_real. Replays use the trial's own seed (audio request).
+- Playtest report saved to the artifact database in test builds (8672d30); Settings shows "Saved for the developer".
+- Integration requests answered (64e57ff): game-started sessions (start(opts), plan.make, pins, titles, done route,
+  log fields, set:done before the log write), Echo's held panel (question.delayMs), exercise help with actions,
+  custom view handles + api.record/level/progress/flow, results:news and results:done hooks, Home module cards,
+  Lab headphone check, own voices row and wipe, learner saved after every answer.
+- Verified: e2e 420/420 in 8 suites (open, session ×2 sizes, layout 4 sizes × 2 themes + tutorial, ui, storage,
+  srcdoc, real, playtest), 0 warnings with 111 scripts; unit: shell/core all pass; failures left are engine-owned
+  solver tests in progress. Single file builds (3.15 MB test build with the starter pack).
+- Next for whoever continues: rerun `node tools/build-index.mjs` whenever modules land; Far's room picture uses
+  room {w, d, cx, cy} in metres; Lab card copy says "About 1 minutes" (lab's text).
