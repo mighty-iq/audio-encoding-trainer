@@ -30,7 +30,7 @@ STANDALONE = [
     ['ex_b_tutorial.py'], ['ex_b_layout.py', '--quick'], ['ex_b_map.py'], ['ex_b_own.py'], ['ex_b_sound.py'],
     ['lab_e2e.py'],
     ['game_all.py', '--held'],
-    ['pwa.py'],
+    ['pwa.py', '--held'],
 ]
 
 

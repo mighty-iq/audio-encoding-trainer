@@ -13,8 +13,10 @@ A copy of the site (the files of the precache list, with sw.js regenerated for t
      Claude app's webview, never on file://;
   7. the app loads offline (browser offline, then the server stopped) from the worker's cache.
 Automated browsers skip the worker unless ES_CONFIG.pwa === true (js/core/pwa.js), so this test forces it.
-Run: tools/with-browser.sh python3 tests/e2e/pwa.py        Outputs: tests/out/pwa/*.png. MIT licence.
+Run: tools/with-browser.sh python3 tests/e2e/pwa.py --held  (--held: the wrapper or run_all already holds a browser
+slot; without it the harness takes one itself)        Outputs: tests/out/pwa/*.png. MIT licence.
 """
+import contextlib
 import functools
 import http.server
 import pathlib
@@ -331,7 +333,8 @@ def main():
         node('tools/build-single.mjs', '--out', str(single / 'earshot.html'))
         html = (single / 'earshot.html').read_text(encoding='utf8')
         c.ok('rel="manifest"' not in html and 'rel="apple-touch-icon"' not in html, 'the single file has no manifest or home-screen icon link')
-        with H.browser_lock(), sync_playwright() as pw:
+        held = '--held' in sys.argv[1:]
+        with (contextlib.nullcontext() if held else H.browser_lock()), sync_playwright() as pw:
             browser = H.launch(pw)
             server, server2 = Server(site), Server(single)
             ctx = browser.new_context(viewport={'width': 390, 'height': 844})
