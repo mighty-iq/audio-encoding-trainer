@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Earshot",
+  "short_name": "Earshot",
+  "description": "A free listening trainer for loud rooms, distant talkers and unfamiliar voices. Built by the Chimera community.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#FAFAF7",
+  "background_color": "#FAFAF7",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
