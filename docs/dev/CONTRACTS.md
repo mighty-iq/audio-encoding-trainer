@@ -27,7 +27,7 @@ Wave 2 (later): exA `js/ex/{crowd,far,strange,repair}.js`; exB `js/ex/{echo,seek
 lab `js/lab/**`; game `js/game/**`. Each will get its own brief.
 
 ## 2. Namespace skeleton (`js/core/ns.js`, shell)
-`window.ES = { VERSION:'0.1.0', core:{}, audio:{}, engine:{}, ex:{}, lab:{}, game:{}, ui:{}, data:{}, packs:{}, hooks:{} }`.
+`window.ES = { VERSION:'1.0.0', core:{}, audio:{}, engine:{}, ex:{}, lab:{}, game:{}, ui:{}, data:{}, packs:{}, hooks:{} }`.
 `ES.hooks.on(name, fn)` / `ES.hooks.emit(name, payload)`: events `trial:done`, `set:done`, `session:done`,
 `pb`, `milestone`, `plateau`, `export`, `store:changed`, `route`.
 

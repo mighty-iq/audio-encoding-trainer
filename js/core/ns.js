@@ -5,7 +5,7 @@
   'use strict';
   var cfg = root.ES_CONFIG && typeof root.ES_CONFIG === 'object' ? root.ES_CONFIG : {};
   var ES = root.ES && typeof root.ES === 'object' ? root.ES : {};
-  ES.VERSION = '0.1.0';
+  ES.VERSION = '1.0.0';
   ['core', 'audio', 'engine', 'ex', 'lab', 'game', 'ui', 'data', 'packs', 'hooks'].forEach(function (k) {
     if (!ES[k] || typeof ES[k] !== 'object') ES[k] = {};
   });
