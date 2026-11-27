@@ -38,7 +38,8 @@
       h = ES.ui.sheet({
         title: 'Welcome to Earshot', cls: 'sheet-chimera sheet-chimera-full', label: 'Welcome',
         body: function (b) {
-          b.appendChild(U.el('p', { class: 'lead' }, 'Earshot was built by the Chimera community on Discord.'));
+          b.appendChild(U.el('p', { class: 'lead' }, 'A free listening trainer for loud rooms, distant talkers and unfamiliar voices.'));
+          b.appendChild(U.el('p', null, 'Earshot was built by the Chimera community on Discord.'));
           b.appendChild(U.el('p', null, 'You are invited to join us there:'));
           b.appendChild(U.el('p', { class: 'chimera-big' }, [mark(), linkEl('discord.gg/chmr', { where: 'welcome' })]));
         },
