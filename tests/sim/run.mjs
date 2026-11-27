@@ -64,7 +64,7 @@ function simMode(mode) {
   if (opt('drift', null)) E.model.driftScale = +opt('drift', 1);
   const out = { mode, learners: [], times: [], plateau: [], path: [], first: { n: 0, all: 0, maxNew: 0 }, variety: { diffVoice: 0, n: 0, diffFam: 0, nFam: 0 },
     focus: { dist: 0, farEdge: 0, farSets: 0, sets: 0 } };
-  const lab = mode === 'focus' ? { weakest: 'rooms' } : null;
+  const lab = mode === 'focus' ? { weakest: 'rooms' } : null, targetEx = E.controller.hasTarget(lab) ? E.controller.PROBE_MAP[lab.weakest].ex : null;
   const ctrlNext = E.controller.next;
   E.controller.next = function (ex, ctx) { const t = performance.now(); const r = ctrlNext(ex, ctx); out.times.push(performance.now() - t); return r; };
   for (let li = 0; li < N; li++) {
@@ -125,11 +125,11 @@ function simMode(mode) {
           const ck = lr.ctxKey(ex, S.headphones);
           L.sessionsWith[ex] = (L.sessionsWith[ex] || 0) + 1;
           (L.series[ex] = L.series[ex] || []).push({ n: L.sessionsWith[ex], est: sess.sets.filter((s) => s.ex === ex).pop().idx, tru: trueIdx(ES, S, ex, ck), practice: S.practice[ex] || 0 });
-          const pr = flag('no-breakers') ? null : E.plateau.check(ex, { learner: lr, log, now, headphones: S.headphones });
+          const pr = flag('no-breakers') ? null : E.plateau.check(ex, { learner: lr, log, now, headphones: S.headphones, mode, lab });
           if (pr) {
             E.plateau.apply(ex, pr, { learner: lr, log });
             const ser = L.series[ex], w = ser.slice(-6), trueSlope = w.length >= 2 ? (w[w.length - 1].tru - w[0].tru) / (w.length - 1) : 0;
-            out.plateau.push({ li, type: S.type, ex, at: L.sessionsWith[ex], kind: pr.breaker.kind, trueSlope, estSlope: pr.trend.slope });
+            out.plateau.push({ li, type: S.type, ex, at: L.sessionsWith[ex], kind: pr.breaker.kind, trueSlope, estSlope: pr.trend.slope, target: ex === targetEx });
           }
         }
       }
@@ -183,7 +183,9 @@ function summarise(o) {
   });
   s.plateau = { firings, falseFirings, stalledPairs, stalledDetected, detectRate: r3(stalledDetected / Math.max(1, stalledPairs)),
     latencyMedian: q(latencies, 0.5), latencyP90: q(latencies, 0.9), improvingPairs: improvPairs, improvingWithFalseAlarm: improvFalse,
-    falseAlarmRate: r3(improvFalse / Math.max(1, improvPairs)), byKind: o.plateau.reduce((a, p) => { a[p.kind] = (a[p.kind] || 0) + 1; return a; }, {}) };
+    falseAlarmRate: r3(improvFalse / Math.max(1, improvPairs)), byKind: o.plateau.reduce((a, p) => { a[p.kind] = (a[p.kind] || 0) + 1; return a; }, {}),
+    // FC-01: the current Focus target is never rested
+    restsOnFocusTarget: o.plateau.filter((p) => p.kind === 'switch' && p.target).length };
   s.firstWeeks = { learners: o.first.n, metAllBySession3: r3(o.first.all / Math.max(1, o.first.n)), maxNewPerSession: o.first.maxNew };
   if (o.mode === 'path') {
     const byEx = {};

@@ -181,8 +181,12 @@
     var b = lr.state.breadth[ex];
     return b === undefined ? 0.2 : b;
   }
+  // Focus mode has a target once the Lab names a weakest check-in it maps to (PROBE_MAP); until then it trains
+  // exactly like Edge (FINAL-CHECK FC-02: Settings, Home and the guide say so)
+  function hasTarget(lab) { return !!(lab && lab.weakest && PROBE_MAP[lab.weakest]); }
   function nextRaw(ex, ctx) {
     var lr = lrOf(ctx), rng = rnd(ctx), md = M(), mode = ctx.mode || 'edge';
+    if (mode === 'focus' && !hasTarget(ctx.lab)) mode = 'edge';
     var set = setView(ctx, lr, ex), meta = E.dialMeta[ex] || {};
     // Path's staged steps run normal sets; a venue set (pins, focus dial or family) keeps its condition at the edge
     if (mode === 'path' && E.path && E.path.next && !pinnedSet(set)) return E.path.next(ex, ctx);
@@ -309,5 +313,5 @@
   }
 
   E.controller = { supports: { pin: true }, exposureN: exposureN, famStats: famStats, next: next, levelFor: levelFor, pAt: pAt, equalShare: equalShare, comfortOf: comfortOf, chooseFamily: chooseFamily,
-    bandit: bandit, PROBE_MAP: PROBE_MAP, FAMILY_ORDER: FAMILY_ORDER };
+    bandit: bandit, PROBE_MAP: PROBE_MAP, FAMILY_ORDER: FAMILY_ORDER, hasTarget: hasTarget };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -5,11 +5,12 @@
    windows in a row (so the earliest call comes at the 13th session with the exercise; later for Seek, whose short
    sets need more sessions to fill a window). Operating point and its
    simulated error rates in docs/dev/progress/engine.md. Breakers, in order, each with a player-facing reason:
-   widen variety; switch the focus dial; more anchors and pop-out feedback; a strategy card; sleep after same-day
-   runs; switch exercise. check() has no side effects; the caller applies the breaker with
-   apply(ex, result, {learner, log}) right after check() returns one (the session does: review H1), else the same
-   breaker repeats and nothing changes; at most one breaker per 3 sessions. Partial and learn:false sets are left
-   out. check() runs after the current session is in the log (so "today" counts it). */
+   widen variety; switch the focus dial; more anchors; a strategy card; sleep after same-day runs; a rest (the
+   exercise's draw weight is a fifth for the next three planned sessions; never for the current Focus target).
+   check() has no side effects; the caller applies the breaker with apply(ex, result, {learner, log}) right after
+   check() returns one (the session does: review H1), else the same breaker repeats and nothing changes; at most
+   one breaker per 3 sessions. Partial and learn:false sets are left out. check() runs after the current session
+   is in the log (so "today" counts it). */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -96,6 +97,17 @@
     t.win = w; t.ys = ys;
     return t;
   }
+  // The exercise behind the current Focus target: opts.mode and opts.lab when the caller passes them, else the
+  // app's settings and Lab context; null outside Focus mode or without a target.
+  function focusTarget(opts) {
+    var mode = opts.mode, lab = opts.lab;
+    try {
+      if (mode === undefined && ES.core && ES.core.store && ES.core.store.peek) mode = ((ES.core.store.peek('profile') || {}).settings || {}).mode;
+      if (lab === undefined && ES.lab) lab = typeof ES.lab.context === 'function' ? ES.lab.context() : typeof ES.lab.forPlanner === 'function' ? ES.lab.forPlanner() : null;
+    } catch (e) { /* no app context (simulations, tests) */ }
+    var tm = mode === 'focus' && E.controller && E.controller.hasTarget(lab) ? E.controller.PROBE_MAP[lab.weakest] : null;
+    return tm ? tm.ex : null;
+  }
   function sameDayCount(log, now) {
     var day = new Date(now).toDateString(), n = 0;
     // sessions with at least one answered trial (FRESH-A #6); the current one is in the log
@@ -119,9 +131,12 @@
     var lastN = t.win, ys = t.ys;
     // next applicable breaker
     var k = pl.k === undefined ? 0 : (pl.k + 1) % ORDER.length, today = sameDayCount(log, now), guard = 0, kind;
+    var target = focusTarget(opts);
     while (guard++ < ORDER.length) {
       kind = ORDER[k];
       if (kind === 'sleep' && today < 2) { k = (k + 1) % ORDER.length; continue; } // today counts the current session
+      // the current Focus target is never rested: the plan keeps its share (FINAL-CHECK FC-01)
+      if (kind === 'switch' && target === ex) { k = (k + 1) % ORDER.length; continue; }
       if (kind === 'focus' && lr.active(ex, { ctxKey: lr.ctxKey(ex, !!opts.headphones) }).filter(function (d) { return !d.family; }).length < 2) { k = (k + 1) % ORDER.length; continue; }
       break;
     }
@@ -138,7 +153,7 @@
       anchors: 'More easy trials go in between the hard ones for a while, so the hard trials have something to build on.',
       strategy: 'Try this: ' + (STRATEGY[ex] || ''),
       sleep: 'This is your ' + ordinal(today) + ' session today. Same-day repetition wears a skill thin; sleep consolidates practice, so tomorrow is a good time for the next session.',
-      switch: 'For the next few sessions the plan gives ' + name + ' a rest and trains other situations for a while, then comes back to it.'
+      switch: name + ' comes up much less often in your next three sessions, so the plan trains other situations; you can still pick it from Exercises.'
     }[kind];
     return { ex: ex, reason: reason, breaker: { kind: kind, dial: kind === 'focus' ? focusDial : undefined, text: text },
       trend: { slope: t.slope, lo: t.lo, hi: t.hi, sessions: win, last: ys[ys.length - 1], slipped: slipped }, chimera: true };

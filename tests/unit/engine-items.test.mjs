@@ -140,6 +140,42 @@ export const tests = [
     assert.ok(E.dialDef('strange', 'accent').levels.every((l) => !/mild|moderate|strong/.test(l) && /accented voice/.test(l)));
     E.exercises.forEach((ex) => E.dials[ex].forEach((d) => { const t = P(ex, d.id, d.kind === 'ord' ? d.max : d.min); assert.ok(t && !/-[0-9]/.test(t), ex + '.' + d.id + ': ' + t); }));
   } },
+  { name: 'Focus without a Lab target plans and chooses exactly like Edge; with a target it is unchanged (FC-02)', fn(ES, assert) {
+    const E = ES.engine;
+    const L = { sessions: [{ id: 'y', start: T0 - DAY, end: T0 - DAY + 900000, sets: E.exercises.map((ex) => ({ ex, n: 10, focus: E.dials[ex][0].id, end: { [E.dials[ex][0].id]: E.dials[ex][0].kind === 'ord' ? 2 : 0 }, voices: [] })) }] };
+    for (const lab of [null, {}, { weakest: null }]) for (const log of [{ sessions: [] }, L]) {
+      const a = E.planner.session({ learner: E.learner.create(null, () => T0), log, mode: 'edge', lab, now: T0 + 3600000, rng: ES.core.rng('same') });
+      const b = E.planner.session({ learner: E.learner.create(null, () => T0), log, mode: 'focus', lab, now: T0 + 3600000, rng: ES.core.rng('same') });
+      assert.deepEqual(b.sets, a.sets); assert.deepEqual(b.notes, a.notes); assert.equal(b.mode, 'focus'); assert.equal(b.effective, 'edge');
+    }
+    const run = (ex, mode, lab) => { const lr = E.learner.create(null, () => T0), sc = E.flow.start(ex, { learner: lr, mode, lab, seed: 'fc02', trials: 40 }), out = []; let t;
+      while ((t = E.flow.next(sc))) { out.push([t.setting.focus, JSON.stringify(t.setting.dials), t.setting.anchor, t.setting.warmup, t.meta.decision.p, JSON.stringify(t.question.slots.map((x) => x.answer))]); E.flow.answer(sc, t, { picks: t.question.slots.map((x, i) => (out.length % 3 ? x.answer : x.options.find((o) => o !== x.answer))) }); }
+      return { out, state: JSON.stringify(lr.state) }; };
+    for (const ex of ['crowd', 'strange']) for (const lab of [null, { weakest: 'nope' }]) {   // Strange: the accent family too
+      const e = run(ex, 'edge', null), f = run(ex, 'focus', lab);
+      assert.deepEqual(f.out, e.out, ex); assert.equal(f.state, e.state, ex);
+    }
+    // with a target: Far sets push the distance dial far more often than Edge does
+    const share = (mode) => { const lr = E.learner.create(null, () => T0), sc = E.flow.start('far', { learner: lr, mode, lab: { weakest: 'rooms' }, seed: 'fc02t', trials: 60 }); let t, n = 0, d = 0;
+      while ((t = E.flow.next(sc))) { if (!t.setting.anchor && !t.setting.warmup) { n++; if (t.setting.focus === 'dist') d++; } E.flow.answer(sc, t, { picks: t.question.slots.map((x) => x.answer) }); } return d / n; };
+    assert.ok(share('focus') > share('edge') + 0.2, 'focus ' + share('focus') + ' edge ' + share('edge'));
+  } },
+  { name: 'plateau: the current Focus target is never rested (FC-01)', fn(ES, assert) {
+    const E = ES.engine, need = E.plateau.DEFAULTS.window + E.plateau.DEFAULTS.persist - 1;
+    const kinds = (ex, opts) => { const lr = E.learner.create(null, () => T0), out = [];
+      for (let k = need; k < need + 40; k++) { const L = log(ex, k, 0); L.sessions.forEach((x) => { x.sets[0].ex = ex; });
+        const r = E.plateau.check(ex, Object.assign({ learner: lr, log: L, now: T0 + k * DAY }, opts)); if (r) { out.push(r.breaker.kind); E.plateau.apply(ex, r, { learner: lr, log: L }); } }
+      return out; };
+    assert.ok(kinds('crowd', { mode: 'edge', lab: null }).includes('switch'));
+    const target = kinds('crowd', { mode: 'focus', lab: { weakest: 'digits' } });   // digits → crowd.tmr
+    assert.ok(target.length >= 6 && !target.includes('switch'), target.join(','));
+    assert.ok(kinds('crowd', { mode: 'focus', lab: { weakest: 'rooms' } }).includes('switch'), 'another exercise is the target');
+    // the app passes neither: the mode comes from the stored profile and the target from ES.lab (as the shell's labInfo)
+    const keep = { store: ES.core.store, lab: ES.lab };
+    ES.core.store = { peek: (k) => (k === 'profile' ? { settings: { mode: 'focus' } } : null) }; ES.lab = { context: () => ({ weakest: 'digits' }) };
+    try { const app = kinds('crowd', {}); assert.ok(app.length >= 6 && !app.includes('switch'), app.join(',')); }
+    finally { ES.core.store = keep.store; ES.lab = keep.lab; }
+  } },
   { name: 'planner: focus mode gives the weakest probe\'s exercise 60 % of sets', fn(ES, assert) {
     const E = ES.engine, lr = E.learner.create(null, () => T0); let far = 0, all = 0;
     for (let i = 0; i < 100; i++) { const p = E.planner.session({ learner: lr, log: { sessions: [] }, mode: 'focus', lab: { weakest: 'rooms' }, rng: ES.core.rng('f' + i) }); all += p.sets.length; far += p.sets.filter((s) => s.exId === 'far').length; }
@@ -174,7 +210,7 @@ export const tests = [
     assert.ok(/fresh mix gives the skill something new to work on/.test(seen.variety) && !/often breaks/.test(seen.variety));
     assert.equal(seen.anchors, 'More easy trials go in between the hard ones for a while, so the hard trials have something to build on.');
     assert.ok(/^This is your second session today\./.test(seen.sleep) && /tomorrow is a good time for the next session/.test(seen.sleep), seen.sleep);
-    assert.ok(/trains other situations for a while, then comes back to it\./.test(seen.switch), seen.switch);
+    assert.equal(seen.switch, 'Crowd comes up much less often in your next three sessions, so the plan trains other situations; you can still pick it from Exercises.');
     const pl = log('crowd', need, 0); pl.sessions.forEach((s) => { s.sets[0].partial = true; });
     assert.equal(P.check('crowd', { learner: lr(), log: pl }), null, 'partial sets are not plateau evidence');
     const nl = log('crowd', need, 0); nl.sessions.forEach((s) => { s.sets[0].learn = false; });

@@ -2,14 +2,14 @@
 
 Owner paths: js/engine/**, tests/unit/engine*, tests/sim/**, tests/fixtures/{data-fixture,rng}.js. Never pushes.
 
-## Status (2026-11-27 00:15 UTC)
+## Status (2026-11-27 02:37 UTC)
 CONTRACTS §5 implemented for all seven exercises (missions has no dials). Unit tests: 38 engine tests pass with
 `node tests/unit/run.mjs engine` (whole suite green). Full verification: `node tests/sim/run.mjs --real` (results in
 the Results section). Engine files load in the order of tools/build-index.mjs (items/adapt.js loads via `items/*`).
 Lead follow-ups of 19:40 UTC done in 61c3b41 (Seek live fields and preview, noteMet, foil types, plateau retune),
 plus game's 19:16 request (venue sets keep their Strange family). Fix round 1: every engine finding fixed (section
 "Fix round 1"). Round 2 (section "Round 2"): answer-only cues at chance + 0.05 on real data for mixed and single
-players; 51 engine tests pass.
+players; 51 engine tests pass. Final check FC-01/02/03 (section "Final check"): 53 engine tests, 224 in the suite.
 
 ## Files
 - dials.js — dials per exercise (real units; ordinal ladders easy → hard, model unit = level index), slope priors
@@ -250,6 +250,28 @@ Each finding in engine files or assigned to the engine, with its test (tests/uni
   variety 0.3, 0.050 at variety 1, Far 0.030, Crowd 0.020. Position: no flag. Sanity simulation (100 learners × 60
   days): accuracy and anchors unchanged; plateau false alarms 3.8–7.5 %, detection 54–81 %.
 
+## Final check (docs/dev/reviews/FINAL-CHECK.md FC-01, FC-02, FC-03; 2026-11-27 02:37 UTC)
+- FC-02: Focus without a Lab target (no Lab result, or a weakest check-in that PROBE_MAP does not map) trains
+  exactly like Edge. `E.controller.hasTarget(lab)`; the controller (nextRaw, so dial choice and Strange's family) and
+  the planner switch the effective mode to Edge before any random draw, so weights, first-week intros, overnight /
+  fresh-ears notes and dials match Edge draw for draw. The plan reports `mode: 'focus'`, `effective: 'edge'`; a
+  trial's `meta.decision.mode` is the effective mode. Unit test: same seed → identical plans (empty and played log;
+  lab null, {} and {weakest: null}) and identical Crowd and Strange sets (40 trials: focus dial, dials, anchors,
+  warm-ups, p, answers, learner state); with {weakest: 'rooms'} Focus still pushes Far's distance dial (> Edge + 0.2).
+- FC-01/FC-03: the rest stays as coded (draw weight × 0.2 for the next three planned sessions). New breaker text:
+  "<Exercise> comes up much less often in your next three sessions, so the plan trains other situations; you can
+  still pick it from Exercises." The current Focus target never gets the rest: the next breaker in the order is
+  used. plateau.check takes `mode` and `lab` from opts, else (in the app) from the profile settings and ES.lab
+  (context(), then forPlanner(), as the shell's labInfo). Edge case left as is: an exercise rested earlier keeps
+  the Focus share (60 %) if it becomes the Focus target during its rest (mode switch or a new Lab result).
+  Unit test: a flat Crowd log under Focus with Crowd as the target ('digits') gets ≥ 6 breakers and never the rest;
+  under Edge, and with another target, it does. The sim passes mode and Lab to plateau.check (`restsOnFocusTarget`).
+- Runs: `node tests/unit/run.mjs` 224/224. `EARSHOT_CMUDICT=… node tests/sim/run.mjs --modes edge,focus`: solver
+  7 × 10,000, 0 failures; fixture shortcut bins: 1 flagged (Repair context=0, 'hub' 0.19, below chance; generators
+  unchanged since e519238). Learners 200 × 60 days: Edge acc 0.78, edge 0.75, plateau FA 6.1 %, detection 74.7 %,
+  first weeks 100 %, ≤ 3 new a session (unchanged); Focus (target Far) acc 0.773, Far 60 % of sets, plateau FA
+  3.8 %, detection 48.9 % (was 50.9 %), rests 53 → 3, none on the target.
+
 ## Log
 - 2026-11-26 17:05 UTC — Started; requests to stimuli/audio/shell.
 - 2026-11-26 17:40 UTC — Core engine, generators, solver, shortcut responders landed; foils made answer-matched.
@@ -267,13 +289,15 @@ Each finding in engine files or assigned to the engine, with its test (tests/uni
   decision), a185d3b; test over 2,000 real seeds.
 - 2026-11-27 00:15 UTC — Round 2: answer-only cues (ST-02, ST-03, Echo frequency), ST-11, ST-05 note, Echo
   variety, first-weeks planner, answered sessions, copy (P10, P11, ST-08); before/after table above.
+- 2026-11-27 02:37 UTC — Final check: FC-02 Focus without a target = Edge; FC-01/FC-03 rest text and no rest for the Focus
+  target; tests and sims above.
 
 ## Open issues
 - Starter pack: Strange, Repair and Echo run on the call-sign fallback until their own clips land; residual
   answer-frequency biases on the real build (see Results). Re-run `node tests/sim/run.mjs --real` on every new pack.
 - Voices length dial has no effect on phrase-only builds (no word or sentence clips).
 - Strange text-first aid trials (exA's "Same or different?") not implemented; exposure interludes are text-first.
-- Plateau: Focus mode detects 47 % of flat stretches (structural: few sessions for its other exercises); the
+- Plateau: Focus mode detects 49 % of flat stretches (structural: few sessions for its other exercises); the
   earliest call is at the 13th session with an exercise. All false alarms are at the band edge (0.15–0.3).
 - Answer-only cues: re-run `node tests/sim/cues.mjs` on every new pack (single players need ≥ 16,000 trials to
   resolve 0.05 in Strange's many small bins).

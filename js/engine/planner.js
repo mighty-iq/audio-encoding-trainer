@@ -90,10 +90,13 @@
   function session(opts) {
     opts = opts || {};
     var lr = E.lrOf(opts.learner), mode = opts.mode || 'edge', now = opts.now || lr.clock(), rng = opts.rng || ES.core.rng('plan:' + now);
+    // Focus without a Lab target plans exactly like Edge (FINAL-CHECK FC-02); the plan still reports the chosen mode
+    var chosen = mode;
+    if (mode === 'focus' && !E.controller.hasTarget(opts.lab)) mode = 'edge';
     // only exercises with material in this build (items[ex].ready), among those the caller can run
     var minutes = opts.minutes || opts.sessionMin || 15, nSets = Math.max(1, Math.round(minutes / 3)), avail = (opts.available || E.exercises).filter(function (ex) {
       var g = E.items[ex]; if (!g) return false; try { return !g.ready || g.ready(); } catch (e) { return false; } });
-    if (!avail.length) return { sets: [], minutes: minutes, notes: [{ kind: 'nodata', text: 'No exercise has its sounds installed yet.' }], mode: mode };
+    if (!avail.length) return { sets: [], minutes: minutes, notes: [{ kind: 'nodata', text: 'No exercise has its sounds installed yet.' }], mode: chosen, effective: mode };
     var sets = [], notes = [], w = weights(mode, { available: avail, learner: lr, lab: opts.lab }), C = E.items.common;
     // sessions already logged today (this one is not in the log yet): the note opens the fourth and later sessions
     var today = sessions(opts.log).filter(function (s) { return dayKey(s.start) === dayKey(now) && s.start <= now; }).length;
@@ -138,7 +141,7 @@
       if (INTERLUDE[s.exId] && i < sets.length - 1 && nInter < 2) { s.interlude = { kind: 'exposure', ex: s.exId, seconds: 25 }; nInter++; }
     });
     Object.keys(lr.state.plat).forEach(function (ex) { var pl = lr.state.plat[ex]; if (pl.rest > 0) pl.rest--; });
-    return { sets: sets, minutes: minutes, notes: notes, mode: mode };
+    return { sets: sets, minutes: minutes, notes: notes, mode: chosen, effective: mode };
   }
 
   E.planner = { session: session, overnight: overnight, freshEars: freshEars, weights: weights, WEIGHTS: W, answered: answered, played: played };
