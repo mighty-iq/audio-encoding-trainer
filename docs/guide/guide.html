@@ -17,7 +17,7 @@
 
 <!-- ============================================================ cover -->
 <section class="cover" aria-label="Cover">
-  <div class="top"><span class="kicker">Earshot · player guide</span><span class="kicker">Version 0.1.0 · November 2026</span></div>
+  <div class="top"><span class="kicker">Earshot · player guide</span><span class="kicker">Version 1.0.0 · November 2026</span></div>
   <div class="field">
     <svg viewBox="0 0 300 230" role="img" aria-label="An earshot field: you at the centre, one voice to follow in red, three other voices in blue, range rings at 1, 2, 4 and 8 metres">
       <g fill="none" stroke="#15171B">
@@ -84,7 +84,7 @@
   <div class="figrow" style="gap: 7mm">
     <div class="panel" style="flex: 1 1 0; margin: 0">
       <h3>About this guide</h3>
-      <p class="small">Every research claim here comes from the project's research notes, which record how much of each source we read: the full text, the abstract only, or a report of it in another paper. The references carry the same tags, and where a claim rests on an abstract or a second-hand report the text says so. Every number about the app matches its code (version 0.1.0).</p>
+      <p class="small">Every research claim here comes from the project's research notes, which record how much of each source we read: the full text, the abstract only, or a report of it in another paper. The references carry the same tags, and where a claim rests on an abstract or a second-hand report the text says so. Every number about the app matches its code (version 1.0.0).</p>
       <p class="small">The pictures show the app on a phone with a simulated player: a learner record produced by the training engine in simulation. Their numbers belong to no real person.</p>
     </div>
     <div class="panel" style="flex: 1 1 0; margin: 0">
@@ -672,7 +672,7 @@
   <p>Three venues are open from the start: the café, the lecture hall and the phone line. A venue opens when the one before it on its line reaches its mark and the venue itself comes within your reach; once open, it never closes. Playing a venue runs a set in its conditions, and each venue lists more conditions from other exercises that you will find there. Below the map, a list shows where each exercise lives. Every exercise has a place at a venue open from the start (Seek's is the lecture hall), and your sessions bring in every exercise whatever is open; a venue lets you pick one.</p>
 
   <h2 id="game-cast">2. The cast</h2>
-  <p>Earshot's training voices are a cast of named characters, each with a role at one of the venues. A cast card fills in when you meet its voice, and it turns "known" once you have picked that voice out by ear three times in Voices. Synthetic voices are labelled as synthetic.</p>
+  <p>Earshot's training voices are a cast of named characters, each with a role at one of the venues. A cast card fills in when you meet its voice, and it turns "known" once you have picked that voice out by ear three times in Voices. Each card says what the voice is, such as US English or a voice from a French model reading English, and synthetic voices are labelled as synthetic.</p>
 
   <h2 id="game-growth">3. Growth in real units</h2>
   <figure class="side phone"><img src="figures/results.png" alt="The Results screen after a Crowd set: 9 of 12 answers right; 4 of 6 trials fully right, 1 partly right; a row of six marks with one half-shaded; the levels line; news of two new cast voices; Finish session"><figcaption><span class="label">Figure 13 · Results after a set</span>Two answers a trial, so the headline counts answers and the line below counts trials; the half-shaded mark is the partly right trial. A simulated player, answers given by script.</figcaption></figure>
@@ -741,8 +741,8 @@
       <tr><td><b>Kokoro-82M</b> v1.0 by hexgrad (ONNX export of the kokoro-onnx project)</td><td>Apache License 2.0 (model weights)</td><td>Synthetic voices: US and UK English, and voices of other languages reading English</td><td>Speech synthesised with Kokoro-82M by hexgrad, Apache License 2.0. Its model card says the training data were permissive or public-domain audio plus synthetic audio from commercial synthesisers.</td></tr>
       <tr><td><b>Piper voice en_US-libritts-high</b> (Rhasspy Piper; sherpa-onnx mirror)</td><td>Trained from scratch on LibriTTS, CC BY 4.0</td><td>A spread of synthetic speakers</td><td>Voices synthesised with the Piper voice en_US-libritts-high, trained on LibriTTS (Zen et al., 2019; CC BY 4.0), which derives from LibriSpeech and LibriVox recordings.</td></tr>
       <tr><td><b>AudioMNIST</b> (Becker et al.)</td><td>MIT</td><td>Spoken digits from 8 talkers, for the Digits check-in only</td><td>Becker S, Vielhaben J, Ackermann M, Müller K-R, Lapuschkin S, Samek W (2023). AudioMNIST: exploring explainable artificial intelligence for audio analysis on a simple benchmark. Journal of the Franklin Institute. <a class="ext" href="https://doi.org/10.1016/j.jfranklin.2023.11.038">doi:10.1016/j.jfranklin.2023.11.038</a>. Copyright (c) 2018 soerenab.</td></tr>
-      <tr><td><b>CREMA-D</b> (Cao et al.)</td><td>Open Database License 1.0; contents under Database Contents License 1.0</td><td>Neutral sentences read by 8 actors, for the Two voices check-in only</td><td>Contains information from CREMA-D, made available under the ODbL 1.0, its contents under the DbCL 1.0. Cao H, Cooper DG, Keutmann MK, Gur RC, Nenkova A, Verma R (2014). CREMA-D: crowd-sourced emotional multimodal actors dataset. IEEE Transactions on Affective Computing 5(4):377–390. Earshot's CREMA-D subset is offered under the same terms.</td></tr>
-      <tr><td><b>LibriVox</b> recordings via the Microsoft DNS Challenge 2020 data</td><td>Public domain</td><td>Read sentences from volunteer readers, as background talkers</td><td>Read speech from LibriVox volunteers (public domain), via the Microsoft DNS Challenge dataset.</td></tr>
+      <tr><td><b>CREMA-D</b> (Cao et al.)</td><td>Open Database License 1.0; contents under Database Contents License 1.0</td><td>Neutral sentences read by 8 actors (each sentence by at least 4), for the Two voices check-in only</td><td>Contains information from CREMA-D, made available under the ODbL 1.0, its contents under the DbCL 1.0. Cao H, Cooper DG, Keutmann MK, Gur RC, Nenkova A, Verma R (2014). CREMA-D: crowd-sourced emotional multimodal actors dataset. IEEE Transactions on Affective Computing 5(4):377–390. Earshot's CREMA-D subset is offered under the same terms.</td></tr>
+      <tr><td><b>LibriVox</b> recordings via the Microsoft DNS Challenge 2020 data</td><td>Public domain</td><td>One read sentence each from 10 volunteer readers, as background talkers</td><td>Read speech from LibriVox volunteers (public domain), via the Microsoft DNS Challenge dataset.</td></tr>
       <tr><td><b>DEMAND</b> noise database via Microsoft MS-SNSD</td><td>CC BY-SA 3.0</td><td>Café, cafeteria, station, square, traffic and metro ambience; a restaurant scene for the Story check-in only</td><td>Ambience from DEMAND (Thiemann J, Ito N, Vincent E, 2013, The Diverse Environments Multi-channel Acoustic Noise Database), CC BY-SA 3.0, via MS-SNSD. Earshot's loops are adaptations under the same licence.</td></tr>
       <tr><td><b>Freesound</b> clips via MS-SNSD</td><td>CC0</td><td>Crowd babble and a room hum</td><td>Crowd babble and room hum from Freesound (CC0), via MS-SNSD.</td></tr>
       <tr><td>Party bed</td><td>MIT (our generator) plus the CC0 babble</td><td>A synthetic beat under crowd babble</td><td>Generated by Earshot's audio tools.</td></tr>
@@ -868,7 +868,7 @@
   <div class="figrow" style="margin-top: 22mm">
     <div class="panel" style="flex: 1 1 0; margin: 0"><h4>Play</h4><p class="small"><span data-url="pages">The web version (GitHub Pages)</span>, or the single file <code>earshot.html</code>, offline on any device.</p></div>
     <div class="panel" style="flex: 1 1 0; margin: 0"><h4>Source</h4><p class="small"><span data-url="repo">The Earshot repository on GitHub</span>: code (MIT), texts and this guide (CC BY-SA 4.0), research notes.</p></div>
-    <div class="panel" style="flex: 1 1 0; margin: 0"><h4>This guide</h4><p class="small">Version 0.1.0, November 2026. Text and figures © 2026 the Chimera community, <a class="ext" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</p></div>
+    <div class="panel" style="flex: 1 1 0; margin: 0"><h4>This guide</h4><p class="small">Version 1.0.0, November 2026. Text and figures © 2026 the Chimera community, <a class="ext" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</p></div>
   </div>
 </section>
 

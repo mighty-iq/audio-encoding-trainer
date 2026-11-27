@@ -136,7 +136,27 @@ Every statement checked in code (progress/shell.md round-2 section as the map). 
   prompt; Copy if nothing arrives). "Deleting everything" folded into section 1 to keep the chapter on one page.
 - Voice and clip counts stay out until the stimuli round's final numbers arrive.
 
-### Numbers in the guide and the code behind them (`python3 tools/build-pdf.py --facts`, 2026-11-27 01:05 UTC)
+## 2026-11-27 01:17 UTC — release candidate (HEAD 9f860da: stimuli round 2, cast labels, version 1.0.0) (status: complete)
+Built WITH the release addresses: `python3 tools/build-pdf.py --pages-url https://mighty-iq.github.io/audio-encoding-trainer/
+--repo-url https://github.com/mighty-iq/audio-encoding-trainer` → 35 pages, 2,082 KiB, 83 URLs / 118 URI annotations /
+195 internal links, only Archivo and JetBrains Mono, metadata in UTC, privacy scan clean (the addresses hold none of
+the private strings), FACTS 136/136. Pages looked at: cover, contents, ch 2, ch 6, credits, back page.
+- Version 1.0.0 on the cover, in the contents note and on the back page (js/core/ns.js).
+- Stimuli numbers come from docs/dev/STIMULI.md (generated): the guide states no total of clips, voices or MB;
+  Table 6 now says CREMA-D's sentences are each read by at least 4 of the 8 actors (81 clips kept) and LibriVox gives
+  one sentence each from 10 readers; AudioMNIST stays 8 talkers. The matrix word swap (hugs, wipes, dolls) changes no
+  guide text (no words are listed; the "no shared word or verb stem" sentence still holds per LICENSES-ASSETS.md).
+  Lab Table 5 (lengths, run SDs, reach) rechecked against js/lab through FACTS.
+- Cast cards: each card names what the voice is (US English, a voice from a French model reading English).
+- Announcement: the three addresses filled in; 1,803 characters (limit 2,000); the comment line says what to post.
+- README (the lead's file) — proposed lines: (1) line 8 "- Online: https://mighty-iq.github.io/audio-encoding-trainer/
+  (installs to your home screen and opens offline after the first visit)."; (2) line 21 "| Strange voices | Voices
+  from other-language models reading English, fast, whispered, phone-quality and robot-like speech | Variety that
+  trains adapting to new voices |"; (3) after the table "Home → Exercises lists all eight: play a set of one (its
+  tutorial first) or see how it works."; (4) lines 29–30 "before training and then weekly" → "in a five-block
+  baseline that starts after your first session, then weekly" (the baseline begins after the first session).
+
+### Numbers in the guide and the code behind them (`python3 tools/build-pdf.py --facts`, 2026-11-27 01:17 UTC)
 | Statement | Where |
 |---|---|
 | edge trials aim at about 72 % right | `js/engine/dials.js:121` |
@@ -199,7 +219,7 @@ Every statement checked in code (progress/shell.md round-2 section as the map). 
 | a cast card turns known after 3 identifications | `js/game/cast.js:11` |
 | milestones from at least 6 updates of a dial | `js/game/milestones.js:14` |
 | own voices: up to 20 s, 16 kHz mono, IndexedDB on the device | `js/ex/voices-own.js:16` |
-| app version | `js/core/ns.js:8` |
+| app version 1.0.0 | `js/core/ns.js:8` |
 | Far rooms: small 5 m to a hall 38 m long; the talker fits the room | `js/engine/dials.js:40` |
 | Far backgrounds per room size (hum, cafe, station, babble) | `js/engine/items/far.js:11` |
 | Crowd cue types widen with variety: call sign, voice preview, location; onset jitter | `js/engine/items/crowd.js:4` |
@@ -267,5 +287,11 @@ Every statement checked in code (progress/shell.md round-2 section as the map). 
 | screen reader: a heading per trial; announces when to answer, the verdict and the feedback | `js/ui/trialview.js:88` |
 | screen reader: an sr-only h1 per trial | `js/ui/screens/play.js:45` |
 | sideways phones: trials and feedback fit without scrolling (640x360, 740x360) | `docs/dev/progress/shell.md:143` |
+| AudioMNIST: 8 talkers, Digits check-in only | `docs/dev/STIMULI.md:144` |
+| CREMA-D: 8 actors, Two voices only; 81 clips, every one of the 12 texts with at least 4 actors | `docs/dev/STIMULI.md:145` |
+| CREMA-D: every text keeps at least 4 actors | `docs/dev/STIMULI.md:106-107` |
+| LibriVox: one sentence each from 10 readers, as background talkers | `docs/dev/STIMULI.md:148` |
+| cast cards show the voice label (US English, a voice from a French model reading English) and synthetic or recorded | `js/game/cast.js:25` |
+| cast card facts: synthetic or recorded voice, the label, pitch | `js/game/screen-cast.js:40` |
 | sideways phones: Echo, Voices and Seek at 640x360 (Seek keeps its reveal beside the feedback) | `docs/dev/progress/exB.md:110-111` |
 | Matrix words share no word or verb lemma with the British English matrix test | `LICENSES-ASSETS.md:56` |
