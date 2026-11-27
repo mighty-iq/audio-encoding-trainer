@@ -39,98 +39,15 @@ annotations, 195 internal links); no file:// links; only Archivo and JetBrains M
 no nearly empty page (an exercise spilling a few lines); page count in 24–48; metadata read back (title "Earshot —
 player guide", author "the Chimera community", CreationDate/ModDate and XMP dates in UTC, no other name in XMP,
 /Lang en); privacy scan of the decompressed objects and the visible text (file://, home/temp paths, the container
-time zone and the private strings of tools/privacy_check.py; values never printed). FACTS: 82 numbers tied to code.
+time zone and the private strings of tools/privacy_check.py; values never printed). FACTS: 82 numbers tied to code (111 after round 2).
 
 ### Page-by-page check
 All 35 pages rendered at 60 dpi (cover, contents, chapters at 100 dpi) and looked at after the last change: no
 overflow, every exercise on one page, tables full width, figures legible, references in two columns. Chapter ends
 leave white space by design (each chapter and each exercise starts a page).
 
-### Numbers in the guide and the code behind them (from `python3 tools/build-pdf.py --facts`, 2026-11-26 21:24 UTC)
-| Statement | Where |
-|---|---|
-| edge trials aim at about 72 % right | `js/engine/dials.js:119` |
-| anchors about 90 %, warm-ups about 85 %, floor 65 % | `js/engine/dials.js:119` |
-| Crowd: your voice vs the others -15 to +12 dB, starts at +8 dB | `js/engine/dials.js:31` |
-| Crowd: 1 to 3 other voices | `js/engine/dials.js:32` |
-| Crowd: similarity other sex .. near-twin | `js/engine/dials.js:34` |
-| Crowd: separation 90 deg .. same place, headphones only | `js/engine/dials.js:36-37` |
-| Far: distance 1 to 30 m in 11 steps | `js/engine/dials.js:41` |
-| Far: echo 0.3 to 3.0 s | `js/engine/dials.js:43` |
-| Far: room noise -6 to +30 dB, starts at +24 dB | `js/engine/dials.js:45` |
-| Strange: accent mild/quiet .. strong/-3 dB | `js/engine/dials.js:50-51` |
-| Strange: fast 1.3x to 3x | `js/engine/dials.js:53` |
-| Strange: whisper quiet, +15 .. 0 dB | `js/engine/dials.js:55` |
-| Strange: phone 300-3400 Hz clear .. 700-2200 Hz +3 dB | `js/engine/dials.js:58-59` |
-| Strange: muffled 3 kHz .. 550 Hz | `js/engine/dials.js:62` |
-| Strange: vocoded 16 .. 4 bands | `js/engine/dials.js:64` |
-| Repair: word lost 30 .. 100 % | `js/engine/dials.js:68` |
-| Repair: sentence kept whole .. 50 % | `js/engine/dials.js:73` |
-| Repair: gaps loud noise .. silence | `js/engine/dials.js:76` |
-| Echo: speech vs noise -8 .. +20 dB, starts +15 | `js/engine/dials.js:79` |
-| Echo: 2 .. 5 details; rate normal .. 1.6x; wait 1 .. 10 s | `js/engine/dials.js:80-84` |
-| Seek: voice vs noise up close -12 .. +15 dB; 0 .. 4 decoys; pause 1 .. 4 s | `js/engine/dials.js:87-92` |
-| Voices: 2 .. 6 voices; mixed .. similar pitch; -6 .. +30 dB; sentence .. one word | `js/engine/dials.js:96-100` |
-| set lengths: Crowd 24, Far 20, Strange 20, Repair 22, Echo 10, Seek 6, Voices 22 | `js/engine/dials.js:108-114` |
-| a session = minutes / 3 sets; default 15 min | `js/engine/planner.js:84` |
-| default exercise weights | `js/engine/planner.js:13` |
-| listen-only interludes of 25 s after Strange, Far or Repair sets, at most two a session | `js/engine/planner.js:116` |
-| sleep note from the fourth session of a day | `js/engine/planner.js:90` |
-| fresh ears after 2 or more days away | `js/engine/planner.js:73` |
-| Focus mode: about 60 % of sets on the exercise behind the weakest check-in | `js/engine/planner.js:105` |
-| session lengths 10, 15, 20, 30 min | `js/ui/screens/settings.js:13` |
-| mode texts (Edge, Path, Variety, Focus 60 %, Free) | `js/ui/screens/settings.js:10` |
-| weekly ring: 4 or 5 sessions a week is a good rhythm | `js/ui/widgets.js:7` |
-| anchor every 4th-5th trial and after two misses in a row | `js/engine/controller.js:219` |
-| focus dial chosen by learning progress, 20 % exploration | `js/engine/controller.js:146` |
-| variety widens at 75 % over the last 20 edge trials, narrows below 55 % | `js/engine/learner.js:300-301` |
-| Path: 5 in a row fully right or 80 % of the last 15; back one step after 15 trials under 50 % | `js/engine/path.js:107-110` |
-| plateau: windows of 10 sessions, flat for 4 windows, band 0.15 dB, no best in 4 sessions | `js/engine/plateau.js:33` |
-| plateau: at most one change every 3 sessions | `js/engine/plateau.js:112` |
-| plateau breakers in order | `js/engine/plateau.js:17` |
-| switch breaker rests the exercise for 3 sessions | `js/engine/plateau.js:162` |
-| headphone check: 6 rounds, pass at 5 | `js/lab/hpcheck.js:12` |
-| Matrix: 20 sentences, about 3 min, run SD 0.6 dB | `js/lab/probes.js:76-77` |
-| Digits: 24 triplets, 2.5 min, run SD 0.9 dB, 2 dB steps | `js/lab/probes.js:121-122` |
-| Two voices: 24 trials, 2.5 min, run SD 1.8 dB | `js/lab/probes.js:169-170` |
-| Rooms: 12 sentences, 2 min | `js/lab/probes-more.js:23` |
-| New voice: 16 sentences, 2.5 min | `js/lab/probes-more.js:67` |
-| Story: one passage at +3 dB, 2 min | `js/lab/probes-more.js:108` |
-| Diary: five items, 1 min | `js/lab/probes-more.js:166` |
-| baseline blocks | `js/lab/schedule.js:18-19` |
-| weekly: Matrix and Two voices, rotation Digits, Rooms, New voice, Story; Matrix twice for the first 8 | `js/lab/schedule.js:24-26` |
-| verdicts: clear, likely (90 %), lower | `js/lab/stats.js:234-236` |
-| no verdict before a measured run 5 days after the baseline | `js/lab/stats.js:150` |
-| twelve venues on three lines | `js/game/data.js:1` |
-| weekly night out: four stops, six trials each | `js/game/weekly.js:2-3` |
-| a cast card turns known after 3 identifications | `js/game/cast.js:11` |
-| milestones from at least 6 updates of a dial | `js/game/milestones.js:13` |
-| own voices: up to 20 s, 16 kHz mono, IndexedDB on the device | `js/ex/voices-own.js:16` |
-| app version | `js/core/ns.js:8` |
-| Far rooms: small 5 m to a hall 38 m long; the talker fits the room | `js/engine/dials.js:40` |
-| Far backgrounds per room size (hum, cafe, station, babble) | `js/engine/items/far.js:11` |
-| Crowd cue types widen with variety: call sign, voice preview, location; onset jitter | `js/engine/items/crowd.js:4` |
-| Echo: two or three questions after a pause | `js/engine/items/echo.js:2` |
-| Seek: a field 20 m across (10 m per unit, -1..1) | `js/ex/seek-scene.js:19` |
-| Seek head-turn feedback: voice 15-70 degrees to one side | `js/ex/seek-scene.js:210` |
-| interlude: about 25 s, nothing to answer, words on screen | `js/ui/interlude.js:27` |
-| tutorial: caption, worked example with labelled foils, practice; wrong practice answer gets a new try; ends with the Chimera link | `js/ui/tutorial.js:9` |
-| overnight check: first session of a calendar day only | `js/engine/planner.js:44` |
-| weekly check-in about 8-9 min after 6.5 days; retention check after 14 days away | `js/lab/schedule.js:4-8` |
-| diary: five items, 1 (very hard) to 5 (very easy) | `js/lab/probes-more.js:164` |
-| missions: eight, same for everyone per ISO week, swappable, 20-second check-in (tried, 0-10, helped) | `js/ex/missions.js:1-2` |
-| milestone names: Equal footing at 0 dB, Through the crowd at -6 dB | `js/game/milestones.js:17-18` |
-| three venues open from the start: cafe, lecture hall, phone line | `js/game/venues.js:135` |
-| weekly night out: first complete run is the card; weekly trials never teach the learner | `js/game/weekly.js:8-9` |
-| pool file: random id, relative days, no name/device/locale/time zone unless ticked, UTC export date | `js/lab/export.js:6` |
-| backups: own-voice recordings never included; damaged files refused whole | `js/lab/export.js:2-13` |
-| the first three items of a new condition are warm-ups that do not move its level | `js/engine/learner.js:240` |
-| Voices: a wrong "who" answer plays the right voice, then the picked one | `docs/dev/DECISIONS.md:39` |
-| own voices: name and consent tick; record where allowed, or import a file | `docs/dev/DECISIONS.md:40` |
-| Lab: two Matrix runs per check-in lift a true 1.5 dB gain to clear by week 4 in 79 % vs 56 % | `docs/dev/DECISIONS.md:22` |
-| plateau simulation: detection 47-86 %, false alarms 3.3-6.3 % (200 learners x 60 days) | `docs/dev/DECISIONS.md:36` |
-| plateau simulation after fix round: false alarms 5.5-7.2 %, detection 51-83 % | `docs/dev/progress/engine.md:190` |
-| Matrix words share no word or verb lemma with the British English matrix test | `LICENSES-ASSETS.md:56` |
+### Numbers in the guide and the code behind them
+The round-1 table (82 facts) is superseded by the current table in the round-2 section below.
 
 Numbers from research (dB, points, hours, percentages of studies) come from docs/research and are cited in the guide
 with their reading depth: R1 §1, §2.1, §2.2, §3.3, §4, §5, §6 (trial results, failure modes, dose, apps); R2 Summary,
@@ -153,3 +70,162 @@ names a product is cited with the name replaced by a bracketed description.
   `margin` shorthand on `.figrow` cancelled it (fixed with `.figrow.wide`).
 - A clearfix `::after` made an empty page after an exercise that filled its page exactly (`display: flow-root` instead).
 - SVG text with a stroke halo made Chromium embed Type 3 fonts; labels are placed clear of the rings instead.
+
+## 2026-11-27 00:43 UTC — round 2: the guide matches the code after fix round 2 (status: complete; resumable)
+Sources: docs/dev/reviews/FIX-ROUND-2.md, the round-2 sections of progress/{engine,game,exA,exB,lab,pwa}.md, and the
+code itself (every statement below checked in code). Rebuilt without the URL flags: 35 pages, 1,864 KiB, 2 passes,
+81 URLs / 113 URI annotations / 195 internal links, only Archivo and JetBrains Mono, metadata in UTC, privacy scan
+clean, no nearly empty page, FACTS 111/111. All 35 pages looked at after the last change.
+
+### What changed in the guide
+- Figures re-shot (tools/shots.py, simulated players): home (this week 4 sessions; Lab baseline block 1 of 5), crowd
+  ("The voice you follow vs the others", 0 dB), far (11 m, 1.7 s, "tap two words from the second phrase"), strange
+  (phone line, thin line; two word slots), repair, echo (two questions), seek (Found and Named marked apart, 1.1 m),
+  voices (meeting: "Listen for about 7 s, then tap the name", one key), lab-trend ("close to training", "likely
+  range"), map (10 of 12 open, "not yet", the mark +3 dB under Club). Alt texts and captions follow the new shots.
+- Ch 0/4: dial name "the voice you follow vs the others". Ch 2: install from the Pages site (home screen, offline after
+  the first visit), whole-version updates offered between sets, the in-app browser notice (Discord, Instagram,
+  Facebook, TikTok, Snapchat, LINE, X; dismissed per device), the single file never installs anything; the web
+  version checks its site for a new version (pwa.js CHECK_MS), so "no network requests" now reads "sends nothing
+  about you". Tutorial: a wrong practice answer gets a new trial; Skip is always there.
+- Ch 3: up to three unplayed exercises open a session in Edge, Path and Variety (all seven by the third session); a
+  session counts once it has an answered trial; plateau numbers now cover every simulation run (detection about half
+  to more than four in five; false alarms 3 to 8 %).
+- Ch 4: foils drawn from answers the player's own voices could have said; Far "then tap what you heard in the
+  second"; Strange: other-language model voices reading English, tiers = recogniser difficulty (table row, trains
+  line, what you do, one research sentence; no "strong accent" or speaker wording), whisper "in quiet / in noise";
+  Seek: the ring rule (within 2.5 m down to 0.9 m), a scene counts when both are right, marked apart; Voices: a
+  meeting plays the introduction plus one more line, then one name key.
+- Ch 5: reach tags (close to training, a step from training, far from training, everyday life) in the text and the
+  Table 5 column; Story = a short story (about 40 seconds) in a busy restaurant; "give or take"; "likely range" in
+  place of "90 % interval" in the verdict text, the card guide and the figure; verdict names as the app shows them;
+  Focus uses "our starting guesses", not norms.
+- Ch 6: earshot on the careful side (90 % sure) and never beyond the hardest level heard; legend "not yet" and "m+";
+  the ring mark example (+3 dB under Club); the exercise list under the map and Seek at the lecture hall; milestones
+  on the careful side at a tested level, at most two per results screen, level-up lines only at tested levels.
+- Announcement: Strange voices reads "other-language model voices" (no accent wording), and the web version
+  "installs to your home screen"; 1,660 characters with placeholders, so the three addresses may total up to 372.
+
+### Not confirmable in code, or worth knowing
+- The in-app list in code also has Discord (the lead's list did not); the guide names it.
+- Echo: the dial still offers "2 details", but the question rule asks one detail fewer than the message holds, up to
+  three (echo.js:88), and the build's messages carry 3–5 details, so the guide's "two or three questions" holds.
+- Voices: a meeting holds at most two clips (the intro, then the engine's clip or a sentence, phrase or word), so the
+  guide says "one more line" rather than "one more sentence".
+- Still to come from the lead: shell (Path stage and step, answer counts, Exercises list from Home, failures move on)
+  and stimuli (final counts, Story options); counts of voices are not stated in the guide until then.
+
+### Numbers in the guide and the code behind them (`python3 tools/build-pdf.py --facts`, 2026-11-27 00:43 UTC)
+| Statement | Where |
+|---|---|
+| edge trials aim at about 72 % right | `js/engine/dials.js:121` |
+| anchors about 90 %, warm-ups about 85 %, floor 65 % | `js/engine/dials.js:121` |
+| Crowd: the voice you follow vs the others -15 to +12 dB, starts at +8 dB | `js/engine/dials.js:31` |
+| Crowd: 1 to 3 other voices | `js/engine/dials.js:32` |
+| Crowd: similarity other sex .. near-twin | `js/engine/dials.js:34` |
+| Crowd: separation 90 deg .. same place, headphones only | `js/engine/dials.js:36-37` |
+| Far: distance 1 to 30 m in 11 steps | `js/engine/dials.js:41` |
+| Far: echo 0.3 to 3.0 s | `js/engine/dials.js:43` |
+| Far: room noise -6 to +30 dB, starts at +24 dB | `js/engine/dials.js:45` |
+| Strange: other-language model voices, an easier voice in quiet .. the hardest at -3 dB | `js/engine/dials.js:52-53` |
+| Strange: accent tiers = how hard a speech recogniser found the voice; other-language models reading English | `js/engine/dials.js:50-51` |
+| Strange: prompt names a voice from another-language model reading English; synthetic voices labelled | `js/ex/strange.js:138` |
+| Strange: fast 1.3x to 3x | `js/engine/dials.js:55` |
+| Strange: whisper in quiet, in noise +15 .. 0 dB | `js/engine/dials.js:57-58` |
+| Strange: phone 300-3400 Hz clear .. 700-2200 Hz +3 dB | `js/engine/dials.js:60-61` |
+| Strange: muffled 3 kHz .. 550 Hz | `js/engine/dials.js:64` |
+| Strange: vocoded 16 .. 4 bands | `js/engine/dials.js:66` |
+| Repair: word lost 30 .. 100 % | `js/engine/dials.js:70` |
+| Repair: sentence kept whole .. 50 % | `js/engine/dials.js:75` |
+| Repair: gaps loud noise .. silence | `js/engine/dials.js:78` |
+| Echo: speech vs noise -8 .. +20 dB, starts +15 | `js/engine/dials.js:81` |
+| Echo: 2 .. 5 details; rate normal .. 1.6x; wait 1 .. 10 s | `js/engine/dials.js:82-86` |
+| Seek: voice vs noise up close -12 .. +15 dB; 0 .. 4 decoys; pause 1 .. 4 s | `js/engine/dials.js:89-94` |
+| Voices: 2 .. 6 voices; mixed .. similar pitch; -6 .. +30 dB; sentence .. one word | `js/engine/dials.js:98-102` |
+| set lengths: Crowd 24, Far 20, Strange 20, Repair 22, Echo 10, Seek 6, Voices 22 | `js/engine/dials.js:110-116` |
+| a session = minutes / 3 sets; default 15 min | `js/engine/planner.js:94` |
+| default exercise weights | `js/engine/planner.js:13` |
+| listen-only interludes of 25 s after Strange, Far or Repair sets, at most two a session | `js/engine/planner.js:138` |
+| sleep note from the fourth session of a day | `js/engine/planner.js:100` |
+| fresh ears after 2 or more days away | `js/engine/planner.js:83` |
+| Focus mode: about 60 % of sets on the exercise behind the weakest check-in | `js/engine/planner.js:126` |
+| session lengths 10, 15, 20, 30 min | `js/ui/screens/settings.js:13` |
+| mode texts (Edge, Path, Variety, Focus 60 %, Free) | `js/ui/screens/settings.js:10` |
+| weekly ring: 4 or 5 sessions a week is a good rhythm | `js/ui/widgets.js:7` |
+| anchor every 4th-5th trial and after two misses in a row | `js/engine/controller.js:219` |
+| focus dial chosen by learning progress, 20 % exploration | `js/engine/controller.js:146` |
+| variety widens at 75 % over the last 20 edge trials, narrows below 55 % | `js/engine/learner.js:300-301` |
+| Path: 5 in a row fully right or 80 % of the last 15; back one step after 15 trials under 50 % | `js/engine/path.js:107-110` |
+| plateau: windows of 10 sessions, flat for 4 windows, band 0.15 dB, no best in 4 sessions | `js/engine/plateau.js:33` |
+| plateau: at most one change every 3 sessions | `js/engine/plateau.js:113` |
+| plateau breakers in order | `js/engine/plateau.js:17` |
+| switch breaker rests the exercise for 3 sessions | `js/engine/plateau.js:163` |
+| headphone check: 6 rounds, pass at 5 | `js/lab/hpcheck.js:12` |
+| Matrix: 20 sentences, about 3 min, run SD 0.6 dB | `js/lab/probes.js:76-77` |
+| Digits: 24 triplets, 2.5 min, run SD 0.9 dB, 2 dB steps | `js/lab/probes.js:121-122` |
+| Two voices: 24 trials, 2.5 min, run SD 1.8 dB | `js/lab/probes.js:169-170` |
+| Rooms: 12 sentences, 2 min | `js/lab/probes-more.js:23` |
+| New voice: 16 sentences, 2.5 min | `js/lab/probes-more.js:67` |
+| Story: one passage at +3 dB, 2 min, far from training | `js/lab/probes-more.js:108` |
+| Story: a short story (about 40 seconds) in a busy restaurant, then five questions | `js/lab/probes-more.js:110` |
+| Diary: five items, 1 min | `js/lab/probes-more.js:166` |
+| baseline blocks | `js/lab/schedule.js:18-19` |
+| weekly: Matrix and Two voices, rotation Digits, Rooms, New voice, Story; Matrix twice for the first 8 | `js/lab/schedule.js:24-26` |
+| verdicts: clear, likely (90 %), lower | `js/lab/stats.js:234-236` |
+| no verdict before a measured run 5 days after the baseline | `js/lab/stats.js:150` |
+| twelve venues on three lines | `js/game/data.js:1` |
+| weekly night out: four stops, six trials each | `js/game/weekly.js:2-3` |
+| a cast card turns known after 3 identifications | `js/game/cast.js:11` |
+| milestones from at least 6 updates of a dial | `js/game/milestones.js:14` |
+| own voices: up to 20 s, 16 kHz mono, IndexedDB on the device | `js/ex/voices-own.js:16` |
+| app version | `js/core/ns.js:8` |
+| Far rooms: small 5 m to a hall 38 m long; the talker fits the room | `js/engine/dials.js:40` |
+| Far backgrounds per room size (hum, cafe, station, babble) | `js/engine/items/far.js:11` |
+| Crowd cue types widen with variety: call sign, voice preview, location; onset jitter | `js/engine/items/crowd.js:4` |
+| Echo: two or three questions after a pause | `js/engine/items/echo.js:2` |
+| Seek: a field 20 m across (10 m per unit, -1..1) | `js/ex/seek-scene.js:19` |
+| Seek head-turn feedback: voice 15-70 degrees to one side | `js/ex/seek-scene.js:217` |
+| interlude: about 25 s, nothing to answer, words on screen | `js/ui/interlude.js:27` |
+| tutorial: caption, worked example with labelled foils, practice; wrong practice answer gets a new try; ends with the Chimera link | `js/ui/tutorial.js:11` |
+| overnight check: first session of a calendar day only | `js/engine/planner.js:54` |
+| weekly check-in about 8-9 min after 6.5 days; retention check after 14 days away | `js/lab/schedule.js:4-8` |
+| diary: five items, 1 (very hard) to 5 (very easy) | `js/lab/probes-more.js:164` |
+| missions: eight, same for everyone per ISO week, swappable, 20-second check-in (tried, 0-10, helped) | `js/ex/missions.js:1-2` |
+| milestone names: Equal footing at 0 dB, Through the crowd at -6 dB | `js/game/milestones.js:18-19` |
+| three venues open from the start: cafe, lecture hall, phone line | `js/game/venues.js:156` |
+| weekly night out: first complete run is the card; weekly trials never teach the learner | `js/game/weekly.js:8-9` |
+| pool file: random id, relative days, no name/device/locale/time zone unless ticked, UTC export date | `js/lab/export.js:6` |
+| backups: own-voice recordings never included; damaged files refused whole | `js/lab/export.js:2-13` |
+| the first three items of a new condition are warm-ups that do not move its level | `js/engine/learner.js:240` |
+| Voices: a wrong "who" answer plays the right voice, then the picked one | `docs/dev/DECISIONS.md:39` |
+| own voices: name and consent tick; record where allowed, or import a file | `docs/dev/DECISIONS.md:40` |
+| Lab: two Matrix runs per check-in lift a true 1.5 dB gain to clear by week 4 in 79 % vs 56 % | `docs/dev/DECISIONS.md:22` |
+| plateau simulation: detection 47-86 %, false alarms 3.3-6.3 % (200 learners x 60 days) | `docs/dev/DECISIONS.md:36` |
+| plateau simulation after fix round: false alarms 5.5-7.2 %, detection 51-83 % | `docs/dev/progress/engine.md:194` |
+| plateau simulation after fix round 2: false alarms 3.8-7.5 %, detection 54-81 % | `docs/dev/progress/engine.md:251` |
+| first sessions: up to three unplayed exercises open a session in Edge, Path and Variety (all seven by the third) | `js/engine/planner.js:111-117` |
+| a session counts once it has an answered trial | `js/engine/planner.js:19` |
+| foils from answers the player's own voice pool can reach | `docs/dev/progress/engine.md:202-203` |
+| tutorial: a Skip button in the header | `js/ui/tutorial.js:94` |
+| Far: then tap what you heard in the second phrase | `js/ex/far.js:31` |
+| Seek: stop with the voice inside the ring around your dot; a scene counts when both are right | `js/ex/seek.js:37` |
+| Seek: found within 1.15 x target size (10 m per unit): 0.22 -> 2.5 m, 0.08 -> 0.9 m | `js/engine/dials.js:92` |
+| Seek: the scorer counts a stop within 1.15 x the target radius | `js/engine/score.js:24` |
+| Voices meet: intro plus one more clip, then tap the name (one key) | `js/ex/voices.js:87-107` |
+| Lab: likely range = where the true change lies, 90 % sure | `js/lab/screen-report.js:37` |
+| Lab: verdict names (A clear gain, Likely a gain, Not yet clear, Below your baseline) | `js/lab/screen-report.js:11` |
+| Lab: a run shows give or take | `js/lab/runner.js:318` |
+| Lab: Focus uses our starting guesses, not norms | `js/lab/screen-lab.js:88` |
+| game: careful side Z = 1.28 (one-sided 90 % bound) | `js/game/core.js:20` |
+| game: claims never beyond the hardest level tested | `js/game/core.js:117` |
+| map: earshot careful and never beyond the hardest level heard; "not yet" below reach; "m+" at the top | `js/game/venues.js:95-98` |
+| map: earshot read at 72 % right | `js/game/venues.js:2` |
+| venue marks: bar +3 dB opens house party, house party +3 dB opens club | `js/game/data.js:49-62` |
+| Seek at the lecture hall (open from the start) | `js/game/data.js:73-74` |
+| map: where to find each exercise | `js/game/screen-map.js:94` |
+| results: at most two milestones, the rest in Progress | `js/game/ui.js:136-137` |
+| level-up lines only for levels the player was tested at | `js/game/milestones.js:224` |
+| PWA: install, offline, whole-version updates between sets; in-app browsers notice; never in the single file | `js/core/pwa.js:5-9` |
+| PWA: in-app browsers Facebook, Instagram, TikTok, Snapchat, LINE, X, Discord; dismissal kept per device | `js/core/pwa.js:30-36` |
+| PWA: looks for a new version at most every 30 min | `js/core/pwa.js:22` |
+| Matrix words share no word or verb lemma with the British English matrix test | `LICENSES-ASSETS.md:56` |

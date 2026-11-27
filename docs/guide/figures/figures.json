@@ -4,7 +4,7 @@
   "file": "figures/crowd-feedback.png",
   "screen": "play",
   "state": "feedback",
-  "text": "1 m\n2 m\n3 m\nyou\nGavin\n\nListen again…\n\nNot quite\n\n“drum, six” came from another voice; Gavin said “grape, three”. Real words, from the wrong voice: lock on at the call sign.\n\nWord\nglass\ndrum\n(your answer, wrong)\nsock\ngrape\n(the right answer)\nNumber\nsix\n(your answer, wrong)\nseven\nfive\nthree\n(the right answer)\nGavin alone\nThe crowd again\nNext",
+  "text": "1 m\n2 m\n3 m\nyou\nRuby\n\nListen again…\n\nNot quite\n\n“crab, two” came from another voice; Ruby said “pear, three”. Real words, from the wrong voice: lock on at the call sign.\n\nNot quite“crab, two” came from another voice; Ruby said “pear, three”. Real words, from the wrong voice: lock on at the call sign.\n\nWord\ncrab\n(your answer, wrong)\nhorn\npear\n(the right answer)\nnest\nNumber\nthree\n(the right answer)\n",
   "trial": {
    "dials": {
     "similar": 1,
@@ -14,8 +14,8 @@
    "ex": "crowd",
    "focus": "tmr",
    "level": null,
-   "prompt": "Follow Gavin: tap its word and number.",
-   "title": "Voice to follow: Gavin; 2 other voices, all from the same place"
+   "prompt": "Follow Ruby: tap its word and number.",
+   "title": "Voice to follow: Ruby; 2 other voices, all from the same place"
   },
   "viewport": [
    390,
@@ -32,13 +32,13 @@
     "delay": 0,
     "details": 1,
     "rate": 0,
-    "snr": 6.5
+    "snr": 0
    },
    "ex": "echo",
    "focus": "snr",
    "level": null,
    "prompt": "Listen once, then answer from memory.",
-   "title": "A message from the voice ahead, in a crowd; the questions come after it"
+   "title": "A message from the voice ahead, in a party; the questions come after it"
   },
   "viewport": [
    390,
@@ -59,8 +59,8 @@
    "ex": "far",
    "focus": "dist",
    "level": null,
-   "prompt": "Listen to the room, then tap the word and the number from the second phrase.",
-   "title": "A talker 11 m ahead in a large room with 1.7 s of echo"
+   "prompt": "Listen to the room, then tap two words from the second phrase.",
+   "title": "A talker 11 m ahead in a large room with 1.7 s of echo"
   },
   "viewport": [
    390,
@@ -78,7 +78,7 @@
  },
  "lab-trend": {
   "clip": {
-   "height": 506.9375,
+   "height": 529.4375,
    "width": 390,
    "x": 0,
    "y": 48
@@ -98,7 +98,7 @@
    -7.13
   ],
   "screen": "report",
-  "text": "‹ Back\nMatrix\nSettings\n\nMATRIX · NEAR–MID · UNTRAINED\n\nA clear gain\n+1.6 dB\nclear gain\nvs your baseline · 90 % interval +0.6 dB to +2.5 dB\n\nOver 4.1 weeks your trend moved 1.6 dB in the better direction. With your runs so far, a change counts as clear once it reaches about 1.1 dB (1.96 × the margin of the gain). Chance that you improved at all: 99 %. The model separates early practice from later change and allows for",
+  "text": "‹ Back\nMatrix\nSettings\n\nMATRIX · CLOSE TO TRAINING\n\nA clear gain\n+1.6 dB\nclear gain\nvs your baseline · likely range +0.6 dB to +2.5 dB\n\nOver 4.1 weeks your trend moved 1.6 dB in the better direction. The likely range is where the true change lies, 90 % sure. With your runs so far, a change counts as clear once it reaches about 1.1 dB, about twice its own uncertainty. Chance that you improved at all: 99 %. The model s",
   "verdict": "clear",
   "viewport": [
    390,
@@ -113,7 +113,7 @@
    "y": 46
   },
   "file": "figures/map.png",
-  "open": 8,
+  "open": 10,
   "screen": "map",
   "viewport": [
    390,
@@ -127,15 +127,15 @@
   "state": "answer",
   "trial": {
    "dials": {
-    "context": 2,
+    "context": 0,
     "fill": 0,
-    "gap": 2,
+    "gap": 0,
     "gate": 0
    },
    "ex": "repair",
    "focus": "gap",
    "level": null,
-   "prompt": "One word is lost. Tap the word that was there.",
+   "prompt": "One word is lost. Hold the whole sentence, then tap the word that was there.",
    "title": "One voice ahead of you; one of its words is lost"
   },
   "viewport": [
@@ -149,10 +149,10 @@
   "screen": "play",
   "state": "feedback",
   "target": [
-   -0.4,
-   0.844
+   0.29,
+   0.721
   ],
-  "text": "5 m\ntrain\n\nFound and named\n\nFound: you stopped 1.1 m from the voice. It was calling “train”.\n\nAnswer\ngrape\ntrain\n(your answer, right)\njug\nbug\nThe voice alone\nUp close, in the noise\nNext",
+  "text": "5 m\nnest\n\nFound\n: yes\n·\nNamed\n: yes\n\nFound: you stopped 1.1 m from the voice. It was calling “nest”.\n\nAnswer\nbone\nrose\nvest\nnest\n(your answer, right)\nThe voice alone\nUp close, in the noise\nNext",
   "viewport": [
    390,
    844
@@ -165,13 +165,13 @@
   "state": "answer",
   "trial": {
    "dials": {
-    "muffled": 1
+    "phone": 2
    },
    "ex": "strange",
-   "focus": "muffled",
+   "focus": "phone",
    "level": null,
-   "prompt": "Through a wall (2.2 kHz): tap the words you heard.",
-   "title": "Through a wall (2.2 kHz)"
+   "prompt": "Phone line, thin line: tap the words you heard.",
+   "title": "Phone line, thin line"
   },
   "viewport": [
    390,
@@ -188,13 +188,13 @@
     "cast": 0,
     "length": 0,
     "similar": 0,
-    "snr": 9
+    "snr": 11
    },
    "ex": "voices",
    "focus": "cast",
    "level": null,
-   "prompt": "Meet Freya: pours the drinks at the bar on the square. Listen, then tap the name.",
-   "title": "A new voice: Freya"
+   "prompt": "Meet Hana: brings the snacks to every party. Listen for about 7 s, then tap the name.",
+   "title": "A new voice: Hana"
   },
   "viewport": [
    390,
