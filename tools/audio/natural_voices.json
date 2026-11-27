@@ -79,9 +79,24 @@
   "ageBand": "20s",
   "sex": "m"
  },
+ "librivox.r00215": {
+  "accent": "English (volunteer reader)",
+  "f0": 167.0,
+  "sex": "f"
+ },
+ "librivox.r01463": {
+  "accent": "English (volunteer reader)",
+  "f0": 84.6,
+  "sex": "m"
+ },
  "librivox.r02767": {
   "accent": "English (volunteer reader)",
   "f0": 86.5,
+  "sex": "m"
+ },
+ "librivox.r03198": {
+  "accent": "English (volunteer reader)",
+  "f0": 105.4,
   "sex": "m"
  },
  "librivox.r04055": {
@@ -99,6 +114,21 @@
   "f0": 222.2,
   "sex": "f"
  },
+ "librivox.r05897": {
+  "accent": "English (volunteer reader)",
+  "f0": 114.9,
+  "sex": "m"
+ },
+ "librivox.r06709": {
+  "accent": "English (volunteer reader)",
+  "f0": 257.4,
+  "sex": "f"
+ },
+ "librivox.r07339": {
+  "accent": "English (volunteer reader)",
+  "f0": 148.5,
+  "sex": "m"
+ },
  "librivox.r10715": {
   "accent": "English (volunteer reader)",
   "f0": 202.5,
@@ -106,7 +136,12 @@
  },
  "librivox.r11216": {
   "accent": "English (volunteer reader)",
-  "f0": 83.8,
+  "f0": 90.7,
   "sex": "m"
+ },
+ "librivox.r11272": {
+  "accent": "English (volunteer reader)",
+  "f0": 170.9,
+  "sex": "f"
  }
 }

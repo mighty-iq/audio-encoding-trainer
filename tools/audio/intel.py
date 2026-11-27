@@ -1,6 +1,7 @@
 """Build-time intelligibility in speech-shaped noise (an objective proxy, not a human norm):
-- tier (1-3) for accented and non-native voices: recogniser word accuracy on up to 10 of the voice's
-  sentences at 0 dB SNR, split into thirds among those voices (1 = clearest); tools/audio/voice_tiers.json;
+- tier (1-3) for the voices of other-language models: how hard the voice is to understand, from recogniser word
+  accuracy on up to 10 of its sentences at 0 dB SNR, split into thirds (1 = easiest); not accent strength;
+  tools/audio/voice_tiers.json;
 - diff (dB) for matrix probe words: recogniser accuracy at 0, +3 and +6 dB SNR (around the recogniser's own 50 %
   point; it needs about 10 dB more SNR than people) over three noise seeds, turned into a level offset with a
   slope of 10 %/dB and capped at +-3 dB (db 'intel'; pack.py copies it into the manifest).
@@ -74,7 +75,8 @@ def tiers(log):
 def matrix(log):
     rec = asr.recogniser('parakeet')
     res = Results('intel')
-    words = [r for r in Results('words').values() if r.get('ok') and 'matrix' in (r.get('tags') or [])]
+    words = [r for r in Results('words').values() if r.get('ok') and 'matrix' in (r.get('tags') or [])
+             and r.get('pack') != 'none']
     for r in words:
         if (res.get(r['id']) or {}).get('v') == 2:
             continue

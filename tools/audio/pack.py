@@ -62,6 +62,16 @@ def rows():
     return sorted(out, key=lambda r: r['id'])
 
 
+def judge(r, heard):
+    """One rule for every clip: open-vocabulary recognition of the shipped audio (intros: exact apart from the
+    name's spelling; stories: the stated word-error limit and every keyword)."""
+    import asr
+    if r.get('name'):
+        return asr.score_named(r.get('asr_text', r['text']), heard, r['name'])
+    sc = asr.score(r.get('asr_text', r['text']), heard, r.get('keywords'))
+    return bool(sc['ok'] or (r.get('wer_max', 0) >= sc['wer'] and sc['kw_ok']))
+
+
 def wav_hash(cid):
     return MP3_VERSION + hashlib.sha256(wav_path(cid).read_bytes()).hexdigest()[:14]
 
@@ -96,10 +106,7 @@ def main(argv):
         cid = r['id']
         data, y, m = encode(cid, cache, 'bed' if r['kind'] == 'bed' else 'speech')
         key = f'{cid}.{wav_hash(cid)}'
-        rule = 'closed' if ('matrix' in (r.get('tags') or []) and r['kind'] == 'word') else 'open'
-        if m is not None and rule == 'closed' and m.get('rule') != 'closed':
-            m = None                  # measured before matrix words had their closed-set rule: check again
-        if m is None or (check_asr and 'asr' not in m):
+        if m is None or (check_asr and 'heard' not in m):
             if y is None:
                 y = mp3_decode(data)
             m = {'id': key, 'dur': round(len(y) / SR, 3),
@@ -108,13 +115,10 @@ def main(argv):
                 import asr
                 rec = rec or asr.recogniser('parakeet')
                 heard, _ = rec.run(y)
-                sc = asr.score(r.get('asr_text', r['text']), heard, r.get('keywords'))
-                ok = sc['ok'] or (r.get('wer_max', 0) >= sc['wer'] and sc['kw_ok'])
-                if 'matrix' in (r.get('tags') or []) and r['kind'] == 'word':
-                    import cut_matrix          # the probe is closed-set: same rule as when the word was cut
-                    ok = cut_matrix.closed_ok(r['text'], heard)
-                m.update({'asr': bool(ok), 'heard': heard, 'wer': sc['wer'], 'rule': rule})
+                m.update({'heard': heard})
             meas.put(m)
+        if check_asr and r['kind'] not in ('bed', 'rir'):
+            m = dict(m, asr=judge(r, m.get('heard', '')))   # the current rule, applied to the stored transcript
         if check_asr and m.get('asr') is False:
             rejects.append({'id': cid, 'db': r['_db'], 'heard': m.get('heard'), 'text': r['text']})
             continue

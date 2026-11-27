@@ -15,7 +15,13 @@ from registry import f0_median
 BASE = 'https://media.githubusercontent.com/media/microsoft/DNS-Challenge/interspeech2020/master/'
 N_READERS = 10
 PER_READER = 1
+FILES_PER_READER = 4                 # a reader's first file often opens with a title or section announcement
 MIN_S, MAX_S = 2.2, 6.5
+
+
+ANNOUNCE = re.compile(r'librivox|chapter|section|recording|public domain|read by|dot org|www|volunteer|'
+                      r'for more information|this is a|end of|collection|adventure the|the adventures of', re.I)
+AUTHOR = re.compile(r'\bby [A-Z][a-z]+ [A-Z]')      # "... by Firstname Lastname": a title line
 
 
 def sentences(x, rec):
@@ -63,36 +69,43 @@ def run(log, res, meta):
         if done >= N_READERS:
             break
         vid = f'r{rd}'
-        have = [k for k in res.rows if k.startswith(f'librivox.{vid}.') and res.rows[k].get('ok')]
+        rows = [k for k in res.rows if k.startswith(f'librivox.{vid}.')]
+        have = [k for k in rows if res.rows[k].get('ok')]
         if len(have) >= PER_READER:
             done += 1
             continue
-        f = sorted(readers[rd])[0]
-        local = CORPORA / 'dns-librivox' / 'wav' / f.split('/')[-1]
-        if not fetch(BASE + f, local):
-            log('fetch failed', f)
-            continue
-        x = load_audio(local)
-        kept = len(have)
-        for (a, b, text) in sentences(x, p_rec):
+        kept, n = len(have), len(rows)        # new ids follow every earlier row (a dropped row keeps its id)
+        for f in sorted(readers[rd])[:FILES_PER_READER]:
             if kept >= PER_READER:
                 break
-            if not (MIN_S <= b - a <= MAX_S) or len(norm_words(text)) < 5:
+            local = CORPORA / 'dns-librivox' / 'wav' / f.split('/')[-1]
+            if not fetch(BASE + f, local):
+                log('fetch failed', f)
                 continue
-            y = trim(cut(x, a, b))
-            ys = shipped(y)
-            p_txt, _ = p_rec.run(ys)
-            w_txt, _ = w_rec.run(ys)
-            d, errs = asr.align(norm_words(p_txt), norm_words(w_txt))
-            if d != 0 or not norm_words(p_txt):
-                log(vid, 'disagree', errs[:4])
-                continue
-            kept += 1
-            cid = f'librivox.{vid}.sentence.seg-{kept}'
-            save_clip(cid, y)
-            res.put({'id': cid, 'src': 'librivox', 'voice': vid, 'kind': 'sentence', 'text': p_txt, 'ok': True,
-                     'heard': w_txt, 'dur': round(len(y) / SR, 3), 'adb': round(active_level_db(y), 2),
-                     'pack': 'babble', 'set': 'train', 'tags': ['babble', 'natural'], 'source': f.split('/')[-1]})
+            x = load_audio(local)
+            for (a, b, text) in sentences(x, p_rec):
+                if kept >= PER_READER:
+                    break
+                if not (MIN_S <= b - a <= MAX_S) or len(norm_words(text)) < 5 or ANNOUNCE.search(text) \
+                        or AUTHOR.search(text):
+                    continue              # body sentences only (no title or section announcements)
+                y = trim(cut(x, a, b))
+                ys = shipped(y)
+                p_txt, _ = p_rec.run(ys)
+                w_txt, _ = w_rec.run(ys)
+                d, errs = asr.align(norm_words(p_txt), norm_words(w_txt))
+                if d != 0 or not norm_words(p_txt):
+                    log(vid, 'disagree', errs[:4])
+                    continue
+                kept, n = kept + 1, n + 1
+                cid = f'librivox.{vid}.sentence.seg-{n}'
+                save_clip(cid, y)
+                res.put({'id': cid, 'src': 'librivox', 'voice': vid, 'kind': 'sentence', 'text': p_txt, 'ok': True,
+                         'heard': w_txt, 'dur': round(len(y) / SR, 3), 'adb': round(active_level_db(y), 2),
+                         'pack': 'babble', 'set': 'train', 'tags': ['babble', 'natural'],
+                         'source': f.split('/')[-1]})
+        if not kept:
+            log(f'librivox reader {rd}: no body sentence in its first {FILES_PER_READER} files')
         if kept:
             f0 = f0_median(np.concatenate([load_audio(wav_path(k)) for k in res.rows
                                            if k.startswith(f'librivox.{vid}.') and res.rows[k].get('ok')]))

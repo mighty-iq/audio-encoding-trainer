@@ -120,6 +120,12 @@ def main(argv=()):
             if clash:
                 errs.append(f'matrix {slot} words also used in training: {clash}')
     import content_probe
+    cues = content_probe.option_cues()
+    for k in ('longest', 'shortest', 'middle', 'heard'):
+        if cues[k] > 0.30:
+            errs.append(f'story options: the {k} responder scores {cues[k]} (chance 0.25, limit 0.30)')
+    if cues['lure_mentioned'] < 40:
+        errs.append(f"story options: only {cues['lure_mentioned']} questions offer a lure the passage mentions")
     if content_probe.overlap_with_published():
         errs.append(f'matrix shares words with the published British English matrix: {content_probe.overlap_with_published()}')
     import registry

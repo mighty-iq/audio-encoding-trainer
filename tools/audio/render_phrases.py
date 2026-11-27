@@ -52,11 +52,10 @@ def render_variant(it, rec, res, log):
         y, off = trim_with_offset(x)
         heard, hw = rec.run(mp3_decode(mp3_encode(code_level(y))))      # judge the audio as it will ship
         sc = asr.score(it.get('asr_text', say), heard, it.get('keywords'))
-        name_ok = True
-        if it.get('name'):            # intros: the name must be heard within two phonemes of its spelling
-            import cut_matrix
-            name_ok = any(cut_matrix.ipa_dist(it['name'].lower(), w) <= 2 for w in norm_words(heard))
-        ok = sc['ok'] or (it.get('wer_max', 0) > 0 and sc['wer'] <= it['wer_max'] and sc['kw_ok'] and name_ok)
+        if it.get('name'):            # intros: exact apart from the name's spelling
+            ok = asr.score_named(it.get('asr_text', say), heard, it['name'])
+        else:
+            ok = sc['ok'] or (it.get('wer_max', 0) > 0 and sc['wer'] <= it['wer_max'] and sc['kw_ok'])
         if not ok:
             log(it['id'], 'miss', sp, ' '.join(sc['errs']), '| heard:', heard[:120])
             continue

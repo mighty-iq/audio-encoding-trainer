@@ -59,14 +59,32 @@ ROLES = [
 ]
 
 
+VERBS = {'run', 'sell', 'pour', 'throw', 'play', 'wait', 'coach', 'sing', 'walk', 'answer', 'teach', 'bake', 'make',
+         'end', 'check', 'tune', 'cook', 'give', 'fix', 'call', 'study', 'sit', 'write', 'drive', 'bring', 'work',
+         'own', 'commentate', 'ring', 'deliver', 'repair', 'tell', 'know', 'dance', 'keep'}
+
+
+def conjugate(v):
+    """Third person singular: study -> studies, fix -> fixes, coach -> coaches, run -> runs."""
+    if v.endswith('y') and v[-2:-1] not in 'aeiou':
+        return v[:-1] + 'ies'
+    if v.endswith(('s', 'sh', 'ch', 'x', 'z', 'o')):
+        return v + 'es'
+    return v + 's'
+
+
 def third_person(line):
-    """'I run the little cafe.' -> 'Runs the little cafe.' (card text)."""
+    """'I study history and sit in the front row.' -> 'Studies history and sits in the front row.' (card text):
+    every verb of the first-person clause is conjugated, and my/our become their."""
     w = line.split()
     assert w[0] == 'I', line
-    k = 2 if w[1] == 'always' else 1
-    v = w[k]
-    v = v + ('es' if v.endswith(('sh', 'ch', 'x', 's')) else 's')
-    rest = ' '.join(w[1:k] + [v] + w[k + 1:]).replace(' my ', ' their ')
+    w = w[1:]
+    k = 1 if w[0] == 'always' else 0
+    w[k] = conjugate(w[k])
+    for i in range(1, len(w)):
+        if w[i - 1] == 'and' and w[i] in VERBS:
+            w[i] = conjugate(w[i])
+    rest = ' '.join(w).replace(' my ', ' their ').replace(' our ', ' their ')
     return rest[0].upper() + rest[1:]
 
 

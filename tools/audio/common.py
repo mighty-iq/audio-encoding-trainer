@@ -149,6 +149,39 @@ def active_level_db(x, sr=SR):
     return prev[0] if prev else rms_db(x)
 
 
+def active_level_stl(x, sr=SR):
+    """Second method for the active speech level, after the ITU-T G.191 (STL) sv56 procedure: thresholds on a
+    6 dB ladder (2^j of a 16-bit sample), activity with a 200 ms hangover per threshold, margin 15.9 dB, and
+    linear interpolation of the active level between the two thresholds that bracket the margin."""
+    x = np.asarray(x, dtype=np.float64) * 32768.0
+    if len(x) < sr * 0.05:
+        return rms_db(x / 32768.0)
+    g = math.exp(-1.0 / (sr * 0.03))
+    q = lfilter([1 - g], [1, -g], lfilter([1 - g], [1, -g], np.abs(x)))
+    hang = int(0.2 * sr + 0.5)
+    sq = float(np.sum(x * x))
+    if sq <= 0:
+        return -120.0
+    idx = np.arange(1, len(x) + 1)
+    pts = []
+    for j in range(15):
+        c = 2.0 ** j
+        above = (q >= c).astype(np.int32)
+        cs = np.concatenate([[0], np.cumsum(above)])
+        act = int(((cs[idx] - cs[np.maximum(idx - (hang + 1), 0)]) > 0).sum())
+        if act == 0:
+            break
+        a_db = 10 * math.log10(sq / act)
+        c_db = 20 * math.log10(c)
+        pts.append((a_db, a_db - c_db))
+    for k in range(1, len(pts)):
+        (a0, d0), (a1, d1) = pts[k - 1], pts[k]
+        if d0 >= 15.9 >= d1:
+            t = (d0 - 15.9) / (d0 - d1) if d0 != d1 else 0.0
+            return a0 + t * (a1 - a0) - 20 * math.log10(32768.0)
+    return (pts[-1][0] if pts else 10 * math.log10(sq / len(x))) - 20 * math.log10(32768.0)
+
+
 def fade(x, sr=SR, ms_in=5.0, ms_out=5.0):
     x = np.array(x, dtype=np.float32)
     for n, sl in ((int(sr * ms_in / 1000), slice(None)), (int(sr * ms_out / 1000), slice(None, None, -1))):
@@ -278,8 +311,8 @@ def _digits_to_words(m):
     return ' ' + num_words(s) + ' '
 
 
-ROMAN = {'ii': 'two', 'iii': 'three', 'iv': 'four', 'v': 'five', 'vi': 'six', 'vii': 'seven',
-         'viii': 'eight', 'ix': 'nine', 'x': 'ten'}
+# multi-letter Roman numerals only: a lone 'V' or 'X' from the recogniser is not taken as a number
+ROMAN = {'ii': 'two', 'iii': 'three', 'iv': 'four', 'vi': 'six', 'vii': 'seven', 'viii': 'eight', 'ix': 'nine'}
 
 
 def norm_words(text):

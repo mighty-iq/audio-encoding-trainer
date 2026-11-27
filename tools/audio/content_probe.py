@@ -7,13 +7,18 @@ story passages with five multiple-choice questions each. Words and names here ap
 # checked against the published British English matrix test (Hall 2006, University of Southampton MSc
 # dissertation, Table 2.1): no word and no verb lemma in common (a first draft shared 7 adjectives, 3 verbs and
 # 2 numbers with it and was changed). The American English matrix list could not be opened (bot check).
+# Round 2 (review ST-04): finds, holds and sticks were replaced by hugs, wipes and dolls. Under the open-vocabulary
+# rule no take of finds or sticks by af_kore, or of holds by bm_lewis, passed after every cutting and rendering
+# fallback. The new words are one syllable like the other verbs, pass from carrier sentences for both talkers, and
+# appear nowhere in the training texts. Lists stay alphabetical (the Lab shows them in this order). The v2 carrier
+# sentences were rendered with the round-1 words and are kept: the cutter reads the words stored with each one.
 MATRIX_VERSION = 2
 MATRIX = {
     'name': ['alma', 'boris', 'clara', 'dennis', 'elsa', 'frank', 'greta', 'hugo', 'irene', 'oscar'],
-    'verb': ['brings', 'counts', 'finds', 'holds', 'moves', 'needs', 'picks', 'sorts', 'takes', 'wraps'],
+    'verb': ['brings', 'counts', 'hugs', 'moves', 'needs', 'picks', 'sorts', 'takes', 'wipes', 'wraps'],
     'num': ['eleven', 'fifteen', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'],
     'adj': ['bright', 'brown', 'heavy', 'new', 'plain', 'round', 'soft', 'warm', 'wet', 'white'],
-    'obj': ['bowls', 'bricks', 'buttons', 'coins', 'cups', 'gloves', 'knives', 'shirts', 'sticks', 'towels'],
+    'obj': ['bowls', 'bricks', 'buttons', 'coins', 'cups', 'dolls', 'gloves', 'knives', 'shirts', 'towels'],
 }
 # the published British English base matrix, kept only to test for overlap (validate.py and __main__)
 HALL_2006 = {
@@ -52,15 +57,12 @@ STORIES = [
         "his umbrella at the fruit stall. When they went back, the farmer was already holding it up and laughing. "
         "By then the grass in the park was soaking wet, so they had the picnic on Lena's balcony instead."),
      'questions': [
-        {'q': 'Who went to the market with Lena?', 'options': ['Paul', 'Simon', 'her sister', 'Henry'], 'answer': 0},
-        {'q': 'What did they buy at the first stall?',
-         'options': ['pears and plums', 'green apples', 'cherries', 'a melon'], 'answer': 0},
-        {'q': 'Where did they wait during the rain?',
-         'options': ['under the bakery awning', 'in the library', 'at the bus stop', 'under a tree'], 'answer': 0},
-        {'q': 'What had Paul left behind?', 'options': ['his umbrella', 'his wallet', 'his keys', 'his hat'],
-         'answer': 0},
-        {'q': 'Where did they have the picnic?',
-         'options': ["on Lena's balcony", 'in the park', 'by the river', "at Paul's house"], 'answer': 0}],
+        {'q': 'Who was laughing at the fruit stall?', 'options': ['the farmer', 'Paul', 'Lena', 'her neighbour'], 'answer': 0},
+        {'q': 'What did they buy at the first stall?', 'options': ['pears and plums', 'sour green apples', 'a warm cheese roll', 'six green apples'], 'answer': 0},
+        {'q': 'Where did they wait during the rain?', 'options': ['at the bakery', 'by the river', 'in the park', 'at the fruit stall'], 'answer': 0},
+        {'q': 'What had Paul left behind?', 'options': ['his umbrella', 'the plums', 'the roll', 'the pears'], 'answer': 0},
+        {'q': 'Where did they have the picnic?', 'options': ['on the balcony', 'in the park', 'by the river', 'under the red awning'], 'answer': 0},
+     ],
      'keywords': ['paul', 'pears', 'plums', 'bakery', 'umbrella', 'balcony']},
     {'id': 'story-2', 'title': 'The evening train', 'text': (
         "Martin was taking the evening train to visit his grandmother. At the station, a voice announced that the "
@@ -71,16 +73,12 @@ STORIES = [
         "grandmother to say he would be late. She laughed and said she would keep the soup warm and leave the "
         "porch light on."),
      'questions': [
-        {'q': 'Which platform did the train leave from?', 'options': ['nine', 'four', 'seven', 'two'], 'answer': 0},
-        {'q': "What colour was Martin's suitcase?", 'options': ['blue', 'black', 'red', 'green'], 'answer': 0},
-        {'q': 'What was the woman knitting?',
-         'options': ['a yellow scarf', 'a blue hat', 'a pair of socks', 'a green jumper'], 'answer': 0},
-        {'q': 'Why did the train stop?',
-         'options': ['a fallen tree on the line', 'a broken signal', 'a power cut', 'snow on the tracks'],
-         'answer': 0},
-        {'q': 'What did his grandmother promise?',
-         'options': ['to keep the soup warm', 'to meet him at the station', 'to bake a cake', 'to call a taxi'],
-         'answer': 0}],
+        {'q': 'Which platform did the train leave from?', 'options': ['nine', 'four', 'seven', 'fifteen'], 'answer': 0},
+        {'q': 'What did Martin carry down the stairs?', 'options': ['his blue suitcase', 'a long yellow scarf', 'the warm soup', 'the porch light'], 'answer': 0},
+        {'q': 'Who was knitting?', 'options': ['a music teacher', "Martin's grandmother", 'Martin on the train', 'a voice at the station'], 'answer': 0},
+        {'q': 'What was on the line?', 'options': ['a fallen tree', 'a suitcase', 'a light', 'a scarf'], 'answer': 0},
+        {'q': 'What would his grandmother leave on?', 'options': ['the porch light', 'the warm soup', 'the evening train', 'the music'], 'answer': 0},
+     ],
      'keywords': ['nine', 'four', 'blue', 'yellow', 'scarf', 'tree', 'soup']},
     {'id': 'story-3', 'title': 'The brown dog', 'text': (
         "On Tuesday evening, Agnes noticed a small brown dog sitting outside the corner shop. It had a red collar "
@@ -90,15 +88,12 @@ STORIES = [
         "called Biscuit. Henry explained that Biscuit had slipped out when the postman opened the garden gate. To "
         "say thank you, Henry's father invited Agnes in for tea and a slice of lemon cake."),
      'questions': [
-        {'q': 'Where did Agnes find the dog?',
-         'options': ['outside the corner shop', 'in the park', 'at the school gate', 'by the bus stop'], 'answer': 0},
-        {'q': "What colour was the dog's collar?", 'options': ['red', 'blue', 'green', 'black'], 'answer': 0},
-        {'q': "What was the dog's name?", 'options': ['Biscuit', 'Buttons', 'Pepper', 'Muffin'], 'answer': 0},
-        {'q': 'How did the dog get out?',
-         'options': ['the postman opened the gate', 'a door was left open', 'it jumped a fence', 'its lead broke'],
-         'answer': 0},
-        {'q': "What did Henry's father offer Agnes?",
-         'options': ['tea and lemon cake', 'a reward', 'a lift home', 'coffee and biscuits'], 'answer': 0}],
+        {'q': 'Where did Agnes find the dog?', 'options': ['at the corner shop', 'at the school gate', 'by the garden gate', 'near the school'], 'answer': 0},
+        {'q': 'What was red?', 'options': ['the collar', 'the garden gate', 'the name tag', 'the lemon cake'], 'answer': 0},
+        {'q': "What was the dog's name?", 'options': ['Biscuit', 'Henry', 'Agnes', 'Tuesday'], 'answer': 0},
+        {'q': 'Who opened the garden gate?', 'options': ['the postman', 'Henry', 'Agnes', 'the boy'], 'answer': 0},
+        {'q': "What did Henry's father offer Agnes?", 'options': ['tea and cake', 'some water', 'a red collar', 'a name tag'], 'answer': 0},
+     ],
      'keywords': ['brown', 'red', 'collar', 'school', 'biscuit', 'postman', 'lemon']},
     {'id': 'story-4', 'title': 'The surprise', 'text': (
         "June wanted to surprise her friend Walter for his fortieth birthday. She booked a table for eight people "
@@ -109,16 +104,12 @@ STORIES = [
         "in at a quarter to eight, the whole group jumped out and sang. He laughed so hard that he dropped his "
         "glasses into the salad."),
      'questions': [
-        {'q': 'Which birthday was Walter having?', 'options': ['fortieth', 'fiftieth', 'thirtieth', 'sixtieth'],
-         'answer': 0},
-        {'q': 'How many people was the table for?', 'options': ['eight', 'six', 'ten', 'twelve'], 'answer': 0},
-        {'q': "How did Walter's sister keep him busy?",
-         'options': ['moving a bookshelf', 'shopping for shoes', 'a trip to the cinema', 'fixing her car'],
-         'answer': 0},
-        {'q': 'What went wrong at the restaurant?',
-         'options': ['the oven was broken', 'the table was double booked', 'the cook was ill', 'the lights went out'],
-         'answer': 0},
-        {'q': 'What did Walter drop?', 'options': ['his glasses', 'his phone', 'his keys', 'his drink'], 'answer': 0}],
+        {'q': 'Where was the restaurant?', 'options': ['on the harbour', 'by the window', 'behind the curtain', "at his sister's"], 'answer': 0},
+        {'q': "What did Walter's sister ask him to help with?", 'options': ['a bookshelf', 'the birthday salad', 'the long curtain', 'the broken oven'], 'answer': 0},
+        {'q': 'What went wrong at the restaurant?', 'options': ['the oven was broken', 'the window was broken', 'the table was booked', 'the salad was cold'], 'answer': 0},
+        {'q': 'Where did everyone hide?', 'options': ['behind the curtain', 'under the table', 'by the window', 'near the harbour'], 'answer': 0},
+        {'q': 'What did Walter drop?', 'options': ['his glasses', 'the salad', 'the table', 'the dishes'], 'answer': 0},
+     ],
      'keywords': ['fortieth', 'eight', 'curtain', 'bookshelf', 'oven', 'glasses']},
     {'id': 'story-5', 'title': 'The museum', 'text': (
         "Last winter, Ruth took her two nephews to the science museum. They started in the room with the old steam "
@@ -129,15 +120,12 @@ STORIES = [
         "between two metal balls. On the way home, Simon said that next time he wanted to bring his own notebook "
         "and draw everything."),
      'questions': [
-        {'q': 'Who took the boys to the museum?', 'options': ['Ruth', 'Edith', 'Olive', 'Vera'], 'answer': 0},
-        {'q': "What colour was the guide's jacket?", 'options': ['green', 'red', 'grey', 'yellow'], 'answer': 0},
-        {'q': 'Why could they not see the dinosaurs?',
-         'options': ['the hall was closed for repairs', 'they ran out of time', 'it was too crowded',
-                     'the tickets were sold out'], 'answer': 0},
-        {'q': 'Where did they eat lunch?',
-         'options': ['on the museum steps', 'in the museum cafe', 'in the park', 'on the bus'], 'answer': 0},
-        {'q': 'What was the afternoon show about?', 'options': ['lightning', 'volcanoes', 'the moon', 'magnets'],
-         'answer': 0}],
+        {'q': 'Who took the boys to the museum?', 'options': ['Ruth', 'Simon', 'the guide', 'the presenter'], 'answer': 0},
+        {'q': 'What was green?', 'options': ['the jacket', 'the rocket', 'a piston', 'the notebook'], 'answer': 0},
+        {'q': 'Why could they not see the dinosaurs?', 'options': ['the hall was closed', 'the museum was cold', 'the show was short', 'the steps were cold'], 'answer': 0},
+        {'q': 'Where did they eat lunch?', 'options': ['on the museum steps', 'in the space gallery', 'inside a model rocket', 'in the steam engine room'], 'answer': 0},
+        {'q': 'What was the afternoon show about?', 'options': ['lightning', 'dinosaurs', 'steam engines', 'a rocket'], 'answer': 0},
+     ],
      'keywords': ['ruth', 'green', 'dinosaurs', 'repairs', 'steps', 'lightning']},
     {'id': 'story-6', 'title': 'The cooking class', 'text': (
         "Every Thursday, Nick goes to a cooking class above the old fire station. This week the teacher, a tall "
@@ -147,17 +135,12 @@ STORIES = [
         "made a sauce from tomatoes, garlic and basil. At the end of the evening, each student took home a box of "
         "pasta. Nick gave half of his to his downstairs neighbour, who had lent him a rolling pin."),
      'questions': [
-        {'q': 'Where is the cooking class?',
-         'options': ['above the old fire station', 'in a school kitchen', 'behind the library', 'in a restaurant'],
-         'answer': 0},
-        {'q': 'What did they make this week?', 'options': ['fresh pasta', 'bread', 'dumplings', 'pizza'], 'answer': 0},
-        {'q': 'What did Olive tell Nick to add?',
-         'options': ['a spoonful of water', 'more flour', 'an egg', 'some oil'], 'answer': 0},
-        {'q': 'What was in the sauce?',
-         'options': ['tomatoes, garlic and basil', 'cream and mushrooms', 'cheese and pepper', 'onions and peas'],
-         'answer': 0},
-        {'q': "Who got half of Nick's pasta?",
-         'options': ['his downstairs neighbour', 'his sister', 'the teacher', 'a friend from work'], 'answer': 0}],
+        {'q': 'Where is the cooking class?', 'options': ['above the fire station', 'next to the fire station', 'below the fire station', "at his neighbour's"], 'answer': 0},
+        {'q': 'What did they mix by hand?', 'options': ['flour and eggs', 'garlic and basil', 'tomatoes and basil', 'dough and water'], 'answer': 0},
+        {'q': 'What did Olive tell Nick to add?', 'options': ['a spoonful of water', 'a spoonful of flour', 'a spoonful of basil', 'a spoonful of garlic'], 'answer': 0},
+        {'q': 'What was in the sauce?', 'options': ['tomatoes, garlic, basil', 'flour, eggs and water', 'eggs, garlic and flour', 'tomatoes, eggs and dough'], 'answer': 0},
+        {'q': "Who got half of Nick's pasta?", 'options': ['his neighbour', 'Olive', 'the teacher', 'a student'], 'answer': 0},
+     ],
      'keywords': ['fire', 'olive', 'pasta', 'water', 'garlic', 'neighbour']},
     {'id': 'story-7', 'title': 'The bike ride', 'text': (
         "On a bright Sunday in May, Vera and her cousin Leo set off on their bikes to the lake. Leo had packed two "
@@ -167,17 +150,12 @@ STORIES = [
         "them a pump and told them a shortcut through his orchard. They reached the lake just before noon, ate "
         "the apples on the jetty, and watched a heron catch a fish."),
      'questions': [
-        {'q': 'Who went with Vera?', 'options': ['her cousin Leo', 'her brother Sam', 'her friend June', 'her uncle'],
-         'answer': 0},
-        {'q': 'Why did they not take the bridge?',
-         'options': ['a sign said it was closed', 'the map was wrong', 'it was too steep', 'a farmer warned them'],
-         'answer': 0},
-        {'q': 'What went wrong on the forest path?',
-         'options': ["Vera's front tyre went flat", 'Leo lost the map', 'the chain broke', 'it started to snow'],
-         'answer': 0},
-        {'q': 'What did the farmer lend them?', 'options': ['a pump', 'a torch', 'a rope', 'a spanner'], 'answer': 0},
-        {'q': 'What did they watch at the lake?',
-         'options': ['a heron catching a fish', 'children swimming', 'a sailing race', 'two swans'], 'answer': 0}],
+        {'q': 'What had Leo packed?', 'options': ['apples and tea', 'a pump and a map', 'a fish and a flask', 'a sign and a map'], 'answer': 0},
+        {'q': 'Why did they not take the bridge?', 'options': ['it was closed', 'it was steep and muddy', 'it was ten years old', 'it was on the left'], 'answer': 0},
+        {'q': 'What went wrong on the forest path?', 'options': ['a flat tyre', 'a closed bridge', 'a lost flask', 'an old map'], 'answer': 0},
+        {'q': 'What did the farmer tell them about?', 'options': ['a shortcut', 'the bridge', 'the lake', 'the forest path'], 'answer': 0},
+        {'q': 'What did they watch at the lake?', 'options': ['a heron', 'a farmer', 'an orchard', 'the bridge'], 'answer': 0},
+     ],
      'keywords': ['leo', 'bridge', 'closed', 'tyre', 'pump', 'orchard', 'heron']},
     {'id': 'story-8', 'title': 'The power cut', 'text': (
         "Late on Wednesday night, the lights in Edith's building went out during a storm. She found a candle in the "
@@ -187,17 +165,12 @@ STORIES = [
         "storm he had sailed through when he was nineteen. At two in the morning the fridge hummed and the lights "
         "came back on. Edith gave Tom a jar of her plum jam to say thank you."),
      'questions': [
-        {'q': 'When did the lights go out?', 'options': ['Wednesday night', 'Tuesday morning', 'Friday evening',
-                                                          'Sunday afternoon'], 'answer': 0},
-        {'q': 'What did Edith need from her neighbour?', 'options': ['matches', 'a candle', 'a torch', 'batteries'],
-         'answer': 0},
-        {'q': 'What had caused the power cut?',
-         'options': ['a falling branch hit a power line', 'lightning hit the building', 'a flood in the cellar',
-                     'a broken fuse'], 'answer': 0},
-        {'q': 'When did the lights come back on?', 'options': ['at two in the morning', 'at midnight', 'at dawn',
-                                                               'at four in the morning'], 'answer': 0},
-        {'q': 'What did Edith give Tom?', 'options': ['a jar of plum jam', 'a cake', 'a bottle of wine',
-                                                      'a new radio'], 'answer': 0}],
+        {'q': 'When did the lights go out?', 'options': ['on Wednesday night', 'at two', 'during the news', 'after the storm'], 'answer': 0},
+        {'q': 'What did Edith need from her neighbour?', 'options': ['matches', 'a candle', 'a radio', 'a jar of jam'], 'answer': 0},
+        {'q': 'What had caused the power cut?', 'options': ['a falling branch', 'the old hotel fridge', 'the radio in the kitchen', 'the kitchen candle'], 'answer': 0},
+        {'q': 'When did the lights come back on?', 'options': ['two in the morning', 'on Wednesday night', 'during the storm', 'after the news'], 'answer': 0},
+        {'q': 'What did Edith give Tom?', 'options': ['a jar of jam', 'a candle', 'the radio', 'a kitchen drawer'], 'answer': 0},
+     ],
      'keywords': ['wednesday', 'candle', 'matches', 'radio', 'branch', 'two', 'plum']},
     {'id': 'story-9', 'title': 'The football match', 'text': (
         "Every Saturday, Peter plays football for a small team called the Rovers. This week they played against "
@@ -207,18 +180,12 @@ STORIES = [
         "half, Peter scored with his left foot, and the goalkeeper saved a penalty in the last minute. The game "
         "ended two each. Afterwards, both teams shared hot chocolate in the clubhouse."),
      'questions': [
-        {'q': 'What is the name of the team?', 'options': ['the Rovers', 'the Rangers', 'the Lions', 'the Comets'],
-         'answer': 0},
-        {'q': 'What was the score at half time?',
-         'options': ['the Rovers were two goals down', 'it was nil all', 'the Rovers were one goal up',
-                     'it was one each'], 'answer': 0},
-        {'q': 'What did the coach tell them?',
-         'options': ['to pass along the ground', 'to shoot from far away', 'to defend more', 'to run faster'],
-         'answer': 0},
-        {'q': 'How did Peter score?', 'options': ['with his left foot', 'with a header', 'from a penalty',
-                                                  'with his right foot'], 'answer': 0},
-        {'q': 'How did the game end?', 'options': ['two each', 'three two to the Rovers', 'one nil to the other team',
-                                                   'nil all'], 'answer': 0}],
+        {'q': 'What is the team called?', 'options': ['the Rovers', 'the league', 'the best team', 'the clubhouse'], 'answer': 0},
+        {'q': 'Where did both teams drink hot chocolate?', 'options': ['the clubhouse', 'the ground', 'the muddy middle', 'the puddles'], 'answer': 0},
+        {'q': 'What did the coach tell them to do?', 'options': ['pass along the ground', 'stay in the middle', 'save the penalty', 'score with the left foot'], 'answer': 0},
+        {'q': 'How did Peter score?', 'options': ['with his left foot', 'from a penalty', 'at half time', 'from the middle'], 'answer': 0},
+        {'q': 'What happened in the last minute?', 'options': ['a penalty was saved', 'Peter scored with his foot', 'the ball kept stopping', 'the Rovers lost a game'], 'answer': 0},
+     ],
      'keywords': ['rovers', 'puddles', 'grace', 'ground', 'left', 'penalty', 'chocolate']},
     {'id': 'story-10', 'title': 'The new flat', 'text': (
         "When Arthur moved into his new flat, he found that the previous owner had left behind a parrot. The bird "
@@ -228,17 +195,12 @@ STORIES = [
         "allow pets. She asked Arthur if he would keep the parrot, whose name was Captain. Arthur agreed, and every "
         "month she sends a parcel of sunflower seeds and a postcard of the sea."),
      'questions': [
-        {'q': "What colour was the parrot's tail?", 'options': ['red', 'green', 'yellow', 'blue'], 'answer': 0},
-        {'q': 'Which of these could the parrot say?',
-         'options': ['where are my glasses', 'pretty bird', 'what time is it', 'good night'], 'answer': 0},
-        {'q': 'Where did Arthur put a note?', 'options': ['on the board in the hallway', 'on the front door',
-                                                         'in the local paper', 'at the shop'], 'answer': 0},
-        {'q': 'Why could the owner not keep the parrot?',
-         'options': ['her new building did not allow pets', 'she was allergic', 'the bird was too loud',
-                     'she was travelling'], 'answer': 0},
-        {'q': 'What does she send every month?',
-         'options': ['sunflower seeds and a postcard', 'money for food', 'a new cage', 'photos of her daughter'],
-         'answer': 0}],
+        {'q': 'What was red?', 'options': ["the bird's tail", 'the postcard', 'the hallway board', 'the parcel'], 'answer': 0},
+        {'q': 'What could the parrot say?', 'options': ['where are my glasses', 'where are my seeds', 'where is my daughter', 'where is the owner'], 'answer': 0},
+        {'q': 'Where did Arthur put a note?', 'options': ['in the hallway', 'in the new building', 'on the postcard', 'in the parcel'], 'answer': 0},
+        {'q': 'Why could the owner not keep the parrot?', 'options': ['pets were not allowed', 'her daughter said no', 'she moved to the sea', 'the bird was grey'], 'answer': 0},
+        {'q': 'What does she send every month?', 'options': ['seeds and a postcard', 'glasses and a note', 'a parcel of glasses', 'a note'], 'answer': 0},
+     ],
      'keywords': ['grey', 'red', 'glasses', 'hallway', 'coast', 'pets', 'captain', 'sunflower']},
 ]
 
@@ -261,6 +223,40 @@ def vocab(key):
     raise KeyError(key)
 
 
+STOP = set('a an the his her their its to of at in on by and for from with it she he they was were is be that '
+           'this up out off into over under behind near next above below inside during after before every some no not '
+           'my me i you we us our there here so as but or'.split())
+
+
+def _content(text):
+    import re
+    toks = [t[:-2] if t.endswith("'s") else t for t in re.findall(r"[a-z']+", text.lower())]
+    return [t.strip("'") for t in toks if t.strip("'") and t.strip("'") not in STOP]
+
+
+def option_cues():
+    """Expected accuracy of answer-only responders (chance = 0.25 with 4 options): pick the longest option, the
+    shortest option, or an option whose content words all occur in the passage (ties shared equally); and the
+    number of questions that offer at least one lure the passage mentions."""
+    res = {'longest': 0.0, 'shortest': 0.0, 'middle': 0.0, 'heard': 0.0, 'lure_mentioned': 0, 'questions': 0}
+    for st in STORIES:
+        heard = set(_content(st['text']))
+        for q in st['questions']:
+            opts, ans = q['options'], q['answer']
+            lens = [len(o) for o in opts]
+            for key, pick in (('longest', max(lens)), ('shortest', min(lens))):
+                tied = [i for i, n in enumerate(lens) if n == pick]
+                res[key] += (1 / len(tied)) if ans in tied else 0.0
+            mid = [i for i, n in enumerate(lens) if min(lens) < n < max(lens)]
+            res['middle'] += (1 / len(mid)) if ans in mid else (0.0 if mid else 0.25)
+            ment = [i for i, o in enumerate(opts) if _content(o) and all(w in heard for w in _content(o))]
+            res['heard'] += (1 / len(ment)) if ans in ment else (0.25 if not ment else 0.0)
+            res['lure_mentioned'] += any(i != ans for i in ment)
+            res['questions'] += 1
+    n = res['questions']
+    return {k: (round(v / n, 3) if k in ('longest', 'shortest', 'middle', 'heard') else v) for k, v in res.items()}
+
+
 def overlap_with_published():
     """Words (and verb lemmas) the matrix shares with the published British English matrix (should be none)."""
     ours = {w for k in SLOTS for w in MATRIX[k]}
@@ -271,6 +267,7 @@ def overlap_with_published():
 
 if __name__ == '__main__':
     print('overlap with the British English matrix:', overlap_with_published() or 'none')
+    print('story option cues (chance 0.25):', option_cues())
     for s in STORIES:
         print(s['id'], len(s['text'].split()), 'words')
     print(matrix_sentences(3), matrix_sentences(2, form=1))

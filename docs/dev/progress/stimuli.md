@@ -41,3 +41,19 @@
   rejected 43 accepted words); matrix 198/200 words, AudioMNIST 80/80 digits, diff on all matrix words.
 - Resume or rebuild: python3 tools/audio/build_all.py (or the steps in ../stimwork/chain4.sh); commits path-limited
   via ../stimwork/commit.sh.
+
+## 2026-11-27 01:08 UTC — fix round 2 published (RV-stimuli ST-04, 06-08, 10-14; RV-play-a11y P12)
+- Total 1200 clips, 89 voices, 8.235 MB MP3 (budget 8.5); validate 0 errors, 0 warnings; recogniser pass 100 % on
+  the decoded MP3 of every kept speech clip. Single file (tools/build-single.mjs) 12.98 MB.
+- ST-04: matrix words under the open-vocabulary rule, wider cut margins and carrier fallbacks; finds, holds and
+  sticks replaced by hugs, wipes and dolls (content_probe.py); af_kore and bm_lewis 50/50 each; diff recomputed.
+  ST-06: af_jessica and af_river words out of the pack. ST-07: story options rewritten (cue checks in validate.py).
+- ST-08: voices.js `accent` keeps the form js/ex/strange.js parses; new `label` "a voice from a French model
+  reading English" for the 15 other-language Kokoro voices (the game's cast card shows `accent` today).
+- ST-10 F0 with octave guards; ST-11 word times on every Repair clip; ST-12 Anouk's intro, exact intro rule, the
+  two "V" call signs dropped; ST-13 13 CREMA-D clips with uncertain levels left out; ST-14 LibriVox body sentences
+  only, 10 readers (natural_librivox.py now tries up to 4 files per reader and never reuses a dropped row's id).
+- P12: content_cast.third_person conjugates every verb (y -> ies) and maps my/our to their; two blurbs changed
+  (Rosa, Lucia).
+- Resume: ../stimwork/chain6.sh (matrix) and chain7.sh (LibriVox) hold the last steps; scratch test of candidate
+  words: ../stimwork/try_words.py.

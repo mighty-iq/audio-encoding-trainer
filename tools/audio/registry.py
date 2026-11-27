@@ -29,26 +29,46 @@ def read_manifest():
     return json.load(open(WORK / 'manifest.json'))     # sidecar copy written by pack.py
 
 
-def f0_median(x, sr=SR, fmin=65, fmax=400):
-    """Median F0 (Hz) of voiced 40 ms frames by normalised autocorrelation (frames with r > 0.6)."""
+def f0_median(x, sr=SR, fmin=60, fmax=400, voiced=0.2):
+    """Median F0 (Hz) from the YIN difference function: per 40 ms frame the deepest dip of the cumulative mean
+    normalised difference (a frame is voiced when that dip is below `voiced`), with two octave guards: half the
+    lag wins when its dip is almost as deep (no octave-down error), and frames more than 0.7 octave from the
+    first median are dropped before the median is taken again."""
+    x = np.asarray(x, dtype=np.float64)
     n, hop = int(0.04 * sr), int(0.01 * sr)
-    lo, hi = int(sr / fmax), int(sr / fmin)
+    tmin, tmax = int(sr / fmax), int(sr / fmin)
+    if len(x) < n + tmax + 1:
+        return None
+    floor = 10 ** (-35 / 20) * np.max(np.abs(x))
     vals = []
-    for s in range(0, len(x) - n - hi, hop):
-        f = x[s:s + n + hi].astype(np.float64)
-        a = f[:n] - f[:n].mean()
-        e0 = float(np.dot(a, a))
-        if e0 < 1e-6:
+    for s0 in range(0, len(x) - n - tmax, hop):
+        f = x[s0:s0 + n + tmax]
+        if np.sqrt(np.mean(f[:n] ** 2)) < floor:
             continue
-        best, lag = 0.0, 0
-        for k in range(lo, hi):
-            b = f[k:k + n] - f[k:k + n].mean()
-            r = float(np.dot(a, b)) / math.sqrt(e0 * float(np.dot(b, b)) + 1e-12)
-            if r > best:
-                best, lag = r, k
-        if best > 0.6 and lag:
-            vals.append(sr / lag)
-    return round(float(np.median(vals)), 1) if vals else None
+        d = np.array([np.sum((f[:n] - f[t:t + n]) ** 2) for t in range(tmax + 1)])
+        cm = np.ones_like(d)
+        cm[1:] = d[1:] * np.arange(1, tmax + 1) / np.maximum(np.cumsum(d[1:]), 1e-12)
+        g = tmin + int(np.argmin(cm[tmin:]))
+        if cm[g] > voiced:
+            continue
+        h = int(round(g / 2))
+        if h - 1 >= tmin and cm[h - 1:h + 2].min() < min(cm[g] + 0.02, 0.1):
+            g = h - 1 + int(np.argmin(cm[h - 1:h + 2]))
+        t = float(g)
+        if tmin < g < tmax:
+            a_, b_, c_ = cm[g - 1], cm[g], cm[g + 1]
+            den = a_ - 2 * b_ + c_
+            t = g + (0.5 * (a_ - c_) / den if den else 0.0)
+        vals.append(sr / t)
+    if not vals:
+        return None
+    m = float(np.median(vals))
+    kept = [v for v in vals if abs(np.log2(v / m)) <= 0.7]
+    return round(float(np.median(kept or vals)), 1)
+
+
+def article(word):
+    return 'an' if word[:1].upper() in 'AEIOU' else 'a'
 
 
 def voice_meta():
@@ -57,11 +77,17 @@ def voice_meta():
     for v, sex, acc in P.KOKORO_EN:
         meta[f'kokoro.{v}'] = {'sex': sex, 'accent': f'{acc} English (synthetic)'}
     for v, sex, acc in P.KOKORO_ACCENT:
-        meta[f'kokoro.{v}'] = {'sex': sex, 'accent': f'English with a {acc} accent (synthetic)'}
+        # 'accent' keeps the form the app parses (js/ex/strange.js reads the language from "with a(n) X accent";
+        # the engine and the test solver read it as other-language); 'label' is the wording players see (ST-08)
+        meta[f'kokoro.{v}'] = {'sex': sex, 'accent': f'English with {article(acc)} {acc} accent (synthetic)',
+                               'label': f'a voice from {article(acc)} {acc} model reading English'}
     for v, d in getattr(P, 'PIPER_VOICES', {}).items():
         meta[f'piper-libritts.{v}'] = {'sex': d['sex'], 'accent': 'North American English (synthetic)'}
+    import re
     for v, d in getattr(P, 'NATURAL_VOICES', {}).items():
         meta[v] = dict(d)
+        if meta[v].get('accent'):           # "with a Italian accent" -> "with an Italian accent"
+            meta[v]['accent'] = re.sub(r'\ba ([AEIOU])', r'an \1', meta[v]['accent'])
     for v in LIC_VOICE:
         meta[v] = {'sex': 'u', 'accent': '', 'noise': True}
     return meta
@@ -90,6 +116,8 @@ def build_voices(man, log):
              'licence': LIC_VOICE.get(vid, LIC.get(src, '')), 'f0': f0, 'clips': len(clips)}
         if m.get('noise'):
             v['noise'] = True
+        if m.get('label'):
+            v['label'] = m['label']
         if m.get('ageBand'):
             v['ageBand'] = m['ageBand']
         if vid in cast:

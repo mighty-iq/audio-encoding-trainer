@@ -44,6 +44,20 @@ class Recogniser:
         return r.text.strip(), [(w, t) for w, t in words if norm_words(w)]
 
 
+CONTRACTIONS = {"i'm": ['i', 'am'], "it's": ['it', 'is'], "don't": ['do', 'not'], "we'll": ['we', 'will'],
+                "i've": ['i', 'have'], "that's": ['that', 'is'], "you're": ['you', 'are'], "he's": ['he', 'is'],
+                "she's": ['she', 'is'], "can't": ['can', 'not'], "won't": ['will', 'not'], "i'll": ['i', 'will'],
+                "there's": ['there', 'is'], "what's": ['what', 'is'], "let's": ['let', 'us']}
+
+
+def expand(words):
+    """Contractions written out, on both sides of a comparison only (word counts elsewhere stay as written)."""
+    out = []
+    for w in words:
+        out += CONTRACTIONS.get(w, [w])
+    return out
+
+
 def align(expected, heard):
     """Word-level edit alignment; a word matches when it is the same spoken word (alias or homophone)."""
     e, h = expected, heard
@@ -75,14 +89,15 @@ def align(expected, heard):
 
 def _joinable(expected, heard):
     """ASR sometimes writes two words as one ("pancake") or one as two; accept when the letters agree."""
-    return ''.join(expected) == ''.join(heard)
+    return ''.join(expected).replace("'", '') == ''.join(heard).replace("'", '')
 
 
 def score(expected_text, heard_text, keywords=None):
     """{ok, wer, errs, kw_ok}: ok when no word differs; keywords (if given) must all be heard. A possessive the
     recogniser adds to a word ("Tyler's bee" for "Tyler, bee") counts as the plain word."""
-    e = norm_words(expected_text)
-    h = [w[:-2] if w.endswith("'s") and w[:-2] in e and w not in e else w for w in norm_words(heard_text)]
+    e = expand(norm_words(expected_text))
+    h = expand([w[:-2] if w.endswith("'s") and w[:-2] in norm_words(expected_text) and w not in norm_words(expected_text)
+                else w for w in norm_words(heard_text)])
     dist, errs = align(e, h)
     if dist and _joinable(e, h):
         dist, errs = 0, []
@@ -94,6 +109,21 @@ def score(expected_text, heard_text, keywords=None):
             if not any(lexicon.same_word(k, w) for w in hs):
                 kw_ok = False
     return {'ok': dist == 0, 'wer': round(wer, 3), 'errs': errs[:6], 'kw_ok': kw_ok}
+
+
+def score_named(expected_text, heard_text, name):
+    """Intros: every word but the name must be heard exactly; the name may be spelt differently by the
+    recogniser if it is within two phonemes ("Layla" for Leila)."""
+    import cut_matrix
+    e = expand([w for w in norm_words(expected_text) if w != name.lower()])
+    h = expand(norm_words(heard_text))
+    if h:
+        k = min(range(len(h)), key=lambda i: cut_matrix.ipa_dist(name.lower(), h[i]))
+        if cut_matrix.ipa_dist(name.lower(), h[k]) > 2:
+            return False
+        h = h[:k] + h[k + 1:]
+    d, _ = align(e, h)
+    return d == 0 or _joinable(e, h)
 
 
 _REC = {}

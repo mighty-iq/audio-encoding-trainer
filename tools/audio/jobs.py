@@ -110,7 +110,9 @@ def job_intros():
         out.append({'id': f'{vid}.intro.{c["name"].lower()}', 'src': src, 'voice': v, 'kind': 'intro',
                     'text': c['intro'], 'pack': 'cast', 'set': 'train', 'item': 'intro', 'tags': ['cast', c['venue']],
                     'name': c['name'], 'wer_max': 0.2,
-                    'alts': [{'id': f'{vid}.intro.{c["name"].lower()}-2', 'text': f'Hello, my name is {c["name"]}. {line}'}]})
+                    'alts': [{'id': f'{vid}.intro.{c["name"].lower()}-2', 'text': f'Hello, my name is {c["name"]}. {line}'},
+                             {'id': f'{vid}.intro.{c["name"].lower()}-3', 'text': f"I'm {c['name']}. {line}"},
+                             {'id': f'{vid}.intro.{c["name"].lower()}-4', 'text': f'My name is {c["name"]}. {line}'}]})
     return out
 
 

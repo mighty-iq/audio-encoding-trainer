@@ -11,7 +11,12 @@ espeak-ng and the recognisers run at build time only; the app gets MP3 clips and
   words, dur, adb, set, asr:{ok}` plus `wt` (word [start, end] s, phrases and sentences), `tags`, `item` (vocab id),
   `rate` (synthesis speed), `bed` (bed category), `diff` (dB, matrix words).
 - `data/voices.js` — per voice `src, sex, accent, set, licence, f0` (median Hz), `clips`, and where it applies
-  `tier` (1-3, accented voices), `cast {name, venue, blurb}`, `ageBand`, `noise:true` (pseudo-voices of beds).
+  `tier`, `cast {name, venue, blurb}`, `ageBand`, `label`, `noise:true` (pseudo-voices of beds). `accent` is the
+  machine form the app parses ("English with a French accent (synthetic)": js/ex/strange.js takes the language
+  from it and words it itself; the engine's isNative reads it). The `label` of a Kokoro voice of another language
+  says what it is, for players: "a voice from a French model reading English" (the model reads US-English
+  phonemes; the accent comes from the voice embedding). `tier` (1-3) is how hard the voice is to understand, from
+  recogniser accuracy at 0 dB SNR (1 = easiest), not a measure of accent strength.
 - `data/vocab.js` — names, numbers, nouns, rhymes, family, neighbours (nouns, numbers, names), sus, susPools,
   phrases (Far), repair (one item per sentence), echo (+ echoValues), intros {voiceId: text}, stories, matrix
   {name, verb, num, adj, obj, slots}, twovoices.
@@ -26,22 +31,29 @@ espeak-ng and the recognisers run at build time only; the app gets MP3 clips and
 2. Voices (`plan.py`): Kokoro-82M English voices (12 starter + 10 second wave), Kokoro voices of other languages
    reading English kept only if the recogniser gets ≥ 5 of 6 test utterances exactly (`scan_accent.py`), 20 Piper
    libritts-high speakers chosen for clarity and an even spread of F0 per sex (`scan_piper.py`). Probe voices
-   (af_kore, bm_lewis, af_river, af_jessica, AudioMNIST and CREMA-D probe talkers) never appear in training.
+   (af_kore, bm_lewis, AudioMNIST and CREMA-D probe talkers) never appear in training; af_river and af_jessica
+   only rendered matrix carrier sentences and ship nothing (review ST-06).
 3. Synthesis (`tts.py`, `render_phrases.py`): whole utterances; Kokoro runs from a variant of its int8 graph that
    also outputs its per-token durations (`kokoro_timed.py`), which gives word times. Every clip is trimmed to
    30 ms of silence, measured (active speech level, ITU-T P.56 method B: two-stage 30 ms envelope, 200 ms hangover,
    15.9 dB margin) and checked by Parakeet TDT 0.6B v2: short items must match word for word (homophones and
-   spelling variants allowed via CMUdict, espeak-ng pronunciations for unknown spellings, Roman numerals and
-   digits normalised); stories may differ by ≤ 6 % of words and must contain every keyword. A miss is re-rendered
-   at speed ×0.95 and ×1.05, then with alternative voices or wordings (call-sign phrases), then dropped and logged.
+   spelling variants allowed via CMUdict, espeak-ng pronunciations for unknown spellings, digits and Roman
+   numerals of two or more letters normalised, so a lone "V" never counts as "five"); intros must match word for
+   word apart from the name, which may be up to 2 phonemes off (`asr.score_named`); stories may differ by ≤ 6 % of
+   words and must contain every keyword. A miss is re-rendered at speed ×0.95 and ×1.05, then with alternative
+   voices or wordings (call-sign phrases, intro wordings), then dropped and logged.
 4. Natural speech (`natural.py`, `natural_librivox.py`): AudioMNIST probe talkers (first of up to six takes the
-   recogniser hears correctly), CREMA-D neutral sentences (8 clearest of 14 sampled actors, 4 per sex), LibriVox
-   sentences cut at Parakeet's sentence ends and kept only where Parakeet and Whisper base.en agree word for word.
-5. Matrix probe words (`cut_matrix.py`): cut from the held-out voices' matrix sentences at the synthesiser's word
-   boundaries (refined to the quietest 5 ms within 30 ms), best take per word by recogniser and edge level. The
-   check is closed-set, like the probe: the recognition must be closer in phonemes to the right word than to any
-   other word of its slot (an open-vocabulary check rejected a third of the cut function words). Words still
-   missing get up to three extra sentences that contain them; isolated synthesis is the last fallback.
+   recogniser hears correctly), CREMA-D neutral sentences (8 clearest of 14 sampled actors, 4 per sex; clips whose
+   active level differs by more than 0.5 dB between P.56 and a second, STL-style method are left out), LibriVox
+   body sentences (title, section and author lines skipped; up to 4 files per reader; 10 readers, 5 per sex) cut
+   at Parakeet's sentence ends and kept only where Parakeet and Whisper base.en agree word for word.
+5. Matrix probe words (`cut_matrix.py`) for the two matrix talkers, af_kore and bm_lewis: cut from their matrix
+   sentences at the quietest 5 ms between 5 and 60 ms outside the synthesiser's word times (up to 120 ms after a
+   sentence-final word), so onsets and codas stay whole. A take is kept only when open-vocabulary recognition of
+   the shipped form hears exactly that word, as for every other clip; the take with the quietest edges wins.
+   Missing words try, in order: six new carrier sentences, a wider cut, carriers with commas around the word,
+   short final-position carriers, isolated synthesis; the method is in each clip's tags (af_kore: 25 cut, 4 from
+   carriers, 21 isolated; bm_lewis: 34, 6, 10).
    `intel.py` adds `diff` (recogniser accuracy at 0, +3, +6 dB SNR in speech-shaped noise, 10 %/dB, capped ±3 dB;
    the recogniser needs about 10 dB more SNR than people, so lower SNRs left it at the floor) and voice `tier`.
 6. Beds (`noise.py`): 10-s seamless loops (tail cross-faded into the head), -24 dBFS RMS; `adb` of a bed = RMS.
@@ -64,8 +76,10 @@ espeak-ng and the recognisers run at build time only; the app gets MP3 clips and
 - AudioMNIST training digits are not built (no generator reads them); CREMA-D is probe-only.
 - Bulk renders (Repair, Echo, Far, the non-accented SUS) use the 20 Piper voices (several times faster than
   Kokoro); Kokoro voices are the featured cast, the accented voices and the probe voices.
-- Accented Kokoro voices are kept when at least 4 of 6 test utterances are recognised exactly and the mean word
-  error is at most 12 % (15 of 17 kept); strength is graded into tiers 1-3 by recogniser accuracy at 0 dB SNR.
+- Kokoro voices of other languages (reading English with US-English phonemes) are kept when at least 4 of 6 test
+  utterances are recognised exactly and the mean word error is at most 12 % (15 of 17 kept); tiers 1-3 grade how
+  hard each is to understand (recogniser accuracy at 0 dB SNR), not accent strength. No natural non-native talker
+  is in training (backlog); French has one voice.
 - Probe matrix: the first draft shared 7 adjectives, 3 verbs and 2 numbers with the published British English
   matrix test (Hall 2006, Table 2.1), so the words were replaced; validate.py now fails on any overlap.
 - Stories run 35-40 s (Kokoro at speed 0.95 reads about 3.2 words/s), below the 45-60 s in the plan; longer
@@ -74,45 +88,64 @@ espeak-ng and the recognisers run at build time only; the app gets MP3 clips and
 - Numbers carry no neighbour list (one-nine have no true sound-alikes); names keep only near-rhymes (harper/parker).
 - data/credits.js lists every shipped source with its licence and attribution; LICENSES-ASSETS.md has a generated
   "what ships" table.
+- Round 2 (2026-11-27): matrix words pass the open-vocabulary rule like every other clip (ST-04; the closed-set
+  check had let clipped onsets and codas through). No take of finds or sticks (af_kore) or holds (bm_lewis)
+  passed after every fallback, so the matrix uses hugs, wipes and dolls instead: one syllable like the other
+  verbs, recognised from carrier sentences for both talkers, in no training text and not in the published matrix
+  (16 one-syllable verbs tried, 7 of them training words; borrows and loses also passed but have two syllables,
+  a cue in a closed set).
+  Both talkers have all 50 words; `diff` was recomputed. af_jessica and af_river matrix words do not ship (ST-06).
+- Story options were rewritten as text only (ST-07): the longest, shortest, middle and heard-word responders score
+  0.253, 0.277, 0.225 and 0.253 (chance 0.25; validate.py fails above 0.30), and 50 of 50 questions offer a lure the
+  passage mentions (validate.py needs 40).
+- F0 (ST-10) is the median of a YIN-type estimate that takes the deepest dip, guards against half-lag errors and
+  re-medians within 0.7 octave (bm_fable: 216 Hz before, 135.6 Hz now).
+- Intros (ST-12): Anouk (ff_siwis) has one; intros heard as "coffee bees" or "bars" were replaced by wordings the
+  recogniser hears exactly; the call signs ruby-door-five (af_nicole) and harper-goat-five (af_nova), heard as
+  "V", were dropped. Every Repair clip has word times (ST-11).
+- CREMA-D (ST-13): 13 clips whose two level measurements differ by more than 0.5 dB are left out; 81 stay, and
+  every one of the 12 texts keeps at least 4 actors for Two voices.
+- LibriVox (ST-14): 4 of the first 6 readers' clips were title or section announcements; they were dropped and the
+  reader pass now looks further into each reader's files for a body sentence.
 
 ## Numbers (last build)
 <!-- stats:start -->
-_Generated by tools/audio/report.py at 2026-11-26 22:41 UTC._
+_Generated by tools/audio/report.py at 2026-11-27 01:06 UTC._
 
-Total: 1306 clips, 87 voices, 8.48 MB of MP3 (budget 8.5 MB); recogniser pass on the decoded MP3 of kept speech clips: 100.0%; clips sent back after MP3 coding in the last pack: 0.
+Total: 1200 clips, 89 voices, 8.24 MB of MP3 (budget 8.5 MB); recogniser pass on the decoded MP3 of kept speech clips: 100.0%; clips sent back after MP3 coding in the last pack: 0.
 
 | Pack | Clips | Seconds | MP3 MB | JS MB | Exercises |
 |---|---|---|---|---|---|
-| babble | 39 | 107 | 0.340 | 0.455 | crowd, echo, repair, far, seek |
+| babble | 43 | 118 | 0.373 | 0.500 | crowd, echo, repair, far, seek |
 | beds | 9 | 90 | 0.274 | 0.365 | crowd, echo, far, seek, repair, strange, voices |
-| cast | 37 | 133 | 0.416 | 0.556 | voices, game |
+| cast | 38 | 134 | 0.420 | 0.562 | voices, game |
 | echo | 56 | 308 | 0.948 | 1.267 | echo |
 | far | 37 | 80 | 0.256 | 0.344 | far |
-| probe | 383 | 754 | 2.435 | 3.259 | lab |
+| probe | 272 | 676 | 2.152 | 2.877 | lab |
 | repair | 156 | 300 | 0.970 | 1.301 | repair |
-| starter | 239 | 342 | 1.135 | 1.524 | crowd, far, seek, voices |
+| starter | 239 | 342 | 1.134 | 1.523 | crowd, far, seek, voices |
 | strange | 148 | 230 | 0.756 | 1.014 | strange |
-| words2 | 202 | 287 | 0.952 | 1.278 | crowd, far, seek, voices, strange |
+| words2 | 202 | 287 | 0.951 | 1.277 | crowd, far, seek, voices, strange |
 
 | Kind | Set | Clips |
 |---|---|---|
 | bed | probe | 1 |
 | bed | train | 9 |
 | digit | probe | 80 |
-| intro | train | 37 |
+| intro | train | 38 |
 | phrase | train | 589 |
-| sentence | probe | 94 |
-| sentence | train | 288 |
+| sentence | probe | 81 |
+| sentence | train | 292 |
 | story | probe | 10 |
-| word | probe | 198 |
+| word | probe | 100 |
 
 | Source | Set | Voices | Clips |
 |---|---|---|---|
 | audiomnist | probe | 8 | 80 |
-| cremad | probe | 8 | 94 |
-| kokoro | probe | 4 | 208 |
-| kokoro | train | 37 | 499 |
-| librivox | train | 6 | 6 |
+| cremad | probe | 8 | 81 |
+| kokoro | probe | 2 | 110 |
+| kokoro | train | 37 | 500 |
+| librivox | train | 10 | 10 |
 | ms-snsd | probe | 1 | 1 |
 | ms-snsd | train | 2 | 8 |
 | piper-libritts | train | 20 | 409 |
@@ -122,12 +155,12 @@ Render jobs (render_phrases.py): items, kept, kept on the first render (main wor
 
 | Job | Items | Kept | First try | Alternative | Misses |
 |---|---|---|---|---|---|
-| starter | 240 | 239 | 175 (73%) | 52 | 161 |
+| starter | 240 | 239 | 174 (72%) | 53 | 161 |
 | babble1 | 16 | 16 | 16 (100%) | 0 | 0 |
-| wave2 | 80 | 79 | 53 (66%) | 20 | 90 |
+| wave2 | 80 | 79 | 52 (65%) | 21 | 90 |
 | piper_cs | 100 | 88 | 31 (31%) | 42 | 336 |
 | babble2 | 20 | 17 | 16 (80%) | 0 | 8 |
-| intros | 78 | 72 | 42 (54%) | 26 | 146 |
+| intros | 78 | 73 | 42 (54%) | 27 | 156 |
 | sus | 150 | 148 | 121 (81%) | 11 | 66 |
 | repair | 160 | 156 | 112 (70%) | 7 | 88 |
 | echo | 60 | 56 | 31 (52%) | 11 | 81 |
@@ -135,9 +168,9 @@ Render jobs (render_phrases.py): items, kept, kept on the first render (main wor
 | stories | 10 | 10 | 10 (100%) | 0 | 0 |
 | far | 40 | 37 | 23 (57%) | 6 | 49 |
 
-natural: 180 kept of 254 rows; not kept: {'not recognised': 2, 'actor not chosen': 72}.
+natural: 184 kept of 262 rows; not kept: {'not recognised': 2, 'actor not chosen': 72, 'ST-14: announcement, replaced by a body sentence': 4}.
 
-words: 198 kept of 200 rows; not kept: {'not recognised': 2}.
+words: 201 kept of 206 rows; not kept: {'not recognised': 5}.
 
-Variants that failed and were replaced or dropped (sentences db): 420; the logs in ../stimwork/logs list each miss with what the recogniser heard.
+Variants that failed and were replaced or dropped (sentences db): 431; the logs in ../stimwork/logs list each miss with what the recogniser heard.
 <!-- stats:end -->
