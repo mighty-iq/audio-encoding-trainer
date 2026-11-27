@@ -5,5 +5,6 @@
 top="$(git rev-parse --show-toplevel)"
 # The script block in index.html and the licence texts must match the files on disk (a pack once went unlisted).
 node "$top/tools/build-index.mjs" --check >&2 || { echo "pre-push: index.html is stale; run node tools/build-index.mjs and commit" >&2; exit 1; }
+node "$top/tools/build-sw.mjs" --check --rev HEAD >&2 || { echo "pre-push: sw.js is stale for HEAD; run node tools/build-sw.mjs --rev HEAD and commit sw.js" >&2; exit 1; }
 node "$top/tools/build-licences.mjs" --check >&2 || { echo "pre-push: licence texts are stale; run node tools/build-licences.mjs and commit" >&2; exit 1; }
 exec python3 "$top/tools/privacy_check.py" --hook "$1" "$2"
