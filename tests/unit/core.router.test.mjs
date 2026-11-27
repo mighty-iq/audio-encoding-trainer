@@ -45,6 +45,27 @@ export const tests = {
     R.back();
     assert.equal(R.current().name, 'home');
   },
+  'no duplicate entries: a screen returned to after a set is one entry, so one Back leaves it (FRESH-A #1, B D1)'(ES, assert, env) {
+    const { ES: E } = env.spawn();
+    const R = E.core.router;
+    ['home', 'map', 'venue', 'play', 'results', 'weekly'].forEach((n) => { E.ui.screens[n] = screen([], n); });
+    R.go('home'); R.go('map'); R.go('venue', { id: 'cafe' });
+    for (let k = 0; k < 3; k++) {                    // three sets, each started from the venue and returning to it
+      R.go('play', { set: 0 });
+      R.go('results', { set: 0 }, { replace: true });
+      R.go('venue', { id: 'cafe', after: true }, { replace: true });
+    }
+    assert.equal(R.depth(), 3);
+    assert.deepEqual(R.current(), { name: 'venue', params: { id: 'cafe', after: true } });
+    R.back();
+    assert.equal(R.current().name, 'map');
+    R.go('venue', { id: 'cafe' }); R.go('venue', { id: 'park' });   // two different venues stay two entries
+    assert.equal(R.depth(), 4);
+    R.go('weekly'); R.go('play'); R.go('weekly', {}, { replace: true });
+    assert.equal(R.depth(), 5);
+    R.back();
+    assert.deepEqual(R.current(), { name: 'venue', params: { id: 'park' } });
+  },
   'listeners and the route hook fire on every entry'(ES, assert, env) {
     const { ES: E } = env.spawn();
     const R = E.core.router, seen = [];

@@ -51,10 +51,15 @@
 .tb-btn .icon { width: 20px; height: 20px; fill: currentColor; }
 .tb-mid { flex: 1; display: flex; flex-direction: column; gap: 7px; }
 .tb-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; white-space: nowrap; overflow: hidden; }
-.tb-title { flex: none; max-width: 60%; font-weight: 700; font-size: var(--fs-2); overflow: hidden; text-overflow: ellipsis; }
-.tb-level { flex: 1 1 auto; min-width: 0; text-align: right; font-size: 12px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; }
+.tb-title { flex: 0 1 auto; min-width: 3em; max-width: 55%; font-weight: 700; font-size: var(--fs-2); overflow: hidden; text-overflow: ellipsis; }
+/* The level: the dial's name may shorten, its value never does (FRESH-B C6). */
+.tb-level { flex: 1 1 auto; min-width: 0; display: flex; justify-content: flex-end; font-size: 12px; color: var(--ink-2); }
+.tb-lab { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-val { flex: none; color: var(--ink); white-space: nowrap; }
 .tb-chip { flex: none; }
-.tb-note { padding: 0 10px; }
+/* Test builds: the in-bar Note stays small so titles and the step count keep their room (RV P19). */
+.tb-note { flex: none; padding: 0 8px; min-width: 0; font-size: 12px; }
+@media (max-width: 420px) { .tb-note { width: 36px; padding: 0; font-size: 0; } .tb-note::before { content: '✎'; font-size: 16px; } }
 .dots { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .dots li { flex: 1; height: 4px; border-radius: 2px; background: var(--rule-2); }
 .dots li.is-done { background: var(--ink-3); }
@@ -117,6 +122,7 @@
 .glyph-row li { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--rule); background: var(--surface); }
 .glyph-row li.is-right { background: var(--ok-wash); border-color: transparent; }
 .glyph-row li.is-wrong { background: var(--surface-2); }
+.glyph-row li.is-partial { background: linear-gradient(135deg, var(--ok-wash) 50%, var(--surface-2) 50%); }   /* partly right (RV P5) */
 .glyph-row .glyph { width: 15px; height: 15px; }
 .facts { font-size: var(--fs-1); color: var(--ink-2); }
 .interlude:empty, .news:empty, .after:empty { display: none; }
@@ -197,3 +203,11 @@
 .free-val { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
 .free-coach { color: var(--ink-2); font-size: var(--fs-1); }
 .free-dial.is-auto .free-val { color: var(--ink-3); }
+
+/* Exercises (FRESH-A #4, FRESH-B C1): every exercise by name, with Play a set and How it works. */
+.ex-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+.ex-row { padding: 14px 16px; }
+.ex-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ex-head .h-small { margin: 0; }
+.ex-short { margin: 6px 0 2px; }
+.ex-bet { margin: 2px 0 8px; }

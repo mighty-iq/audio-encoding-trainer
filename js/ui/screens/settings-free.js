@@ -2,8 +2,8 @@
    be set by hand within the dial's range, or left alone to play at a comfortable level. Under each dial a coach
    line shows the player's current edge on it (the learner's estimate), and one tap copies the coach's levels.
    Saved as profile.settings.free = {exId, dials: {dialId: value}}: continuous dials in their unit, ordinal dials as
-   a level index. The session hands the dials to the engine as overrides (ES.engine.flow.start {overrides}).
-   Exercises with their own screen (Seek) set their own levels and are not offered here. */
+   a level index. The session hands the dials to the engine as overrides (ES.engine.flow.start {overrides}); for
+   Seek, whose screen runs its own sets, the session opens that flow with the overrides (FRESH-B C1). */
 (function (ES) {
   'use strict';
   var U = ES.core.util;
@@ -15,11 +15,11 @@
   }
   function save(f) { ES.core.store.update('profile', function (r) { r.settings = r.settings || {}; r.settings.free = { exId: f.exId, dials: f.dials }; }); }
 
-  /** Exercises a Free session can run with hand-set dials: runnable now, shown in the trial view. */
+  /** Exercises a Free session can run with hand-set dials: runnable now and with dials (Seek included). */
   function choices() {
     var I = ES.ui.sessionInfo;
     if (!I || !I.realAvailable()) return [];
-    return (E().exercises || []).filter(function (id) { return I.runnable(id) && I.exInfo(id).view !== 'custom' && E().dials && E().dials[id]; });
+    return (E().exercises || []).filter(function (id) { return I.runnable(id) && E().dials && E().dials[id]; });
   }
   function snapTo(d, v) {
     if (d.kind === 'ord') return Math.max(d.min, Math.min(d.max, Math.round(v)));
@@ -78,9 +78,9 @@
       box.appendChild(U.el('strong', null, 'Free mode: what to train'));
       if (!list.length) { box.appendChild(U.el('p', { class: 'hint' }, 'Free mode needs the training sounds; the demo plays tones only.')); return; }
       if (list.indexOf(f.exId) < 0) { f = { exId: list[0], dials: {} }; save(f); }
-      var chips = U.el('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Exercise for Free mode' });
+      var chips = U.el('div', { class: 'seg', role: 'group', 'aria-label': 'Exercise for Free mode' });
       list.forEach(function (id) {
-        chips.appendChild(U.el('button', { type: 'button', role: 'radio', class: 'seg-btn', 'aria-checked': String(id === f.exId), 'data-free-ex': id,
+        chips.appendChild(U.el('button', { type: 'button', class: 'seg-btn', 'aria-pressed': String(id === f.exId), 'data-free-ex': id,
           on: { click: function () { if (id !== f.exId) { save({ exId: id, dials: {} }); render(); } } } }, ES.ui.sessionInfo.exInfo(id).name));
       });
       box.appendChild(U.el('div', { class: 'chips' }, chips));

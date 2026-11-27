@@ -451,7 +451,7 @@ def c06(h, c):
     pg.wait_for_selector('[data-free-pick]', timeout=5000)
     chips = pg.locator('[data-free-ex]').all()
     ids = [x.get_attribute('data-free-ex') for x in chips]
-    c.ok(len(ids) >= 4 and 'seek' not in ids, 'C06: the picker offers the trial-view exercises', ids)
+    c.ok(len(ids) >= 4 and 'seek' in ids, 'C06: the picker offers every exercise with dials, Seek included (round 2, FRESH-B C1)', ids)
     ex = 'far' if 'far' in ids else ids[0]
     pg.click(f'[data-free-ex="{ex}"]')
     rows = pg.locator('[data-free-dial]').count()

@@ -18,7 +18,7 @@
   }
   function cols(n) { return n <= 2 || n === 4 ? 2 : 3; }
   function glyph(kind) {
-    var d = kind === 'right' ? 'M4 12.5 L9.5 18 L20 6.5' : 'M6 6 L18 18 M18 6 L6 18';
+    var d = kind === 'right' || kind === 'partial' ? 'M4 12.5 L9.5 18 L20 6.5' : 'M6 6 L18 18 M18 6 L6 18';
     return U.svg('svg', { class: 'glyph glyph-' + kind, viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false' },
       U.svg('path', { d: d }));
   }
@@ -27,7 +27,7 @@
   function answerPanel(slots, onDone, opts) {
     opts = opts || {};
     slots = (slots || []).slice(0, 3);
-    var root = U.el('div', { class: 'answer', role: 'group', 'aria-label': opts.label || 'Your answer', 'data-slots': String(slots.length) });
+    var root = U.el('div', { class: 'answer', role: 'group', 'aria-label': opts.label || 'Your answer', 'data-slots': String(slots.length), tabindex: '-1' });
     var picks = slots.map(function () { return -1; }), rts = slots.map(function () { return null; });
     var enabled = false, locked = false, enabledAt = 0, track = null, lastUp = 0, keyBound = false;
     var groups = [];
@@ -38,7 +38,7 @@
       var grid = U.el('div', { class: 'answer-grid cols-' + cols(options.length), 'data-n': String(options.length), role: 'radiogroup', 'aria-labelledby': labelId });
       var keys = options.map(function (o, oi) {
         var k = U.el('button', { type: 'button', class: 'key', role: 'radio', 'aria-checked': 'false', 'data-slot': si, 'data-opt': oi,
-          tabindex: oi === 0 ? '0' : '-1' }, [
+          tabindex: '-1' }, [
           opts.hints !== false && oi < 9 ? U.el('span', { class: 'key-n', 'aria-hidden': 'true' }, String(oi + 1)) : null,
           U.el('span', { class: 'key-t' }, o.label),
           U.el('span', { class: 'key-mark' }),
@@ -57,18 +57,22 @@
 
     function activeSlot() { for (var i = 0; i < picks.length; i++) if (picks[i] < 0) return i; return picks.length - 1; }
     function paint() {
-      var act = activeSlot();
+      var act = activeSlot(), live = enabled && !locked;
       groups.forEach(function (g, si) {
-        g.box.classList.toggle('is-active', enabled && !locked && si === act && slots.length > 1);
+        g.box.classList.toggle('is-active', live && si === act && slots.length > 1);
+        // roving tab stop while answers are open; before they open no key takes the focus (FRESH-B D4)
+        var stop = live ? (picks[si] >= 0 ? picks[si] : 0) : -1;
         g.keys.forEach(function (k, oi) {
           var on = picks[si] === oi;
           k.classList.toggle('picked', on);
           k.setAttribute('aria-checked', on ? 'true' : 'false');
-          k.setAttribute('aria-disabled', enabled && !locked ? 'false' : 'true');
+          k.setAttribute('aria-disabled', live ? 'false' : 'true');
+          k.setAttribute('tabindex', oi === stop ? '0' : '-1');
         });
       });
       root.classList.toggle('is-locked', locked);
-      root.classList.toggle('is-enabled', enabled && !locked);
+      root.classList.toggle('is-enabled', live);
+      if (!live) root.classList.remove('hover-ok');
     }
     function choose(key) {
       if (!enabled || locked || !key) return;
@@ -86,7 +90,9 @@
         return;
       }
       paint();
-      if (key === document.activeElement && groups[next]) focusKey(groups[next].keys[0]);
+      // the focus follows the choice: a ring never stays on a key that was not picked (FRESH-A #7)
+      var inPanel = document.activeElement && root.contains(document.activeElement);
+      if (inPanel && groups[next]) focusKey(groups[next].keys[0]);
     }
     function focusKey(k) {
       if (!k) return;
@@ -101,6 +107,8 @@
       key.classList.add('pressed');
     });
     root.addEventListener('pointermove', function (e) {
+      // hover shows only after the pointer moves over open answers, so a resting pointer never pre-marks a key
+      if (enabled && !locked && e.pointerType === 'mouse') root.classList.add('hover-ok');
       if (!track || e.pointerId !== track.id || track.moved) return;
       var dx = e.clientX - track.x, dy = e.clientY - track.y;
       if (dx * dx + dy * dy > MOVE_PX * MOVE_PX) { track.moved = true; track.key.classList.remove('pressed'); }
@@ -141,6 +149,7 @@
         return;
       }
       var cur = document.activeElement && document.activeElement.closest ? document.activeElement.closest('.key') : null;
+      if ((!cur || !root.contains(cur)) && /^Arrow/.test(e.key) && g) { e.preventDefault(); focusKey(g.keys[Math.max(0, picks[si])]); return; }
       if (!cur || !root.contains(cur)) return;
       var csi = +cur.getAttribute('data-slot'), coi = +cur.getAttribute('data-opt'), cg = groups[csi], c = cols(cg.keys.length);
       var to = { ArrowRight: coi + 1, ArrowLeft: coi - 1, ArrowDown: coi + c, ArrowUp: coi - c }[e.key];
@@ -158,7 +167,9 @@
       lock: function () { locked = true; unbindKeys(); paint(); },
       isLocked: function () { return locked; },
       picks: function () { return picks.slice(); },
-      focusFirst: function () { var g = groups[activeSlot()]; if (g) focusKey(g.keys[Math.max(0, picks[activeSlot()])] || g.keys[0]); },
+      /** Answers open: the panel takes the focus (not a key, which would look picked); number keys answer, arrows
+          and Tab reach the keys. */
+      focusFirst: function () { U.focus(root); },
       /** result.slots[i] = { picked, answer, correct } (values as strings or numbers). */
       mark: function (result) {
         locked = true; unbindKeys();

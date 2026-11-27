@@ -55,17 +55,20 @@
     if (s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
     return s;
   }
+  /** A no-break space joins a number and its unit, so "1 m" never splits across lines (RV P13). */
+  var NBSP = '\u00a0';
+  U.NBSP = NBSP;
   /** "−6 dB", "+2.5 dB", "0 dB" (true minus sign; one decimal at most). */
   U.fmtDb = function (x, d) {
-    if (typeof x !== 'number' || !isFinite(x)) return '– dB';
+    if (typeof x !== 'number' || !isFinite(x)) return '–' + NBSP + 'dB';
     var r = U.round(x, d == null ? 1 : d);
     var s = trimNum(r, d == null ? 1 : d);
-    return (r < 0 ? MINUS : r > 0 ? '+' : '') + s + ' dB';
+    return (r < 0 ? MINUS : r > 0 ? '+' : '') + s + NBSP + 'dB';
   };
   /** "12 m", "1.5 m", "0.8 m". */
   U.fmtM = function (x) {
-    if (typeof x !== 'number' || !isFinite(x)) return '– m';
-    return trimNum(x, x < 10 ? 1 : 0) + ' m';
+    if (typeof x !== 'number' || !isFinite(x)) return '–' + NBSP + 'm';
+    return trimNum(x, x < 10 ? 1 : 0) + NBSP + 'm';
   };
   U.fmtNum = function (x, d) { return (x < 0 ? MINUS : '') + trimNum(x, d || 0); };
   /** "2:05" for ms. */

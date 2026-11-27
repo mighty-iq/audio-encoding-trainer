@@ -15,8 +15,19 @@
     U.clear(ol);
     var n = set.n, done = set.results.length;
     ol.setAttribute('aria-label', 'Trial ' + Math.min(done + 1, n) + ' of ' + n);
+    var h1 = cur && cur.h1;                          // the screen's heading for screen readers (RV A4)
+    if (h1) h1.textContent = (cur.name || '') + ', trial ' + Math.min(done + 1, n) + ' of ' + n;
     if (n > 30) { ol.appendChild(U.el('li', { class: 'dots-count mono' }, Math.min(done + 1, n) + '/' + n)); return; }
     for (var i = 0; i < n; i++) ol.appendChild(U.el('li', { class: i < done ? 'is-done' : i === done ? 'is-now' : '' }));
+  }
+  /** The level in the bar: the dial's name may shorten, its value never does (FRESH-B C6). */
+  function setLevel(el, text) {
+    U.clear(el);
+    text = String(text || '');
+    var i = text.lastIndexOf(' · ');
+    if (i < 0) { el.appendChild(U.el('span', { class: 'tb-val' }, text)); return; }
+    el.appendChild(U.el('span', { class: 'tb-lab' }, text.slice(0, i + 3)));
+    el.appendChild(U.el('span', { class: 'tb-val' }, text.slice(i + 3)));
   }
   function savedChip() {
     var st = ES.core.store.status();
@@ -31,17 +42,18 @@
     ES.core.clock.resume('away');
     document.documentElement.classList.add('in-trial');
     var level = U.el('span', { class: 'tb-level mono' });
-    var dots = U.el('ol', { class: 'dots' });
+    var dots = U.el('ol', { class: 'dots' }), h1 = U.el('h1', { class: 'sr-only' }), title = U.el('span', { class: 'tb-title' }, set.plan.title || info.name);
     var bar = U.el('header', { class: 'trial-bar' }, [
       U.el('button', { type: 'button', class: 'tb-btn', 'aria-label': 'Pause', 'data-pause': '', on: { click: openPause } }, pauseIcon()),
-      U.el('div', { class: 'tb-mid' }, [U.el('div', { class: 'tb-line' }, [U.el('span', { class: 'tb-title' }, set.plan.title || info.name), level]), dots]),
+      U.el('div', { class: 'tb-mid' }, [U.el('div', { class: 'tb-line' }, [title, level]), dots]),
       savedChip(),
       ES.core.playtest.enabled() ? ES.core.playtest.noteButton(function () { return 'play:' + set.exId + ':' + (set.results.length + 1); }, { cls: 'tb-note' }) : null,
       U.el('button', { type: 'button', class: 'tb-btn tb-help', 'aria-label': 'Help', 'data-help': '', on: { click: function () { openHelp(); } } }, '?')
     ]);
     var host = U.el('div', { class: 'trial-host' });
-    root.appendChild(U.el('div', { class: 'trial', 'data-ex': set.exId }, [bar, host]));
-    cur = { view: null, aborted: false, host: host, set: set, sheet: null };
+    root.appendChild(U.el('div', { class: 'trial', 'data-ex': set.exId }, [h1, bar, host]));
+    cur = { view: null, aborted: false, host: host, set: set, sheet: null, h1: h1, name: set.plan.title || info.name };
+    paintDots(dots, set);
     function onVis() {
       if (!cur || cur.aborted) return;
       if (document.hidden) { if (cur.view) cur.view.pause(); }
@@ -64,7 +76,12 @@
       try { trial = sess.makeTrial(); } catch (e) { err = e; reportErr(e); }
       if (!trial && !err) { sess.finishSet(); return; }          // the engine says the set is complete
       if (!trial) { if (sess.replaceTrial(null, 'generator: ' + (err && err.message || err))) setTimeout(loop, 0); return; }
-      level.textContent = sess.levelText(trial);
+      var place = trial.meta && trial.meta.decision ? ES.ui.sessionInfo.pathPlace(set.exId, trial.meta.decision.path) : null;
+      if (place) {                                   // Path mode shows its stage and step (RV P4)
+        title.textContent = place.stage;
+        var lv = sess.levelText(trial), j = lv.lastIndexOf(' · ');
+        setLevel(level, 'Path step ' + place.pos + ' of ' + place.of + ' · ' + (j >= 0 ? lv.slice(j + 3) : lv));
+      } else setLevel(level, sess.levelText(trial));
       root.querySelector('.trial').setAttribute('data-index', String(set.results.length));
       var view = ES.ui.trialView.run(host, { trial: trial, mode: 'set', score: sess.scorer(trial),
         onResult: function (result, resp, prepared) { sess.record(prepared || trial, result, resp); } });
@@ -96,7 +113,7 @@
         rate: function () { return ratingSheet(s.exId, s.index); },
         /** Record an answered trial; the view's own flow (if it drives ES.engine.flow) already updated the learner. */
         record: function (trial, result, response) { if (cur && !cur.aborted) sess.record(trial, result, response, { learned: true }); paintDots(dots, s); },
-        level: function (text) { level.textContent = text == null ? '' : String(text); },
+        level: function (text) { setLevel(level, text == null ? '' : String(text)); },
         progress: function () { paintDots(dots, s); },
         flow: function (sc) { s.sc = sc || null; } };
       try {
@@ -119,7 +136,9 @@
   }
   function openPause() {
     if (!cur || ES.ui.sheetOpen()) return;
-    var set = cur.set, n = set.n, i = Math.min(set.results.length + 1, n);
+    // the trial on screen: during its feedback it is the one just answered (RV P14)
+    var set = cur.set, n = set.n, st = cur.view && typeof cur.view.state === 'function' ? cur.view.state() : '';
+    var i = Math.max(1, Math.min(set.results.length + (/^(feedback|example|done)$/.test(st) ? 0 : 1), n));
     if (cur.view) cur.view.pause();
     ES.core.clock.pause('menu');
     var h = ES.ui.sheet({ title: 'Paused', cls: 'sheet-pause', body: function (b) {
@@ -151,23 +170,7 @@
       if (v === 'tutorial') { ES.core.router.go('tutorial', { exId: set.exId, resume: true }); return; }
       if (cur.view) cur.view.resume();
     }
-    if (X && typeof X.openHelp === 'function') {          // the exercise's own "How it works", with our actions
-      var own = null;
-      try { own = X.openHelp({ actions: acts }); } catch (e) { own = null; }
-      if (own && own.closed) { own.closed.then(after); return; }
-    }
-    if (X && typeof X.helpBody === 'function') {          // or its body inside our sheet
-      ES.ui.sheet({ title: info.name, cls: 'sheet-help', body: function (b) { try { X.helpBody(b); } catch (e) { b.appendChild(U.el('p', null, info.short || '')); } },
-        actions: acts }).closed.then(after);
-      return;
-    }
-    var tips = info.tips || ((info.tutorial && info.tutorial.steps) || []).filter(function (s) { return s.kind === 'caption' || s.text; }).map(function (s) { return s.text; });
-    var h = ES.ui.sheet({ title: info.name, cls: 'sheet-help', body: function (b) {
-      if (info.short) b.appendChild(U.el('p', { class: 'lead' }, info.short));
-      if (tips.length) b.appendChild(U.el('ul', { class: 'tips' }, tips.slice(0, 5).map(function (t) { return U.el('li', null, t); })));
-      if (info.bet) b.appendChild(U.el('p', { class: 'bet' }, [U.el('strong', null, 'The bet: '), info.bet]));
-    }, actions: acts });
-    h.closed.then(after);
+    ES.ui.exerciseHelp(set.exId, acts).then(after);        // the exercise's own "How it works", with our actions
   }
   function unmount() {
     if (cur) {

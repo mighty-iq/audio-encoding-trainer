@@ -14,6 +14,8 @@
     return p && typeof p.mount === 'function' ? p : null;
   }
   function has(name) { return !!resolve(name); }
+  /** The same screen: same name and the same `id` param (two different venues stay two entries). */
+  function same(a, b) { return a.name === b.name && ((a.params || {}).id === (b.params || {}).id); }
   function linkable(name) { var s = resolve(name); return !!s && !NO_LINK[name] && s.deepLink !== false; }
 
   function emit(name, entry) {
@@ -85,6 +87,10 @@
     unmount();
     if (opts.reset) stack = [];
     if (opts.replace && stack.length) stack[stack.length - 1] = entry; else stack.push(entry);
+    // Never two entries for the same screen in a row (FRESH-A #1, FRESH-B D1): a venue left for a set and
+    // returned to after it is one entry, so one Back leaves it. The newer entry (its params) wins.
+    var n = stack.length;
+    if (n >= 2 && same(stack[n - 2], stack[n - 1])) stack.splice(n - 2, 1);
     if (stack.length > 40) stack.splice(0, stack.length - 40);
     mount(entry);
     mirror(name);

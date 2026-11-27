@@ -47,9 +47,10 @@
   }
   /** ✓/✕ glyphs for the trials of a finished set (shown only after the set). */
   function glyphRow(results) {
-    var ok = results.filter(function (r) { return r.correct; }).length;
-    return U.el('ol', { class: 'glyph-row', 'aria-label': ok + ' right, ' + (results.length - ok) + ' wrong' },
-      results.map(function (r) { return U.el('li', { class: r.correct ? 'is-right' : 'is-wrong' }, ES.ui.glyph(r.correct ? 'right' : 'wrong')); }));
+    var t = tally(results);
+    function kind(r) { var n = Math.max(1, r.slots | 0); return r.correct ? 'right' : n > 1 && (+r.prop || 0) > 0 ? 'partial' : 'wrong'; }
+    return U.el('ol', { class: 'glyph-row', 'aria-label': t.right + ' right, ' + (t.partial ? t.partial + ' partly right, ' : '') + (t.trials - t.right - t.partial) + ' wrong' },
+      results.map(function (r) { var k = kind(r); return U.el('li', { class: 'is-' + k }, ES.ui.glyph(k)); }));
   }
   function mark() {
     return U.svg('svg', { class: 'wordmark-mark', viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false' }, [
@@ -73,18 +74,46 @@
   }
   function dialDef(exId, id) { var defs = (ES.engine.dials || {})[exId] || []; return defs.filter(function (d) { return d.id === id; })[0] || null; }
   /** Format a dial value for people: dB with a true minus, metres, ordinal level names. */
+  /** The one level formatter (RV P3): an estimate or a level in the dial's own words. Ordinal levels are floored
+      (a level fully reached) and clamped; past the hardest level the last level reads "(top)", never a raw number.
+      Continuous values snap to the dial's step and clamp to its range, "(top)" past the hard end. The game reads
+      it as ES.ui.fmt.level for its news and cards. */
+  function fmtLevel(exId, id, x) {
+    var d = typeof id === 'object' && id ? id : dialDef(exId, id);
+    if (typeof x !== 'number' || !isFinite(x)) return '';
+    if (!d) return U.fmtNum(x, 1);
+    if (d.kind === 'ord') {
+      var i = Math.floor(x + 1e-9), top = i > d.max, j = Math.max(d.min, Math.min(d.max, i));
+      var lab = d.levels && d.levels[j] != null ? String(d.levels[j]) : String(j);
+      return top ? lab + ' (top)' : lab;
+    }
+    var step = d.step || 0.5, v = Math.round(x / step) * step, hard = d.dir < 0 ? d.min : d.max;
+    var past = d.dir < 0 ? v < d.min : v > d.max;
+    v = Math.max(Math.min(d.min, d.max), Math.min(Math.max(d.min, d.max), v));
+    var t = d.unit === 'dB' ? U.fmtDb(v) : d.unit === 'm' ? U.fmtM(v) : U.fmtNum(v, 1) + (d.unit ? ' ' + d.unit : '');
+    return past && v === hard ? t + ' (top)' : t;
+  }
   function dialText(exId, id, v) {
     var d = dialDef(exId, id);
     if (v && typeof v === 'object') { if (v.text) return String(v.text); v = v.value != null ? v.value : v.m; }
     if (typeof v !== 'number') return '';
-    var name = d && d.label ? d.label : id;
-    if (d && d.kind === 'ord' && d.levels) return name + ': ' + (d.levels[Math.round(v)] || v);
-    var unit = d && d.unit;
-    return name + ': ' + (unit === 'dB' ? U.fmtDb(v) : unit === 'm' ? U.fmtM(v) : U.fmtNum(v, 1) + (unit ? ' ' + unit : ''));
+    return (d && d.label ? d.label : id) + ': ' + fmtLevel(exId, d || id, v);
+  }
+  /** One count for a set's trials (RV P5): multi-answer trials count their answers, partly right ones are marked. */
+  function tally(results) {
+    var t = { trials: results.length, right: 0, partial: 0, answers: 0, answersRight: 0, multi: false };
+    results.forEach(function (r) {
+      var n = Math.max(1, r.slots | 0), got = Math.round((+r.prop || (r.correct ? 1 : 0)) * n);
+      if (n > 1) t.multi = true;
+      t.answers += n; t.answersRight += r.correct ? n : Math.min(got, n - 1);
+      if (r.correct) t.right++; else if (n > 1 && got > 0) t.partial++;
+    });
+    return t;
   }
   function placeholderCard(text) { return U.el('p', { class: 'card placeholder-note' }, text); }
 
-  ES.ui.w = { weekRing: weekRing, weekCard: weekCard, glyphRow: glyphRow, header: header, footer: footer, mark: mark, counts: counts,
+  ES.ui.fmt = { level: fmtLevel };
+  ES.ui.w = { weekRing: weekRing, weekCard: weekCard, glyphRow: glyphRow, header: header, footer: footer, mark: mark, counts: counts, tally: tally, fmtLevel: fmtLevel,
     sessionsThisWeek: sessionsThisWeek, sessionsToday: sessionsToday, dialText: dialText, placeholderCard: placeholderCard,
     GOOD_RHYTHM: GOOD_RHYTHM };
 })(window.ES, window);

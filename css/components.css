@@ -9,6 +9,8 @@
 .btn:hover { background: var(--surface-2); }
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
+/* A tutorial Continue in its first 0.6 s: looks ready, lets taps through to its card, which keeps them. */
+.btn.is-wait:disabled { opacity: 1; cursor: default; pointer-events: none; }
 .btn-primary { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
 .btn-primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--ink-2); }
@@ -93,7 +95,11 @@ html.in-trial #banners { display: none; }
   cursor: default; touch-action: manipulation; user-select: none; -webkit-user-select: none; overflow-wrap: anywhere;
 }
 .answer.is-enabled .key { cursor: pointer; }
-.answer.is-enabled .key:hover { background: var(--surface-2); }
+/* Hover is lighter than a pick and only for pointers that hover, after the pointer moves over open answers;
+   the keyboard focus is a dashed outline, never a fill or a solid ring (FRESH-A #7, FRESH-B D4, D6). */
+@media (hover: hover) and (pointer: fine) { .answer.is-enabled.hover-ok .key:hover { border-color: var(--ink-3); } }
+.answer:focus, .answer:focus-visible { outline: none; }
+.key:focus-visible { outline: 2px dashed var(--focus); outline-offset: 3px; }
 .answer:not(.is-enabled):not(.is-locked) .key { color: var(--ink-3); background: var(--surface-2); border-style: dashed; }
 .key.pressed { background: var(--surface-2); border-color: var(--ink-3); }
 .key.picked { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
@@ -111,12 +117,13 @@ html.in-trial #banners { display: none; }
 .glyph { width: 18px; height: 18px; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .glyph-right { stroke: var(--ok); }
 .glyph-wrong { stroke: var(--ink); }
+.glyph-partial { stroke: var(--ink-3); }
 
 /* Controls: segmented, switch, text inputs. */
 .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule-2); border-radius: var(--r-1); overflow: hidden; background: var(--surface); }
 .seg-btn { min-height: var(--tap); padding: 0 12px; border: 0; border-right: 1px solid var(--rule); background: transparent; font-weight: 600; font-size: var(--fs-1); cursor: pointer; }
 .seg-btn:last-child { border-right: 0; }
-.seg-btn[aria-checked="true"] { background: var(--ink); color: var(--on-ink); }
+.seg-btn[aria-checked="true"], .seg-btn[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
 .switch { appearance: none; -webkit-appearance: none; position: relative; flex: none; width: 52px; height: 30px; margin: 7px 0; border: 0;
   border-radius: 999px; background: var(--rule-2); cursor: pointer; transition: background .15s; }
 .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface);
@@ -135,6 +142,7 @@ html.in-trial #banners { display: none; }
 .chimera-mark circle { fill: none; stroke: var(--ink-3); stroke-width: 1.4; }
 .chimera-mark circle:first-child { fill: var(--red); stroke: none; }
 .chimera-big { display: flex; align-items: center; gap: 10px; margin: 14px 0 4px; font-size: var(--fs-4); font-weight: 700; }
+.chimera-big .chimera-link { display: inline-flex; align-items: center; min-height: var(--tap); }   /* RV A3 */
 .chimera-big .chimera-mark { width: 30px; height: 30px; }
 .chimera-line { display: flex; align-items: center; gap: 10px; margin: 0; font-size: var(--fs-3); }
 .sheet-chimera-light { max-width: 460px; }
@@ -145,7 +153,10 @@ html.in-trial #banners { display: none; }
 /* Playtest. */
 .note-btn { min-height: var(--tap); min-width: var(--tap); padding: 0 12px; border-radius: 999px; border: 1px dashed var(--ink-3);
   background: var(--surface); color: var(--ink-2); font: 600 var(--fs-1) var(--mono); cursor: pointer; flex: none; }
-.note-float { position: fixed; z-index: 40; right: max(12px, env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); box-shadow: var(--shadow); }
+/* Test builds: the floating Note is a slim tab on the right edge, inside the page gutter, so it covers no text or
+   button (RV P19, FRESH-A, FRESH-B D8). */
+.note-float { position: fixed; z-index: 40; right: 0; top: 50%; transform: translateY(-50%); min-width: 0; width: 26px; min-height: 72px;
+  padding: 8px 0; border-radius: 8px 0 0 8px; border-right: 0; writing-mode: vertical-rl; font-size: 12px; box-shadow: var(--shadow); }
 html.in-trial .note-float { display: none; }
 .rating h3 { font-size: var(--fs-2); margin-bottom: 2px; }
 .rating-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--rule); }

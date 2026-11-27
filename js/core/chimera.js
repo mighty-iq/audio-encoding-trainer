@@ -67,28 +67,52 @@
       U.el('p', null, [t.body + ' ', linkEl('discord.gg/chmr', { where: 'invite-' + kind })])
     ]);
   }
+  /** At most one invitation card per screen (RV P9): a later invitation adds its line to the card already there. */
+  function mergeInto(existing, kind, ctx) {
+    var t = TEXT[kind] || TEXT.milestone, line = [ctx.title || t.title, ctx.detail].filter(Boolean).join(': ');
+    if (!line) return;
+    var list = existing.querySelector('.chimera-more');
+    if (!list) {
+      list = U.el('ul', { class: 'chimera-more plain' });
+      var body = existing.querySelector('p:last-child');
+      existing.insertBefore(list, body || null);
+    }
+    list.appendChild(U.el('li', null, line));
+  }
+  function screenOf(el) { return el && el.closest ? el.closest('[data-screen]') || el : el; }
   /** Ask for an invitation. During a set it waits; with ctx.el it renders inline; otherwise it is queued for
-      the next screen between sets (Results), which calls takeInto(). Duplicate kinds merge. */
+      the next screen between sets (Results), which calls takeInto(). Duplicate kinds merge, and a screen never
+      shows more than one card. */
   function invite(kind, ctx) {
     ctx = ctx || {};
     if (!TEXT[kind]) return false;
-    if (ctx.el && !ES.ui.inSet) { ctx.el.appendChild(card(kind, ctx)); return true; }
+    if (ctx.el && !ES.ui.inSet) {
+      var have = screenOf(ctx.el).querySelector('.chimera-card');
+      if (have) mergeInto(have, kind, ctx); else ctx.el.appendChild(card(kind, ctx));
+      return true;
+    }
     for (var i = 0; i < queue.length; i++) if (queue[i].kind === kind) { queue[i].ctx = ctx; return true; }
     queue.push({ kind: kind, ctx: ctx });
     return true;
   }
   function pending() { return queue.map(function (q) { return q.kind; }); }
   /** Render queued invitations into el (only between sets). Returns how many were shown. */
+  var RANK = { pb: 0, milestone: 1, plateau: 2, export: 3 };
   function takeInto(el) {
     if (ES.ui.inSet || !el || !queue.length) return 0;
-    var q = queue;
+    var q = queue.sort(function (a, b) { return (RANK[a.kind] || 9) - (RANK[b.kind] || 9); });
     queue = [];
-    q.forEach(function (x) { el.appendChild(card(x.kind, x.ctx)); });
+    var have = screenOf(el).querySelector('.chimera-card');
+    q.forEach(function (x) {
+      if (have) mergeInto(have, x.kind, x.ctx);
+      else { have = card(x.kind, x.ctx); el.appendChild(have); }
+    });
     return q.length;
   }
 
   ['pb', 'milestone', 'plateau'].forEach(function (kind) {
-    ES.hooks.on(kind, function (payload) { invite(kind, { detail: payload && payload.text, title: payload && payload.title }); });
+    // the plateau card on Results already says what changes; the invitation does not repeat it (RV P8)
+    ES.hooks.on(kind, function (payload) { invite(kind, { detail: kind === 'plateau' ? null : payload && payload.text, title: payload && payload.title }); });
   });
 
   ES.core.chimera = { URL: URL, welcome: welcome, linkEl: linkEl, invite: invite, card: card, pending: pending,

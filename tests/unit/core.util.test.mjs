@@ -5,18 +5,18 @@ const at = (y, m, d) => new Date(y, m - 1, d, 12).getTime();
 export const tests = {
   'fmtDb uses a true minus sign and at most one decimal'(ES, assert) {
     const U = ES.core.util;
-    assert.equal(U.fmtDb(-6), '−6 dB');
-    assert.equal(U.fmtDb(2.5), '+2.5 dB');
-    assert.equal(U.fmtDb(0), '0 dB');
-    assert.equal(U.fmtDb(-0.04), '0 dB');
-    assert.equal(U.fmtDb(-12.25), '−12.3 dB');
-    assert.equal(U.fmtDb(NaN), '– dB');
+    assert.equal(U.fmtDb(-6), '−6\u00a0dB');
+    assert.equal(U.fmtDb(2.5), '+2.5\u00a0dB');
+    assert.equal(U.fmtDb(0), '0\u00a0dB');
+    assert.equal(U.fmtDb(-0.04), '0\u00a0dB');
+    assert.equal(U.fmtDb(-12.25), '−12.3\u00a0dB');
+    assert.equal(U.fmtDb(NaN), '–\u00a0dB');
   },
   'fmtM and fmtClock'(ES, assert) {
     const U = ES.core.util;
-    assert.equal(U.fmtM(12), '12 m');
-    assert.equal(U.fmtM(1.5), '1.5 m');
-    assert.equal(U.fmtM(32.4), '32 m');
+    assert.equal(U.fmtM(12), '12\u00a0m');
+    assert.equal(U.fmtM(1.5), '1.5\u00a0m');
+    assert.equal(U.fmtM(32.4), '32\u00a0m');
     assert.equal(U.fmtClock(125000), '2:05');
     assert.equal(U.fmtClock(0), '0:00');
   },

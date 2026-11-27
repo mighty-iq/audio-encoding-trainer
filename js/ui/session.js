@@ -94,8 +94,9 @@
         set.snap = null;
         if (set.sc) { if (noLearn(set)) set.sc.learn = false; return; }
       }
-      if (exInfo(set.exId).view === 'custom') return;               // a custom view opens its own flow
       var free = S.mode === 'free' && settings().free && settings().free.exId === set.exId ? settings().free.dials || null : null;
+      // a custom view (Seek) opens its own flow, except that Free mode's hand-set dials must reach it
+      if (exInfo(set.exId).view === 'custom' && !(free && Object.keys(free).length)) return;
       set.sc = E().flow.start(set.exId, { mode: S.mode, seed: S.id + ':' + set.index, headphones: !!settings().headphones, kind: p.kind,
         hint: p.hint, avoidVoices: p.avoidVoices, daysAway: p.daysAway, lab: labInfo(), trials: Math.max(1, set.n - set.results.length),
         pin: p.pin, focus: typeof p.focus === 'string' ? p.focus : undefined, family: typeof p.family === 'string' ? p.family : undefined,
@@ -174,6 +175,9 @@
       if (quiet) sc.learn = false;
       try { var out = E().flow.answer(sc, t, r); } finally { if (quiet) sc.learn = was; }
       set.lastOut = out;
+      var dp = t.meta && t.meta.decision && t.meta.decision.path;
+      if (dp) set.pathAt = dp;                          // Path mode: where the set is, and its moves (RV P4)
+      if (out.path && (out.path.advanced || out.path.back)) set.pathMoves = (set.pathMoves || []).concat([{ advanced: !!out.path.advanced, back: !!out.path.back, i: out.path.i }]);
       return out.result;
     };
     return function (t, r) { return E().score(t, r); };
@@ -188,7 +192,8 @@
   function record(trial, result, resp, opts) {
     var set = currentSet();
     if (!set) return;
-    var rec = { correct: !!result.correct, prop: +result.prop || 0, intrusions: result.intrusions | 0, focus: trial.setting && trial.setting.focus || '', level: focusLevel(trial) };
+    var rec = { correct: !!result.correct, prop: +result.prop || 0, intrusions: result.intrusions | 0, focus: trial.setting && trial.setting.focus || '', level: focusLevel(trial),
+      slots: (trial.question && trial.question.slots && trial.question.slots.length) || 1 };
     set.results.push(rec);
     S.rows.push([Date.now(), trial.ex || set.exId, rec.focus, rec.level, rec.correct ? 1 : 0, U.round(rec.prop, 3), rec.intrusions]);
     if (trial.meta && trial.meta.demo) S.demoTmr = ES.ui.demo.nextTmr(S.demoTmr, rec.correct);
@@ -360,7 +365,8 @@
         return { index: i, exId: x.exId, n: x.n || 1, planned: x.planned, plan: x.plan || { exId: x.exId }, results: Array.isArray(x.results) ? x.results : [],
           pb: false, activeStart: 0, activeSoFar: x.activeMs || 0, plateau: null, demo: !!x.demo, sc: null, finished: !!x.finished,
           activeMs: x.activeMs || 0, entry: x.entry || null, partial: !!x.partial, replacements: x.replacements || 0, salt: x.salt || 0, introShown: !!x.introShown,
-          snap: x.snap && typeof x.snap === 'object' ? x.snap : null, skipped: x.skipped || undefined, endReason: x.endReason || undefined };
+          snap: x.snap && typeof x.snap === 'object' ? x.snap : null, skipped: x.skipped || undefined, endReason: x.endReason || undefined,
+          pathAt: x.pathAt || undefined, pathMoves: Array.isArray(x.pathMoves) ? x.pathMoves : undefined };
       }) };
     S.log = r.log && typeof r.log === 'object' ? r.log : { id: S.id, start: S.start, end: S.start, activeMs: 0, mode: S.mode, sets: [] };
     S.activeBase = S.log.activeMs || 0;

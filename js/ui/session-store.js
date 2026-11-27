@@ -40,7 +40,7 @@
         return { index: x.index, exId: x.exId, n: x.n, planned: x.planned, plan: planCopy(x.plan), results: x.results, finished: !!x.finished,
           activeMs: x.finished ? x.activeMs || 0 : Math.max(0, now - x.activeStart), entry: x.entry || null, partial: !!x.partial,
           replacements: x.replacements || 0, salt: x.salt || 0, introShown: !!x.introShown, demo: !!x.demo, snap: snapOf(x),
-          skipped: x.skipped || undefined, endReason: x.endReason || undefined };
+          skipped: x.skipped || undefined, endReason: x.endReason || undefined, pathAt: x.pathAt || undefined, pathMoves: x.pathMoves || undefined };
       }) };
     store().set('session', rec);
     tabMark(rec);

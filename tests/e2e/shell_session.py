@@ -33,10 +33,12 @@ def one(h, c, size):
     pg.wait_for_selector('.tut [data-step="caption"]', timeout=8000)
     btn = pg.locator('[data-continue]')
     # FRESH-A #2 / FRESH-B C5: Continue never looks disabled; a tap in the first 0.6 s is kept and acted on then
-    c.ok(not btn.is_disabled(), 'tutorial: Continue looks ready at once (never greyed out)')
+    c.eq(pg.evaluate("getComputedStyle(document.querySelector('[data-continue]')).opacity"), '1', 'tutorial: Continue looks ready at once (never greyed out)')
     c.ok(pg.inner_text('.tut-next').startswith('Next:'), 'tutorial: the next action is stated')
-    c.ok(pg.evaluate("document.activeElement && document.activeElement.hasAttribute('data-continue')"), 'tutorial: Continue has the focus, so Enter works')
-    btn.click()
+    bb = btn.bounding_box()
+    pg.mouse.click(bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2)     # an early tap is kept
+    pg.wait_for_function("() => !document.querySelector('.tut [data-step=\"caption\"]') || document.querySelector('.trial-body')", timeout=3000)
+    c.ok(True, 'tutorial: a tap in the first 0.6 s is acted on, within a second')
     # Worked example.
     wait_state(pg, 'example', 15000)
     c.ok(pg.locator('.key.answer .glyph-right').count() >= 1, 'tutorial: the example marks the answer with ✓')
@@ -100,7 +102,11 @@ def one(h, c, size):
                     ok = False
                 c.ok(ok, f'trial {i + 1}: a right answer moves on by itself')
     pg.wait_for_selector('.results', timeout=8000)
-    c.ok('of 6 right' in pg.inner_text('.results h1').replace('\n', ' '), 'results: set summary', pg.inner_text('.results h1'))
+    head = pg.inner_text('.results h1').replace('\n', ' ')
+    multi = pg.get_attribute('.results h1', 'data-headline') == 'answers'
+    # RV P5: a set with two-answer trials counts answers in the headline and trials on the line below
+    c.ok(('answers right' in head and 'of 6 trials fully right' in pg.inner_text('[data-trials-line]')) if multi else 'of 6 right' in head,
+         'results: set summary', head)
     c.eq(pg.locator('.glyph-row li').count(), 6, 'results: one glyph per trial, after the set')
     c.eq(pg.evaluate('ES.ui.inSet'), False, 'between sets: invitations may show')
     for label in ('Fun 4', 'Clarity 5', 'Difficulty 3'):

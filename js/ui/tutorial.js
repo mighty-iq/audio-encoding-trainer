@@ -107,8 +107,9 @@
       if (!cur || cur.aborted || (e.key !== 'Enter' && e.key !== ' ') || (ES.ui.sheetOpen && ES.ui.sheetOpen())) return;
       var a = document.activeElement, btn = host.querySelector('.tut-card [data-continue]');
       if (!btn || (a && a !== btn && /^(BUTTON|A|INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
-      if (a === btn) return;                              // the button's own key press
+      if (a === btn && !btn.disabled) return;             // the button's own key press
       e.preventDefault();
+      if (btn.disabled) { if (cur.early) cur.early(); return; }
       btn.click();
     };
     document.addEventListener('keydown', cur.onKey);
@@ -126,17 +127,28 @@
     function caption(st) {
       var minMs = Math.max(3000, st.minMs | 0), auto = st.then === 'auto', label = st.next || 'Continue', X = ES.ex[exId];
       var nextNote = U.el('p', { class: 'tut-next' }, auto ? 'Next: the following step starts by itself.' : 'Next: tap ' + label + '.');
-      // Ready-looking at once (FRESH-A #2, FRESH-B C5); a tap in the first 0.6 s is kept and acted on then.
-      var ready = false, early = false, step = k;
+      // Ready-looking at once (FRESH-A #2, FRESH-B C5): for its first 0.6 s the button keeps its normal look but takes
+      // no click (a tap that lands then, or Enter, is kept and acted on at 0.6 s).
+      var early = false, step = k;
       function go() { if (!cur || cur.aborted || k !== step) return; k++; show(); }
-      var btn = ES.ui.button(label, { kind: 'primary', wide: true, attrs: { 'data-continue': '' }, onClick: function () { if (ready) go(); else early = true; } });
+      var btn = ES.ui.button(label, { kind: 'primary', wide: true, disabled: !auto, cls: 'is-wait', attrs: { 'data-continue': '' }, onClick: go });
+      cur.early = function () { early = true; };
       var howBtn = k === 0 && X && typeof X.openHelp === 'function' ? ES.ui.button('How it works', { kind: 'ghost', small: true, attrs: { 'data-how': '' },
         onClick: function () { try { X.openHelp(); } catch (e) { /* ignore */ } } }) : null;
       U.clear(host);
       host.appendChild(U.el('div', { class: 'tut-card card', 'data-step': 'caption' }, [st.title ? U.el('h2', { class: 'h-small' }, st.title) : null,
         U.el('p', { class: 'tut-text' }, st.text), nextNote, auto ? null : btn, howBtn]));
-      if (!auto) U.focus(btn);
-      cur.timer = setTimeout(function () { if (auto) { k++; show(); return; } ready = true; if (early) go(); }, auto ? minMs : LOCK_MS);
+      var card = host.querySelector('.tut-card');
+      if (card) card.addEventListener('pointerup', function (e) {     // a tap on the waiting button (it lets taps through)
+        if (!btn.disabled) return;
+        var r = btn.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) early = true;
+      });
+      cur.timer = setTimeout(function () {
+        if (auto) { k++; show(); return; }
+        btn.disabled = false; btn.classList.remove('is-wait'); cur.early = null;
+        if (early) go(); else U.focus(btn);
+      }, auto ? minMs : LOCK_MS);
     }
     /** A step whose sound could not be prepared twice: say so and move on (RV P1). */
     function passOver() {

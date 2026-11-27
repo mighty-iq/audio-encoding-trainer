@@ -4,6 +4,7 @@
   'use strict';
   var U = ES.core.util, W = function () { return ES.ui.w; };
   var INDEX = [
+    ['exercises', 'Exercises', 'All eight by name: play a set of one, or see how it works'],
     ['map', 'Map', 'The night out: venues that open as your ear grows'],
     ['lab', 'Lab', 'Check-ins that measure what carries over'],
     ['cast', 'Cast', 'The voices you have met'],
@@ -25,6 +26,15 @@
     return U.el('section', { class: 'card venue' }, [U.el('p', { class: 'eyebrow mono' }, 'Coming up'),
       U.el('h2', { class: 'h-small' }, 'A night out, venue by venue'),
       U.el('p', { class: 'hint' }, 'Café, restaurant, bar, house party and more open as your ear grows. The map arrives in a later build.')]);
+  }
+  /** Focus mode with nothing to aim at says so before the session (RV P6). */
+  function focusNote() {
+    var st = (ES.core.store.peek('profile').settings || {}), P = ES.ui.settingsParts;
+    if (st.mode !== 'focus' || !P || typeof P.focusTarget !== 'function' || !ES.ui.session.realAvailable()) return null;
+    var t = P.focusTarget();
+    if (!t.ok || t.has) return null;
+    return U.el('p', { class: 'hint focus-note', 'data-focus-note': '' }, ['Focus has no target yet: ', U.el('a', { href: '#settings' }, 'choose one'),
+      ' or run a Lab check-in. This session trains like Edge.']);
   }
   function startButton() {
     var sess = ES.ui.session;
@@ -66,6 +76,7 @@
           U.el('h1', { class: 'h-big' }, ES.ui.session.active() ? 'Your session is waiting.' : 'Ready when you are.'),
           U.el('p', { class: 'lead' }, lead()),
           today >= 3 ? U.el('p', { class: 'hint sleep-note' }, 'That is ' + today + ' sessions today. Sleep consolidates practice, so tomorrow is a good time for the next session.') : null,
+          focusNote(),
           startButton()
         ]),
         U.el('div', { class: 'home-hero-pic', 'aria-hidden': 'true' }, ES.ui.field(null, { compact: true, labels: false, voices: [

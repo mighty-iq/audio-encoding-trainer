@@ -79,7 +79,19 @@
     Object.keys(p || {}).forEach(function (k) { if (typeof p[k] !== 'function') o[k] = p[k]; });
     try { return JSON.parse(JSON.stringify(o)); } catch (e) { return { exId: p && p.exId }; }
   }
-  ES.ui.sessionInfo = { NAMES: NAMES, flowOk: flowOk, engineReady: engineReady, runnable: runnable, audioData: audioData,
+  /** Path mode's place in words (RV P4): {stage, pos, of, last, text: "Path · Café: one other voice · step 2 of 4"}
+      from a trial's meta.decision.path ({i, of, stage}); null outside Path mode. */
+  function pathPlace(exId, path) {
+    var P = ES.engine && ES.engine.path;
+    if (!path || !P || typeof P.steps !== 'function' || !P.STAGES || !P.STAGES[exId]) return null;
+    var all = P.steps(exId) || [], cur = all[path.i];
+    if (!cur) return null;
+    var mine = all.filter(function (s) { return s.stage === cur.stage; }), pos = mine.indexOf(cur) + 1;
+    var stage = P.STAGES[exId][cur.stage] ? P.STAGES[exId][cur.stage][1] : cur.label;
+    return { stage: stage, pos: pos, of: mine.length, last: path.i >= all.length - 1, i: path.i, total: all.length,
+      text: 'Path · ' + stage + ' · step ' + pos + ' of ' + mine.length };
+  }
+  ES.ui.sessionInfo = { NAMES: NAMES, pathPlace: pathPlace, flowOk: flowOk, engineReady: engineReady, runnable: runnable, audioData: audioData,
     realAvailable: realAvailable, exInfo: exInfo, labInfo: labInfo, focusLevel: focusLevel, levelText: levelText, pbText: pbText,
     fallbackEntry: fallbackEntry, planCopy: planCopy };
 })(window.ES, window);

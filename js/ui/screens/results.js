@@ -23,7 +23,7 @@
     }
     return U.el('section', { class: 'card plateau' }, [U.el('h2', { class: 'h-small' }, 'A plateau, and what changes next'),
       pl.reason ? U.el('p', null, pl.reason) : null,
-      br.text && !card ? U.el('p', null, [U.el('strong', null, 'Next: '), br.text]) : null,
+      br.text && !card ? U.el('p', { 'data-plateau-next': '' }, br.text) : null,          // the text says what changes (RV P8)
       card ? U.el('div', { class: 'strategy' }, [U.el('strong', null, card.title || 'A strategy to try'), card.text ? U.el('p', null, card.text) : null,
         card.tryIt ? U.el('p', { class: 'hint' }, [U.el('strong', null, 'Try it: '), card.tryIt]) : null]) : null]);
   }
@@ -55,22 +55,48 @@
       actionsFor(S, set)
     ]));
   }
+  /** Path mode (RV P4): where the set left the path, its moves (on, or one step back with no penalty), and at the
+      last step that the path is complete, with Edge offered. Never "mastered". */
+  function pathCard(set) {
+    var place = set.pathAt ? ES.ui.sessionInfo.pathPlace(set.exId, set.pathAt) : null;
+    if (!place) return null;
+    var name = ES.ui.session.exInfo(set.exId).name, moves = set.pathMoves || [], up = moves.filter(function (m) { return m.advanced; }).length;
+    var back = moves.filter(function (m) { return m.back; }).length, lines = [];
+    if (up) lines.push(up === 1 ? 'You moved on a step.' : 'You moved on ' + up + ' steps.');
+    if (back) lines.push('The path went back a step to firm it up. No penalty: you move on again from there.');
+    if (!up && !back) lines.push('A step moves on after 5 fully right trials in a row, or 8 in 10 over the last 15.');
+    var edge = (ES.core.store.peek('profile').settings || {}).mode !== 'edge';
+    return U.el('section', { class: 'card path-card', 'data-path': place.last ? 'complete' : 'step' }, [
+      U.el('p', { class: 'eyebrow mono' }, place.text),
+      U.el('p', null, lines.join(' ')),
+      place.last ? U.el('p', { 'data-path-complete': '' }, 'This is the last step of the ' + name + ' path: the path is complete. From here, Edge mode keeps every dial at your own edge.') : null,
+      place.last && edge ? ES.ui.button('Switch to Edge', { small: true, attrs: { 'data-path-edge': '' }, onClick: function (e, b) {
+        ES.core.store.update('profile', function (r) { r.settings = r.settings || {}; r.settings.mode = 'edge'; });
+        b.disabled = true; ES.ui.toast('Edge mode from the next session');
+      } }) : null
+    ]);
+  }
   function setSummary(root, S, set) {
     if (set.skipped) { skippedSummary(root, S, set); return; }
     var info = ES.ui.session.exInfo(set.exId), entry = S.log.sets[S.log.sets.length - 1] || {};
-    var ok = set.results.filter(function (r) { return r.correct; }).length;
+    var T = ES.ui.w.tally(set.results);
+    // multi-answer sets count their answers, so a set at the edge does not read as half wrong (RV P5)
+    var head = T.multi ? [U.el('span', { class: 'mono' }, String(T.answersRight)), ' of ', U.el('span', { class: 'mono' }, String(T.answers)), ' answers right']
+      : [U.el('span', { class: 'mono' }, String(T.right)), ' of ', U.el('span', { class: 'mono' }, String(T.trials)), ' right'];
     var interlude = U.el('section', { class: 'interlude', 'data-slot': 'interlude' });
     var news = U.el('section', { class: 'news', 'data-slot': 'news' });
     var invites = U.el('div', { class: 'invites' });
     var wrap = U.el('div', { class: 'wrap results' }, [
       U.el('p', { class: 'eyebrow mono' }, 'Set ' + (set.index + 1) + ' of ' + S.sets.length + ' · ' + info.name),
-      U.el('h1', { class: 'h-big', 'data-autofocus': '' }, [U.el('span', { class: 'mono' }, String(ok)), ' of ', U.el('span', { class: 'mono' }, String(set.results.length)), ' right']),
+      U.el('h1', { class: 'h-big', 'data-autofocus': '', 'data-headline': T.multi ? 'answers' : 'trials' }, head),
+      T.multi ? U.el('p', { class: 'hint', 'data-trials-line': '' }, T.right + ' of ' + T.trials + ' trials fully right' + (T.partial ? ', ' + T.partial + ' partly right' : '') + '.') : null,
       ES.ui.w.glyphRow(set.results),
       U.el('p', { class: 'facts mono' }, ['Active ' + U.fmtClock(set.activeMs || 0), levelLine(set, entry) ? ' · ' + levelLine(set, entry) : '']),
       set.demo ? U.el('p', { class: 'hint' }, 'A demo set: tone trials stand in until the voice exercises are installed. Nothing here counts toward your levels.') : null,
       set.endReason && ENDED[set.endReason] ? U.el('p', { class: 'lead', 'data-end-reason': set.endReason }, ENDED[set.endReason]) : null,
       set.partial ? U.el('p', { class: 'hint', 'data-partial': '' }, 'Ended early, so this set is logged as partial: it sets no personal best and does not count as a completed set.') : null,
       set.index === 0 && S.notes && S.notes.length ? U.el('div', { class: 'plan-notes' }, S.notes.map(function (n) { return U.el('p', { class: 'hint' }, n.text || ''); })) : null,
+      pathCard(set),
       interlude,
       set.plateau ? plateauCard(set) : null,
       news,
@@ -98,9 +124,9 @@
       U.el('h1', { class: 'h-big', 'data-autofocus': '' }, 'Session done.'),
       played ? null : U.el('p', { class: 'lead', 'data-empty-session': '' }, 'Nothing was answered in this session, so it is not logged and does not count.'),
       U.el('ul', { class: 'set-list' }, S.sets.filter(function (s) { return s.finished; }).map(function (s) {
-        var ok = s.results.filter(function (r) { return r.correct; }).length;
+        var T = ES.ui.w.tally(s.results), score = T.multi ? T.answersRight + '/' + T.answers + ' answers' : T.right + '/' + T.trials + ' right';
         return U.el('li', null, [U.el('span', null, ES.ui.session.exInfo(s.exId).name),
-          U.el('span', { class: 'mono' }, s.skipped ? 'passed over' : ok + '/' + s.results.length + ' right · ' + U.fmtClock(s.activeMs || 0))]);
+          U.el('span', { class: 'mono' }, s.skipped ? 'passed over' : score + ' · ' + U.fmtClock(s.activeMs || 0))]);
       })),
       U.el('p', { class: 'facts mono' }, 'Active time ' + U.fmtClock(total)),
       ES.ui.w.weekCard(),

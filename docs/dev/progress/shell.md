@@ -153,3 +153,24 @@ all failing before). Status per finding:
 - FRESH-A #2 / FRESH-B C5 fixed: tutorial Continue is never greyed out; it acts from 0.6 s (an earlier tap is kept),
   has the focus, and Enter or Space press it on every card, "You are ready" included. Also C24 on Session done.
 - Tests: tests/e2e/shell_round2.py (P1, P16, P7, #6); shell_session checks the new Continue and Enter.
+- FRESH-A #1 / FRESH-B D1 fixed: the router never keeps two entries for the same screen in a row (same name and
+  id), so one Back leaves a venue after any number of sets and after Finish session (unit test in core.router).
+- FRESH-A #7 / FRESH-B D4, D6 fixed: no key focus or tab stop before answers open; when they open the panel takes
+  the focus; the focus follows a pick; hover is a lighter border only, on hover pointers, after the pointer moves;
+  key focus is a dashed outline; after a replay Next takes the focus, and a disabled control does not swallow Enter.
+- FRESH-A #4 / FRESH-B C1 fixed: Home → Exercises lists all eight (line, bet, Play a set with the tutorial first,
+  How it works; Missions opens its screen); Play's help is the same sheet (ES.ui.exerciseHelp); the Free picker
+  offers Seek, and Free's hand-set dials reach Seek's flow.
+- P3: one level formatter (ES.ui.fmt.level / ES.ui.w.fmtLevel) for the bar, facts and personal bests, and for the
+  game. P5: multi-answer sets count answers in the headline, trials on the line below; partly right trials get a
+  half mark. P13: no-break space in U.fmtDb/fmtM (lab adapted first).
+- C6: the bar's level keeps the dial value whole (only the dial name shortens). P19: the in-bar Note is small (an
+  icon at ≤ 420 px) and the floating Note is a slim tab in the right gutter. A4: an sr-only h1 per trial.
+- A2: "Listen…" is no longer announced; an sr-only live region says when to answer, the verdict and the feedback,
+  and problems. A3: the welcome's Discord link is 44 px tall. A6: Settings choices are aria-pressed toggles.
+- P6: Settings shows what Focus aims at (Choose, through ES.lab.records) and Home notes when Focus has no target.
+  P8: the plateau card shows the breaker text without "Next:", and its invitation does not repeat it. P9: one
+  invitation card per screen (later ones are merged into it). P14: the pause count follows the trial on screen.
+- P4: Path mode shows "<stage>" and "Path step k of m · value" in the bar, and a Path card on Results with the
+  moves (on, or a step back with no penalty), and at the last step "the path is complete" with Switch to Edge.
+- Tests: tests/e2e/shell_round2.py (42 checks), the router unit test and the layout suite.

@@ -18,12 +18,13 @@
   function section(title, children, id) {
     return U.el('section', { class: 'set-sec', 'aria-labelledby': 'sec-' + id }, [U.el('h2', { class: 'h-small', id: 'sec-' + id }, title)].concat(children));
   }
+  /** A row of choices as toggle buttons (aria-pressed): each is a Tab stop and Enter or Space picks it (RV A6). */
   function seg(name, items, value, onPick) {
-    var box = U.el('div', { class: 'seg', role: 'radiogroup', 'aria-label': name });
+    var box = U.el('div', { class: 'seg', role: 'group', 'aria-label': name });
     items.forEach(function (it) {
-      var b = U.el('button', { type: 'button', role: 'radio', class: 'seg-btn', 'aria-checked': String(it[0] === value), 'data-value': String(it[0]),
+      var b = U.el('button', { type: 'button', class: 'seg-btn', 'aria-pressed': String(it[0] === value), 'data-value': String(it[0]),
         on: { click: function () {
-          Array.prototype.forEach.call(box.children, function (c) { c.setAttribute('aria-checked', String(c === b)); });
+          Array.prototype.forEach.call(box.children, function (c) { c.setAttribute('aria-pressed', String(c === b)); });
           onPick(it[0]);
         } } }, it[1]);
       box.appendChild(b);
@@ -44,15 +45,48 @@
       var id = 'mode-' + m[0];
       var input = U.el('input', { type: 'radio', name: 'mode', id: id, value: m[0], 'data-mode': m[0] });
       input.checked = m[0] === current;
-      input.addEventListener('change', function () { if (input.checked) { setSetting('mode', m[0]); showFree(m[0] === 'free'); } });
+      input.addEventListener('change', function () { if (input.checked) { setSetting('mode', m[0]); showFree(m[0]); } });
       list.appendChild(U.el('label', { class: 'mode', for: id }, [input, U.el('span', { class: 'mode-text' }, [
         U.el('strong', null, m[1] + (m[0] === 'edge' ? ' · default' : '')), U.el('span', null, m[2]), U.el('span', { class: 'hint' }, m[3])])]));
     });
-    // the Free picker sits under the list while Free is the mode (RV C06)
-    var pick = ES.ui.settingsFree ? U.el('div', { 'data-free-slot': '' }) : null;
-    function showFree(on) { if (!pick) return; U.clear(pick); if (on) pick.appendChild(ES.ui.settingsFree.el()); }
-    showFree(current === 'free');
-    return [list, pick, engine ? null : U.el('p', { class: 'hint' }, 'Modes take effect once the training engine is installed; the demo ignores them.')];
+    // the Free picker sits under the list while Free is the mode (RV C06); Focus shows what it aims at (RV P6)
+    var pick = ES.ui.settingsFree ? U.el('div', { 'data-free-slot': '' }) : null, aim = U.el('div', { 'data-focus-slot': '' });
+    function showFree(on) {
+      if (pick) { U.clear(pick); if (on === 'free') pick.appendChild(ES.ui.settingsFree.el()); }
+      U.clear(aim); if (on === 'focus') { var r = focusRow(); if (r) aim.appendChild(r); }
+    }
+    showFree(current);
+    return [list, pick, aim, engine ? null : U.el('p', { class: 'hint' }, 'Modes take effect once the training engine is installed; the demo ignores them.')];
+  }
+  /** Focus mode's target (the Lab's check-in behind it) with a chooser; without one Focus trains like Edge (RV P6). */
+  function focusTarget() {
+    var L = ES.lab, c = null;
+    try { c = L && typeof L.context === 'function' ? L.context() : null; } catch (e) { c = null; }
+    var R = L && L.records, pick = R && typeof R.focus === 'function' ? R.focus() : null;
+    return { has: !!(c && c.weakest), name: c && c.weakest && L.probes[c.weakest] ? L.probes[c.weakest].name : '', pick: !!pick, ok: !!(R && L.probes) };
+  }
+  function focusRow() {
+    var t = focusTarget();
+    if (!t.ok) return null;
+    var text = t.has ? t.name + (t.pick ? ' (your pick)' : ' (furthest below our starting guesses)')
+      : 'No target yet: choose one, or run a Lab check-in. Until then Focus trains like Edge.';
+    return U.el('div', { class: 'row focus-aim', 'data-focus-aim': t.has ? 'set' : 'none' }, [
+      U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Focus aims at'), U.el('span', { class: 'hint' }, text)]),
+      ES.ui.button('Choose', { small: true, attrs: { 'data-focus-choose': '' }, onClick: chooseFocus })]);
+  }
+  function chooseFocus() {
+    var L = ES.lab, R = L.records, cur = R.focus() || '';
+    var opts = [{ id: '', label: 'Automatic: the check-in where you sit furthest below our starting guess' }].concat((L.probeOrder || Object.keys(L.probes))
+      .filter(function (id) { return id !== 'diary' && L.probes[id]; }).map(function (id) { return { id: id, label: L.probes[id].name + (L.probes[id].short ? ' — ' + L.probes[id].short : '') }; }));
+    ES.ui.sheet({ title: 'Which situation bothers you most?', body: function (b) {
+      b.appendChild(U.el('p', { class: 'hint' }, 'Focus mode spends 60\u00a0% of training on the exercise behind this check-in.'));
+      opts.forEach(function (o) {
+        var inp = U.el('input', { type: 'radio', name: 'focus-aim', value: o.id, 'data-focus-opt': o.id || 'auto' });
+        inp.checked = cur === o.id;
+        inp.addEventListener('change', function () { if (inp.checked) { R.setFocus(o.id || null); ES.ui.toast('Focus saved'); } });
+        b.appendChild(U.el('label', { class: 'mode' }, [inp, U.el('span', { class: 'mode-text' }, o.label)]));
+      });
+    }, actions: [{ label: 'Done', kind: 'primary' }], onClose: function () { var c = ES.core.router.current(); if (c && c.name === 'settings') ES.core.router.refresh(); } });
   }
   function headphones(s) {
     var r = s.hpCheck && s.hpCheck.result;
@@ -130,6 +164,6 @@
     ]));
   }
 
-  ES.ui.settingsParts = { section: section, seg: seg, toggle: toggle, MODES: MODES, LENGTHS: LENGTHS };
+  ES.ui.settingsParts = { section: section, seg: seg, toggle: toggle, MODES: MODES, LENGTHS: LENGTHS, focusTarget: focusTarget };
   if (!ES.ui.screens.settings) ES.ui.screens.settings = { mount: mount, unmount: function () { if (offSaved) { offSaved(); offSaved = null; } } };
 })(window.ES, window);

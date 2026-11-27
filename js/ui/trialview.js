@@ -84,12 +84,15 @@
     var svg = ES.ui.field(null, trial.picture || { voices: [] });
     var prompt = U.el('p', { class: 'trial-prompt' }, cfg.prompt || q.prompt || '');
     var primeEl = U.el('p', { class: 'trial-prime', hidden: true });
-    var status = U.el('p', { class: 'trial-status', 'aria-live': 'polite' });
+    // RV A2: the visible status ("Listen…") is not announced, so speech output never masks the sound; a separate
+    // live region carries what a screen reader needs: when to answer, the verdict and the feedback, problems.
+    var status = U.el('p', { class: 'trial-status' });
+    var live = U.el('p', { class: 'sr-only trial-live', 'aria-live': 'polite', role: 'status' });
     var fb = U.el('div', { class: 'trial-feedback' });
     var answerBox = U.el('div', { class: 'trial-answer' });
     var actions = U.el('div', { class: 'trial-actions' });
     var body = U.el('div', { class: 'trial-body', 'data-state': 'loading', 'data-mode': mode }, [
-      U.el('div', { class: 'trial-field' }, svg), U.el('div', { class: 'trial-text' }, [primeEl, prompt, status, fb]), answerBox, actions]);
+      U.el('div', { class: 'trial-field' }, svg), U.el('div', { class: 'trial-text' }, [primeEl, prompt, status, fb, live]), answerBox, actions]);
     host.appendChild(body);
     panel = ES.ui.answerPanel(q.slots, onAnswer, { enabled: false });
     answerBox.appendChild(panel.el);
@@ -173,6 +176,7 @@
     /** No sound came through: nothing is shown as heard, nothing is scored; a tap unlocks audio and plays again. */
     function noSound(buf) {
       setState('nosound', 'The sound didn’t play. Tap to try again.');
+      live.textContent = 'The sound didn’t play. Use the button Play the sound again.';
       U.clear(actions);
       actions.appendChild(ES.ui.button('Play the sound again', { kind: 'primary', attrs: { 'data-retry': '' }, onClick: function () {
         ES.ui.sound.unlock();
@@ -188,6 +192,7 @@
     function openAnswer(r) {
       r = r || {};
       setState('answer', q.slots.length > 1 ? 'Your answers:' : 'Your answer:');
+      live.textContent = (q.prompt ? q.prompt + ' ' : '') + (q.slots.length > 1 ? 'Answer now: ' + q.slots.length + ' answers.' : 'Answer now.');
       panel.enable();
       t0 = Date.now();
       panel.focusFirst();
@@ -197,6 +202,7 @@
       report(err);
       if (aborted) return;
       setState('error', 'This sound could not be prepared.');
+      live.textContent = 'This sound could not be prepared. Use the button Skip this trial.';
       U.clear(actions);
       actions.appendChild(ES.ui.button('Skip this trial', { kind: 'primary', attrs: { 'data-skip': '' }, onClick: function () { finish({ skipped: true, error: String(err && err.message || err) }); } }));
     }
@@ -229,6 +235,7 @@
       var detail = rv && rv.text ? String(rv.text) : lines.join(' ') + (trial.feedback && trial.feedback.text ? (lines.length ? ' ' : '') + trial.feedback.text : '');
       if (detail) fb.appendChild(U.el('p', { class: 'fb-text' }, detail.charAt(0).toUpperCase() + detail.slice(1)));
       if (rv && rv.words) fb.appendChild(U.el('p', { class: 'fb-words' }, String(rv.words)));
+      live.textContent = fb.textContent;                   // the verdict and the feedback, read out (RV A2)
       buildActions(result);
       bindKeys();
       var auto = [].concat(rv && rv.auto || [], typeof cfg.autoReplays === 'function' ? cfg.autoReplays(result) || [] : [])
@@ -289,6 +296,10 @@
         playBuf(buf, function (r) {
           body.removeAttribute('data-playing'); setReplays(true);
           if (r && r.silent) ES.ui.toast('No sound came through. Check the volume, then try again.');
+          else if (!r || !r.stopped) {                // after a replay one Enter goes on (FRESH-A #7)
+            var a = win.document.activeElement;
+            if (nextBtn && (!a || a === win.document.body || (a.classList && a.classList.contains('replay')))) U.focus(nextBtn);
+          }
         });
       }, function (e) { report(e); body.removeAttribute('data-playing'); setReplays(true); ES.ui.toast('That replay could not be prepared.'); });
     }
@@ -296,7 +307,9 @@
       if (state !== 'feedback' && state !== 'example') return;
       if (ES.ui.sheetOpen && ES.ui.sheetOpen()) return;
       var a = win.document.activeElement;
-      if (e.key === 'Enter' && !(a && (a.tagName === 'BUTTON' || a.tagName === 'A' || a.tagName === 'TEXTAREA'))) { e.preventDefault(); next(); }
+      // a disabled control (a replay button while it plays) does not take Enter: Enter goes on
+      var control = a && !a.disabled && (a.tagName === 'BUTTON' || a.tagName === 'A' || a.tagName === 'TEXTAREA');
+      if (e.key === 'Enter' && !control) { e.preventDefault(); next(); }
     }
     function bindKeys() { if (!keyBound) { win.document.addEventListener('keydown', onKey); keyBound = true; } }
     function unbindKeys() { if (keyBound) { win.document.removeEventListener('keydown', onKey); keyBound = false; } }
