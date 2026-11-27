@@ -154,6 +154,8 @@ export const tests = {
     assert.equal(parts.before + parts.after, B.splitWorker(worker).before + B.splitWorker(worker).after);
   },
   'git reader: files of a commit, null for paths it does not have': async (ES, assert, env) => {
+    // an unpacked release copy has no .git: the reader is only used inside a clone, so there is nothing to test
+    if (spawnSync('git', ['-C', env.ROOT, 'rev-parse', '--is-inside-work-tree']).status !== 0) return;
     const B = await tool(env, 'build-sw.mjs');
     const read = B.gitReader('HEAD', env.ROOT);
     const want = spawnSync('git', ['-C', env.ROOT, 'show', 'HEAD:index.html']).stdout;
