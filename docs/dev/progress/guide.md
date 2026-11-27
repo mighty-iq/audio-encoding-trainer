@@ -156,7 +156,24 @@ the private strings), FACTS 136/136. Pages looked at: cover, contents, ch 2, ch 
   tutorial first) or see how it works."; (4) lines 29–30 "before training and then weekly" → "in a five-block
   baseline that starts after your first session, then weekly" (the baseline begins after the first session).
 
-### Numbers in the guide and the code behind them (`python3 tools/build-pdf.py --facts`, 2026-11-27 01:17 UTC)
+## 2026-11-27 02:39 UTC — final check FC-01…FC-12 (docs/dev/reviews/FINAL-CHECK.md) (status: complete)
+Built with the release addresses again: 35 pages, 2,083 KiB, 83 URLs / 118 URI annotations / 195 internal links,
+fonts, UTC metadata and privacy scan clean, FACTS 151/151; changed pages looked at (pp. 5, 8, 9, 11, 12, 13, 16, 22, 23).
+- FC-01: the plateau rest now reads "a fifth of its usual weight for your next three sessions; you can still pick it
+  from Exercises; your Focus target is never rested (another change is chosen)" (planner.js weights and countdown;
+  the Focus-target rule is in the engine builder's working tree at the time of writing, plateau.js, commit pending).
+- FC-02: "until it has a target, Focus trains like Edge" kept; planner.js and controller.js switch target-less Focus
+  to Edge (engine working tree, commit pending); no other guide text describes target-less Focus.
+- FC-04: the overnight check is the first three trials of the first session of a new day in Edge, Variety and Focus,
+  other voices where possible, reported as a plain count that counts toward the trend; Path skips it, Free skips it
+  and fresh ears. FC-05: "almost no trial below 65 %" (Table 1 and the trial-mix sidebar). FC-06: Free says Strange
+  voices picks its kind of voice. FC-07: Run SD note rewritten (literature value for the card's figures; the trend
+  uses each run's own uncertainty plus a day-to-day term; simulated Matrix run about 0.5 dB). FC-09 "where possible";
+  FC-10 "on almost every trial"; FC-11 "(Seek's live search aside)". Strange voices' bet box matches the app's card
+  ("Variety that trains adapting to new voices"); Figure 2 (Exercises) re-shot to show the new bet text.
+- FC-12: announcement "Every training exercise holds you at your edge …"; 1,812 characters.
+
+### Numbers in the guide and the code behind them (`python3 tools/build-pdf.py --facts`, 2026-11-27 02:39 UTC)
 | Statement | Where |
 |---|---|
 | edge trials aim at about 72 % right | `js/engine/dials.js:121` |
@@ -184,23 +201,23 @@ the private strings), FACTS 136/136. Pages looked at: cover, contents, ch 2, ch 
 | Seek: voice vs noise up close -12 .. +15 dB; 0 .. 4 decoys; pause 1 .. 4 s | `js/engine/dials.js:89-94` |
 | Voices: 2 .. 6 voices; mixed .. similar pitch; -6 .. +30 dB; sentence .. one word | `js/engine/dials.js:98-102` |
 | set lengths: Crowd 24, Far 20, Strange 20, Repair 22, Echo 10, Seek 6, Voices 22 | `js/engine/dials.js:110-116` |
-| a session = minutes / 3 sets; default 15 min | `js/engine/planner.js:94` |
+| a session = minutes / 3 sets; default 15 min | `js/engine/planner.js:97` |
 | default exercise weights | `js/engine/planner.js:13` |
-| listen-only interludes of 25 s after Strange, Far or Repair sets, at most two a session | `js/engine/planner.js:138` |
-| sleep note from the fourth session of a day | `js/engine/planner.js:100` |
+| listen-only interludes of 25 s after Strange, Far or Repair sets, at most two a session | `js/engine/planner.js:141` |
+| sleep note from the fourth session of a day | `js/engine/planner.js:103` |
 | fresh ears after 2 or more days away | `js/engine/planner.js:83` |
-| Focus mode: about 60 % of sets on the exercise behind the weakest check-in | `js/engine/planner.js:126` |
+| Focus mode: about 60 % of sets on the exercise behind the weakest check-in | `js/engine/planner.js:129` |
 | session lengths 10, 15, 20, 30 min | `js/ui/screens/settings.js:13` |
 | mode texts (Edge, Path, Variety, Focus 60 %, Free) | `js/ui/screens/settings.js:10` |
 | weekly ring: 4 or 5 sessions a week is a good rhythm | `js/ui/widgets.js:7` |
-| anchor every 4th-5th trial and after two misses in a row | `js/engine/controller.js:219` |
+| anchor every 4th-5th trial and after two misses in a row | `js/engine/controller.js:223` |
 | focus dial chosen by learning progress, 20 % exploration | `js/engine/controller.js:146` |
 | variety widens at 75 % over the last 20 edge trials, narrows below 55 % | `js/engine/learner.js:300-301` |
 | Path: 5 in a row fully right or 80 % of the last 15; back one step after 15 trials under 50 % | `js/engine/path.js:107-110` |
-| plateau: windows of 10 sessions, flat for 4 windows, band 0.15 dB, no best in 4 sessions | `js/engine/plateau.js:33` |
-| plateau: at most one change every 3 sessions | `js/engine/plateau.js:113` |
-| plateau breakers in order | `js/engine/plateau.js:17` |
-| switch breaker rests the exercise for 3 sessions | `js/engine/plateau.js:163` |
+| plateau: windows of 10 sessions, flat for 4 windows, band 0.15 dB, no best in 4 sessions | `js/engine/plateau.js:34` |
+| plateau: at most one change every 3 sessions | `js/engine/plateau.js:125` |
+| plateau breakers in order | `js/engine/plateau.js:18` |
+| switch breaker rests the exercise for 3 sessions | `js/engine/plateau.js:178` |
 | headphone check: 6 rounds, pass at 5 | `js/lab/hpcheck.js:12` |
 | Matrix: 20 sentences, about 3 min, run SD 0.6 dB | `js/lab/probes.js:76-77` |
 | Digits: 24 triplets, 2.5 min, run SD 0.9 dB, 2 dB steps | `js/lab/probes.js:121-122` |
@@ -244,7 +261,7 @@ the private strings), FACTS 136/136. Pages looked at: cover, contents, ch 2, ch 
 | plateau simulation: detection 47-86 %, false alarms 3.3-6.3 % (200 learners x 60 days) | `docs/dev/DECISIONS.md:36` |
 | plateau simulation after fix round: false alarms 5.5-7.2 %, detection 51-83 % | `docs/dev/progress/engine.md:194` |
 | plateau simulation after fix round 2: false alarms 3.8-7.5 %, detection 54-81 % | `docs/dev/progress/engine.md:251` |
-| first sessions: up to three unplayed exercises open a session in Edge, Path and Variety (all seven by the third) | `js/engine/planner.js:111-117` |
+| first sessions: up to three unplayed exercises open a session in Edge, Path and Variety (all seven by the third) | `js/engine/planner.js:114-120` |
 | a session counts once it has an answered trial | `js/engine/planner.js:19` |
 | foils from answers the player's own voice pool can reach | `docs/dev/progress/engine.md:202-203` |
 | tutorial: a Skip button in the header | `js/ui/tutorial.js:94` |
@@ -280,13 +297,28 @@ the private strings), FACTS 136/136. Pages looked at: cover, contents, ch 2, ch 
 | a set passed over with its reason (sounds, interruptions, ended before the first answer); the session goes on | `js/ui/screens/results.js:32-34` |
 | only sessions with an answered trial are logged | `js/ui/session.js:235` |
 | tutorial: a step whose sound cannot be prepared gets two tries | `js/ui/tutorial.js:179` |
-| one invitation card per screen | `js/core/chimera.js:84-85` |
+| one invitation card per screen | `js/core/chimera.js:85-86` |
 | Focus: Settings shows its target with Choose; without one it trains like Edge; Home says so | `js/ui/screens/settings.js:72-75` |
 | Home: Focus has no target yet | `js/ui/screens/home.js:36` |
 | downloads: one helper for backups, Lab exports and the weekly card; viewer prompt or a normal download; Copy | `js/core/download.js:1-105` |
 | screen reader: a heading per trial; announces when to answer, the verdict and the feedback | `js/ui/trialview.js:88` |
 | screen reader: an sr-only h1 per trial | `js/ui/screens/play.js:45` |
 | sideways phones: trials and feedback fit without scrolling (640x360, 740x360) | `docs/dev/progress/shell.md:143` |
+| FC-01: a rest cuts the draw weight to a fifth while rest > 0 | `js/engine/planner.js:36` |
+| FC-01: the rest is counted down once per planned session | `js/engine/planner.js:143` |
+| FC-01: the current Focus target is never rested (another breaker is chosen) | `js/engine/plateau.js:138-139` |
+| FC-02: Focus without a target plans and trains exactly like Edge | `js/engine/planner.js:95` |
+| FC-02: Focus without a target picks trials like Edge | `js/engine/controller.js:189` |
+| FC-04: the overnight re-test covers the first three trials | `js/engine/controller.js:205` |
+| FC-04: Free skips fresh ears and the overnight check; Path skips the overnight check | `js/engine/planner.js:106-111` |
+| FC-04: the overnight result is a plain count that counts toward the trend | `js/game/returns.js:69` |
+| FC-04: at the hardest level of your last training day | `js/game/returns.js:67` |
+| FC-05: a floored dial gets the focus now and then, at its easiest level | `js/engine/controller.js:259-260` |
+| FC-06: Free on Strange voices: no dial to set, it picks its kind of voice | `js/ui/screens/settings-free.js:89` |
+| FC-07: Run SD is the literature value for the card; the trend adds a day-to-day term | `docs/dev/progress/lab.md:57-58` |
+| FC-07: simulated Matrix run SD about 0.5 dB (0.51 true, 0.53 reported) | `docs/dev/progress/lab.md:47` |
+| FC-10: Variety on almost every trial | `js/ui/screens/settings.js:9` |
+| Strange voices bet on the Exercises card | `js/ex/strange.js:58` |
 | AudioMNIST: 8 talkers, Digits check-in only | `docs/dev/STIMULI.md:144` |
 | CREMA-D: 8 actors, Two voices only; 81 clips, every one of the 12 texts with at least 4 actors | `docs/dev/STIMULI.md:145` |
 | CREMA-D: every text keeps at least 4 actors | `docs/dev/STIMULI.md:106-107` |

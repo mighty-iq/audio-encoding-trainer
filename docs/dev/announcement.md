@@ -1,4 +1,4 @@
-<!-- Discord announcement for Earshot. Post everything below this comment. 1803 characters with the release addresses (limit 2,000). Says only that Earshot was built by the Chimera community, plus the invitation link. Text: CC BY-SA 4.0. -->
+<!-- Discord announcement for Earshot. Post everything below this comment. 1812 characters with the release addresses (limit 2,000). Says only that Earshot was built by the Chimera community, plus the invitation link. Text: CC BY-SA 4.0. -->
 
 **Earshot: a free listening trainer for the moments conversations break**
 
@@ -14,7 +14,7 @@ Built by the Chimera community. Earshot trains following one voice in a loud roo
 - **Voices**: get to know a cast of voices, then find your friend in a crowd (a new bet)
 - **Missions**: one real-world listening tactic a week
 
-Every exercise holds you at your edge on several dials at once: how loud and how alike the other voices are, how far away and how echoey the room. Each one names the carry-over bet it makes. No streaks, and no score while you listen.
+Every training exercise holds you at your edge on several dials at once: how loud and how alike the other voices are, how far away and how echoey the room. Each one names the carry-over bet it makes. No streaks, and no score while you listen.
 
 **The Lab** checks what carries over, with voices, rooms and formats you never train on, and shows your own trend with its margin of error. **The Weekly Night Out** is one seeded challenge that everyone plays identically: four stops, six trials each, and a card to share.
 
