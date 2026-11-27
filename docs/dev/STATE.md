@@ -1,47 +1,47 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-26 23:25 UTC
+Updated: 2026-11-27 01:55 UTC
 
 ## Phase
-3 — review, fix, release. Every builder finished fix round 1; the final stimulus set is in (eab5150: 1,306 clips,
-87 voices, 8.48 MB MP3). Phase-3 reviews: RV-stimuli done (15 findings, 4 high); FRESH-A, FRESH-B and RV-play-a11y
-running. Fix round 2 started for engine, stimuli and shell.
+3 — release gate. Release candidate 1.0.0 on `build` (89818c3, plus a test-only fix 94401e3). Fix round 2 is done
+by every owner (docs/dev/reviews/FIX-ROUND-2.md). Waiting for: the final independent check (FINAL-CHECK.md), the
+browser suites from the unpacked archive, then the owner's release checklist and yes to merge `build` → `main`.
 
 ## Running subagents (IDs in the lead's container notes)
-- FRESH-A, FRESH-B (fresh players; snap2 75c28ba, then snap4 09a8ff3 for the exercises that lacked packs),
-  RV-play-a11y (snap4) → docs/dev/reviews/FRESH-A.md, FRESH-B.md, RV-play-a11y.md.
-- Engine round 2: Echo answer balance, pool-matched foils (ST-03), Repair without a central answer (ST-02), Repair
-  mask lead (ST-11), solver number words. Stimuli round 2: matrix re-cuts (ST-04), drop unused probe clips (ST-06),
-  Story options (ST-07), accent labels (ST-08), F0 (ST-10), intros (ST-12), CREMA-D levels (ST-13), ledger (ST-14).
-  Shell round 2: one download helper (artifact `downloads` capability + copy fallback) for backups, cards, exports.
+- FINAL-CHECK on the frozen copy /tmp/rc1 (89818c3) → docs/dev/reviews/FINAL-CHECK.md.
 
 ## Done since the last milestone
-- Snapshots for review: /tmp/rv-snap2 (75c28ba), /tmp/rv-snap3 (eab5150), /tmp/rv-snap4 (09a8ff3, all ten packs).
-- ST-01 (four packs unlisted in index.html) fixed by the shell (8d79e75); the pre-push hook now runs
-  build-index --check and build-licences --check.
-- Echo never asks for or offers a Lab matrix word (a185d3b); unit 192/192.
-- Browser suites on 09a8ff3: 528/529 shell checks (m11 reload hang under load, retried 3×) and 11/11 other owners'.
-- Test build republished from 2bd6a8d (13.24 MB, all packs); artifact declares db + downloads.
-- Release checklist page source ready (lead's container folder outside the repo; 12 pass/fail checks, db + copy fallback).
-- Browser slots raised to three; backlog file docs/dev/PLAN-v1.1.md started.
+- Fix round 2: engine (pool-matched foils, Repair without a central answer, Echo balance and variety, first-week
+  planner, session = ≥ 1 answered trial), stimuli (1,200 clips, 89 voices, 8.235 MB MP3; matrix 50/50 per talker),
+  shell (download helper, sideways phones, failures move on, Back, Continue, answer keys, Exercises list, Path and
+  Focus shown, one formatter, a11y), game (careful milestones and venues), exA, exB, lab; PWA + in-app notice.
+- Version 1.0.0; welcome says what Earshot is; release single file `earshot.html` (12.98 MB, playtest off) committed
+  at the root; sw.js precache for the candidate; README with the Pages address.
+- Guide 35 pages with the release addresses (136 code facts checked by its builder); announcement 1,803 characters.
+- Release checklist page (9 pass/fail checks, db + Copy) and the test build (candidate, playtest on) published
+  privately; links in BRIEF.md and the project status note.
+
+## Last verified (candidate 89818c3)
+- Unit 221/221 (also from the unpacked archive, after the git-reader test fix).
+- Browser `run_all.py --all`: 958/958 shell checks, 12/12 other owners' suites (incl. pwa 57/57), 0 failures.
+- Sims: Edge/Path/Variety/Focus × 200 learners; solvers 0 failures on 10,000 trials per generator; shortcut
+  responders within chance + 0.06 in every bin.
+- Release single file: file:// at 390×844 and 1366×768, no page errors, no service worker, no playtest UI; welcome
+  fits 360×640. privacy_check clean on every push.
 
 ## Next three steps
-1. Read FRESH-A, FRESH-B, RV-play-a11y → fix round 2 for exA, exB, game, lab, shell, guide (claims: Story length
-   ~40 s and restaurant scene, accent wording); rerun shell_round1 m11 on a quiet machine.
-2. After round 2: full unit + browser suites, new test build, independent guide-vs-code check, guide rebuild.
-3. Release: version 1.0.0, release build (playtest off), URLs in guide and announcement, VERIFY.md table, release
-   checklist page, build log + playbook merge (draft in the lead's container notes); owner's yes → main.
+1. Read FINAL-CHECK; fix any S1 (guide/README/announcement/app copy), rebuild guide and earshot.html if touched,
+   rerun the affected suites, republish the test build.
+2. Message the owner: release checklist + test build + guide PDF + earshot.html + announcement; wait for yes.
+3. On yes: merge `build` → `main` (sw.js current), push, check Pages (taps if it is off), save the build log and
+   merge lessons into claude/playbook.md; update the project status note.
 
 ## Open questions
-- Owner to rename the repo to Earshot (taps sent); URLs use audio-encoding-trainer until then.
-- Single file 13.24 MB vs the 12 MB target (hard limit 16 MiB met); lazy packs in the 1.1 backlog.
-
-## Last verified
-- 2bd6a8d test build: file:// at 390×844, no page errors, welcome sheet with discord.gg/chmr.
-- privacy_check clean on every push (last push after 2bd6a8d).
+- Owner may rename the repo (Pages URL changes with it; the guide and announcement then need a rebuild).
+- Single file 12.98 MB vs the 12 MB target (lazy packs in docs/dev/PLAN-v1.1.md).
 
 ## Dead ends
-- gh CLI token invalid; api.github.com refused → no repo rename by API (owner renames in Settings).
+- gh CLI token invalid; api.github.com refused → no repo rename or Pages switch by API (owner taps).
 - Hugging Face/OpenSLR/Zenodo blocked. Piper models fine-tuned from Lessac rejected (research-only data).
 - sherpa-onnx 2.0.3 has no espeak front end for Piper models → run ONNX via onnxruntime + build-time phonemiser.
 - Web-search budget is shared by all agents and ran out in research; WebFetch of URLs not from a search needs the
