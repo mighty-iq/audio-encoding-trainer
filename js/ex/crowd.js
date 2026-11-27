@@ -32,7 +32,7 @@
           tmr: 'How loud the voice you follow is against each other voice. Above 0 dB it is louder; below 0 dB the others are louder.',
           talkers: 'How many other voices talk at the same time.',
           similar: 'How alike the other voices sound, from the other sex to a near-twin of the voice you follow.',
-          space: 'How far apart the voices stand around you. Unlocks once the headphone check passes.'
+          space: 'How far apart the voices stand around you. Unlocks with headphones (the check, or the switch in Settings).'
         },
         why: 'Most of the difficulty in a crowd is choosing which talker to follow, not hearing the words. Crowd trains that choice with call signs and voices, and with headphones, places. In one study, gains from practice in babble did not carry over to babble in another language, so the crowd here keeps changing: voices, sexes, numbers of talkers and backgrounds.'
       };

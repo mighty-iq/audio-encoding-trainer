@@ -6,7 +6,7 @@
   var MODES = [
     ['edge', 'Edge', 'Tracks your edge on every dial and pushes one at a time to it, the rest just below. No setup.', 'Right for almost everyone; it is the default.'],
     ['path', 'Path', 'Venues in order: one condition at a time, then mixed.', 'Right for beginners, for clear goals, or when mixing feels confusing.'],
-    ['variety', 'Variety', 'A new talker, room or voice type on every trial.', 'Right after a plateau, or when you already do well and want breadth.'],
+    ['variety', 'Variety', 'A new talker, room or voice type on almost every trial.', 'Right after a plateau, or when you already do well and want breadth.'],
     ['focus', 'Focus', 'Spends 60 % of the time on your hardest situation.', 'Right when one situation bothers you most.'],
     ['free', 'Free', 'Pick one exercise and set its dials yourself; a coach line shows your current edge on each.', 'Right when you want to explore.']
   ];
@@ -91,7 +91,7 @@
   function headphones(s) {
     var r = s.hpCheck && s.hpCheck.result;
     var status = r === 'pass' ? 'Checked: headphones detected.' : r === 'manual' ? 'You said you wear headphones (check skipped).'
-      : r === 'fail' ? 'Checked: the left-right test did not pass (a speaker or mono output?).' : 'Not checked yet.';
+      : r === 'fail' ? 'Checked: the headphone check did not pass (a speaker or mono output?).' : 'Not checked yet.';
     var line = U.el('p', { class: 'hint', 'data-hp-status': '' }, status);
     return [
       U.el('div', { class: 'row' }, [U.el('span', { class: 'row-text' }, [U.el('strong', null, 'Headphone check'), line]),
@@ -102,7 +102,7 @@
             if (h && h.closed) h.closed.then(function () { var c = ES.core.router.current(); if (c && c.name === 'settings') ES.core.router.refresh(); });
             return;
           }
-          ES.ui.sheet({ title: 'Headphone check', body: 'A short left-right test arrives with the audio build. Everything except the 3D-direction dials works on a phone speaker; those dials wait for headphones.', actions: [{ label: 'OK', kind: 'primary' }] });
+          ES.ui.sheet({ title: 'Headphone check', body: 'The headphone check is not available in this view. Everything except the 3D-direction dials works on a phone speaker; those dials wait for headphones.', actions: [{ label: 'OK', kind: 'primary' }] });
         } })]),
       toggle('I am wearing headphones', 'Skips the check and unlocks the direction dials; turn it off when you use a speaker.', !!s.headphones, function (on) {
         ES.core.store.update('profile', function (r) { r.settings.headphones = on; r.settings.hpCheck = on ? { at: Date.now(), result: 'manual' } : null; });

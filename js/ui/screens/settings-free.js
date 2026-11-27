@@ -86,6 +86,7 @@
       box.appendChild(U.el('div', { class: 'chips' }, chips));
       box.appendChild(U.el('p', { class: 'hint' }, 'Set any dial yourself, or leave it at a comfortable level. Sessions in Free mode train only this exercise.'));
       var rows = dialsFor(f.exId);
+      if (!rows.length) box.appendChild(U.el('p', { class: 'hint', 'data-free-nodials': '' }, ES.ui.sessionInfo.exInfo(f.exId).name + ' picks its kind of voice or level for you here; there is no dial to set.'));
       function onSave(again) { save(f); if (again) render(); }
       rows.forEach(function (it) { box.appendChild(dialRow(f.exId, it, f, onSave)); });
       box.appendChild(U.el('div', { class: 'row-buttons' }, [

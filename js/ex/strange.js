@@ -55,7 +55,7 @@
 
   var M = {
     id: 'strange', name: 'Strange voices',
-    card: { bet: 'variety that teaches you to adapt to any new voice' },
+    card: { bet: 'variety that trains adapting to new voices' },
     bet: 'Varied voices that train your ear to adapt to new ones, fast.',
     betNew: false,
     view: 'keyword', feedback: 'popout',
