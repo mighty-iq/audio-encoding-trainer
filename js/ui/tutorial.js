@@ -1,16 +1,19 @@
 /* ES.ui.tutorial — the two-minute start (CONTRACTS §11). Plays an exercise's tutorial.steps:
-   caption (on screen ≥ minMs, default 3 s; the next action is always stated), demo (a worked example with the
+   caption (the next action is always stated; Continue looks ready at once and acts from 0.6 s, an earlier tap is
+   kept and acted on then; Enter and Space work on every card; captions that move on by themselves stay ≥ minMs,
+   default 3 s), demo (a worked example with the
    answer marked and every foil labelled; it covers each foil type the practice trials use), practice (real
    answers with feedback; the right answer sits in a different key each time). Ends with the Chimera link.
    Screen 'tutorial' params: { exId, set } inside a session, or { exId, resume:true } from a set's Help.
    Exercise hooks (exA request; guarded): ES.ex[id].tutorialTrial(step, stepIndex, rng) builds demo/practice
    trials (it then owns forcing and key positions); ES.ex[id].openHelp() behind "How it works" on the first
    caption. Step fields beyond §11: title, next (button label), notes (foil wording), replayOnMiss (true or
-   replay indices). A wrong practice answer offers "Try again" with a new trial of the same step (3 tries). */
+   replay indices). A wrong practice answer offers "Try again" with a new trial of the same step (3 tries). A step
+   whose sound cannot be prepared twice is passed over with a plain message (RV P1); the set then plays. */
 (function (ES, win) {
   'use strict';
   var U = ES.core.util;
-  var cur = null;
+  var cur = null, LOCK_MS = 600, MAX_FAILS = 2;
 
   function stepsOf(exId) {
     var info = ES.ui.session.exInfo(exId);
@@ -99,6 +102,16 @@
     // A hidden tab stops the sound; coming back plays it again (once: the trial view's pause rule, RV L2).
     cur.onVis = function () { if (!cur || !cur.view) return; if (document.hidden) cur.view.pause(); else cur.view.resume(); };
     document.addEventListener('visibilitychange', cur.onVis);
+    // Enter or Space on a card (caption, a passed-over step, "You are ready") presses its button wherever focus is.
+    cur.onKey = function (e) {
+      if (!cur || cur.aborted || (e.key !== 'Enter' && e.key !== ' ') || (ES.ui.sheetOpen && ES.ui.sheetOpen())) return;
+      var a = document.activeElement, btn = host.querySelector('.tut-card [data-continue]');
+      if (!btn || (a && a !== btn && /^(BUTTON|A|INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+      if (a === btn) return;                              // the button's own key press
+      e.preventDefault();
+      btn.click();
+    };
+    document.addEventListener('keydown', cur.onKey);
 
     function clearTimer() { if (cur && cur.timer) { clearTimeout(cur.timer); cur.timer = null; } }
     function show() {
@@ -113,13 +126,26 @@
     function caption(st) {
       var minMs = Math.max(3000, st.minMs | 0), auto = st.then === 'auto', label = st.next || 'Continue', X = ES.ex[exId];
       var nextNote = U.el('p', { class: 'tut-next' }, auto ? 'Next: the following step starts by itself.' : 'Next: tap ' + label + '.');
-      var btn = ES.ui.button(label, { kind: 'primary', wide: true, disabled: true, attrs: { 'data-continue': '' }, onClick: function () { k++; show(); } });
+      // Ready-looking at once (FRESH-A #2, FRESH-B C5); a tap in the first 0.6 s is kept and acted on then.
+      var ready = false, early = false, step = k;
+      function go() { if (!cur || cur.aborted || k !== step) return; k++; show(); }
+      var btn = ES.ui.button(label, { kind: 'primary', wide: true, attrs: { 'data-continue': '' }, onClick: function () { if (ready) go(); else early = true; } });
       var howBtn = k === 0 && X && typeof X.openHelp === 'function' ? ES.ui.button('How it works', { kind: 'ghost', small: true, attrs: { 'data-how': '' },
         onClick: function () { try { X.openHelp(); } catch (e) { /* ignore */ } } }) : null;
       U.clear(host);
       host.appendChild(U.el('div', { class: 'tut-card card', 'data-step': 'caption' }, [st.title ? U.el('h2', { class: 'h-small' }, st.title) : null,
         U.el('p', { class: 'tut-text' }, st.text), nextNote, auto ? null : btn, howBtn]));
-      cur.timer = setTimeout(function () { if (auto) { k++; show(); } else { btn.disabled = false; U.focus(btn); } }, minMs);
+      if (!auto) U.focus(btn);
+      cur.timer = setTimeout(function () { if (auto) { k++; show(); return; } ready = true; if (early) go(); }, auto ? minMs : LOCK_MS);
+    }
+    /** A step whose sound could not be prepared twice: say so and move on (RV P1). */
+    function passOver() {
+      U.clear(host);
+      var btn = ES.ui.button('Continue', { kind: 'primary', wide: true, attrs: { 'data-continue': '' }, onClick: function () { k++; show(); } });
+      host.appendChild(U.el('div', { class: 'tut-card card', 'data-step': 'failed' }, [
+        U.el('p', { class: 'tut-text' }, 'This step’s sound could not be prepared on this device, so the tutorial moves on.'),
+        U.el('p', { class: 'tut-next' }, 'Next: tap Continue.'), btn]));
+      U.focus(btn);
     }
     function runTrial(st, trial, attempt) {
       if (!trial) { k++; show(); return; }
@@ -138,7 +164,14 @@
       cur.view = view;
       view.done.then(function (out) {
         if (!cur || cur.aborted || (out && out.aborted)) return;
-        if (out && (out.voided || out.skipped)) {          // interrupted twice or unplayable: the same step, a new trial
+        if (out && out.skipped) {                          // unplayable: a new trial, at most twice per step (RV P1)
+          if (cur.failK !== k) { cur.failK = k; cur.fails = 0; }
+          cur.fails++;
+          if (cur.fails >= MAX_FAILS) { passOver(); return; }
+          runTrial(st, makeTrial(exId, st, k + ':fail:' + cur.fails, k), attempt);
+          return;
+        }
+        if (out && out.voided) {                           // paused twice while it played: the same step, a new trial
           cur.voids = (cur.voids || 0) + 1;
           runTrial(st, makeTrial(exId, st, k + ':void:' + cur.voids, k), attempt);
           return;
@@ -158,6 +191,7 @@
         U.el('p', { class: 'tut-next' }, params.resume ? 'Next: tap Back to the set.' : 'Next: tap Start the set.'),
         ES.ui.button(params.resume ? 'Back to the set' : 'Start the set', { kind: 'primary', wide: true, attrs: { 'data-continue': '' }, onClick: function () { finish(false); } })
       ]));
+      U.focus(host.querySelector('[data-step="end"] [data-continue]'));
     }
     function finish(skipped) {
       if (!cur || cur.aborted) return;
@@ -173,7 +207,13 @@
     show();
   }
   function unmount() {
-    if (cur) { cur.aborted = true; if (cur.timer) clearTimeout(cur.timer); if (cur.view) cur.view.abort(); if (cur.onVis) document.removeEventListener('visibilitychange', cur.onVis); }
+    if (cur) {
+      cur.aborted = true;
+      if (cur.timer) clearTimeout(cur.timer);
+      if (cur.view) cur.view.abort();
+      if (cur.onVis) document.removeEventListener('visibilitychange', cur.onVis);
+      if (cur.onKey) document.removeEventListener('keydown', cur.onKey);
+    }
     cur = null;
     document.documentElement.classList.remove('in-trial');
   }

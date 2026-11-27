@@ -6,16 +6,20 @@
   var U = ES.core.util;
   var RING_SEGMENTS = 5, GOOD_RHYTHM = [4, 5];   // one number for the ring, the guide and PLAN.md (RV C29)
 
+  /** One definition of a session everywhere (round 2): at least one answered trial. Sessions logged from now on
+      carry `answered`; older entries count when any set has n ≥ 1. */
+  function counts(s) {
+    if (!s) return false;
+    if (typeof s.answered === 'number') return s.answered >= 1;
+    return (s.sets || []).some(function (x) { return x && (x.n | 0) >= 1; });
+  }
   function sessionsThisWeek() {
     var log = ES.core.store.peek('log'), wk = U.weekKey(), real = ES.ui.session.realAvailable();
-    // A session counts when it holds at least one completed (not partial) set.
-    return (log.sessions || []).filter(function (s) {
-      return U.weekKey(s.start) === wk && (!s.demo || !real) && (s.sets || []).some(function (x) { return x && !x.partial; });
-    }).length;
+    return (log.sessions || []).filter(function (s) { return U.weekKey(s.start) === wk && (!s.demo || !real) && counts(s); }).length;
   }
   function sessionsToday() {
-    var log = ES.core.store.peek('log'), d = U.dayKey();
-    return (log.sessions || []).filter(function (s) { return U.dayKey(s.start) === d; }).length;
+    var log = ES.core.store.peek('log'), d = U.dayKey(), real = ES.ui.session.realAvailable();
+    return (log.sessions || []).filter(function (s) { return U.dayKey(s.start) === d && (!s.demo || !real) && counts(s); }).length;
   }
   /** The weekly ring: five segments; the first four are the "good rhythm" goal, the fifth is extra. */
   function weekRing(count) {
@@ -80,7 +84,7 @@
   }
   function placeholderCard(text) { return U.el('p', { class: 'card placeholder-note' }, text); }
 
-  ES.ui.w = { weekRing: weekRing, weekCard: weekCard, glyphRow: glyphRow, header: header, footer: footer, mark: mark,
+  ES.ui.w = { weekRing: weekRing, weekCard: weekCard, glyphRow: glyphRow, header: header, footer: footer, mark: mark, counts: counts,
     sessionsThisWeek: sessionsThisWeek, sessionsToday: sessionsToday, dialText: dialText, placeholderCard: placeholderCard,
     GOOD_RHYTHM: GOOD_RHYTHM };
 })(window.ES, window);

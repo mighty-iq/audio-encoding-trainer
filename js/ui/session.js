@@ -219,8 +219,7 @@
       }
     }
     if (ended) {
-      ES.ui.toast(reason === 'voided' ? 'This set ends here: too many interrupted trials. Nothing was counted against you.' : 'This set ends here: its trials could not be prepared.');
-      endSetEarly({ partial: true });
+      endSetEarly({ partial: true, reason: reason === 'voided' ? 'voided' : 'sounds' });   // the screen says why (RV P16)
       return false;
     }
     set.salt = set.replacements;
@@ -228,13 +227,18 @@
     return true;
   }
   function skip(trial, err) { return replaceTrial(trial, err ? String(err.message || err) : 'skipped'); }
+  /** One definition of a session (round 2): it holds at least one answered trial. Only such sessions are logged;
+      log.sessions[].answered carries the count for every counter (week ring, today's note, the planner). */
   function writeLog() {
     S.log.end = Date.now();
     S.log.activeMs = (S.activeBase || 0) + ES.core.clock.activeMs();
+    S.log.answered = (S.log.sets || []).reduce(function (a, x) { return a + ((x && x.n) | 0); }, 0);
+    if (!S.log.answered) return false;
     var copy = U.copy(S.log), rows = S.rows;
     S.rows = [];
     store().update('log', function (r) { r.sessions = (r.sessions || []).filter(function (x) { return x.id !== copy.id; }).concat([copy]); });
     if (rows.length) store().update('trials', function (r) { r.rows = (r.rows || []).concat(rows); });
+    return true;
   }
   /** Close the current set (also from a custom view's done(result)) and show its results. extra.partial: the set
       ended early with fewer than half its trials answered, or after too many replacements (RV M11): it is logged as
@@ -261,6 +265,7 @@
     ['venue', 'week', 'stop'].forEach(function (k) { if (set.plan[k] != null) entry[k] = set.plan[k]; });
     set.entry = entry;
     set.partial = partial;
+    if (extra.reason) set.endReason = extra.reason;      // 'sounds' or 'voided': Results says why the set ended
     ES.ui.inSet = false;
     var learns = !set.demo && !noLearn(set);
     if (learns) saveLearner();
@@ -293,14 +298,26 @@
   /** End the running set early (Pause → End set, or too many replacements). Fewer than half of its trials answered,
       or opts.partial: logged as partial. No trial answered: the set is dropped. */
   function endSetEarly(opts) {
+    opts = opts || {};
     var set = currentSet();
     if (!set) return;
     if (set.sc) set.sc.pending = null;
-    if (!set.results.length) { set.finished = true; ES.ui.inSet = false; S.sets = S.sets.slice(0, set.index); finish(); return; }
-    var partial = !!(opts && opts.partial) || set.results.length < set.n / 2;
+    if (!set.results.length) { skipSet(set, opts.reason || 'ended'); return; }
+    var partial = !!opts.partial || set.results.length < set.n / 2;
     set.planned = set.n;
     set.n = set.results.length;
-    finishSet({ partial: partial, early: true });
+    finishSet({ partial: partial, early: true, reason: opts.reason });
+  }
+  /** A set with no answered trial (ended before the first answer, or its sounds could not be prepared) is passed
+      over: nothing is logged, its screen says why, and the session goes on with the next set (RV P7, P16). */
+  function skipSet(set, reason) {
+    set.finished = true;
+    set.skipped = reason;
+    set.activeMs = 0;
+    ES.ui.inSet = false;
+    persist();
+    ES.hooks.emit('set:skipped', { index: set.index, exId: set.exId, reason: reason, session: S.id });
+    ES.core.router.go('results', { set: set.index }, { replace: true });
   }
   function next() { if (!S) return; if (S.setIndex + 1 < S.sets.length) beginSet(S.setIndex + 1); else finish(); }
   function finish() {
@@ -309,10 +326,11 @@
     ES.core.clock.resume('away');
     if (!S.done) {
       S.done = true;
-      writeLog();
+      var logged = writeLog();
       ES.core.clock.stop();
       clearStored(S.id);
-      ES.hooks.emit('session:done', { session: U.copy(S.log), demo: !!S.demo, kind: S.kind });
+      // empty: nothing was answered, so nothing was logged (listeners that count sessions skip it)
+      ES.hooks.emit('session:done', { session: U.copy(S.log), demo: !!S.demo, kind: S.kind, empty: !logged });
     }
     var d = S.doneRoute;
     if (d && d.name && ES.core.router.has(d.name)) ES.core.router.go(d.name, d.params || {}, { replace: true });
@@ -342,7 +360,7 @@
         return { index: i, exId: x.exId, n: x.n || 1, planned: x.planned, plan: x.plan || { exId: x.exId }, results: Array.isArray(x.results) ? x.results : [],
           pb: false, activeStart: 0, activeSoFar: x.activeMs || 0, plateau: null, demo: !!x.demo, sc: null, finished: !!x.finished,
           activeMs: x.activeMs || 0, entry: x.entry || null, partial: !!x.partial, replacements: x.replacements || 0, salt: x.salt || 0, introShown: !!x.introShown,
-          snap: x.snap && typeof x.snap === 'object' ? x.snap : null };
+          snap: x.snap && typeof x.snap === 'object' ? x.snap : null, skipped: x.skipped || undefined, endReason: x.endReason || undefined };
       }) };
     S.log = r.log && typeof r.log === 'object' ? r.log : { id: S.id, start: S.start, end: S.start, activeMs: 0, mode: S.mode, sets: [] };
     S.activeBase = S.log.activeMs || 0;

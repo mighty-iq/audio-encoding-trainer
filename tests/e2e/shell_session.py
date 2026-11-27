@@ -32,11 +32,10 @@ def one(h, c, size):
     # Tutorial: caption.
     pg.wait_for_selector('.tut [data-step="caption"]', timeout=8000)
     btn = pg.locator('[data-continue]')
-    c.ok(btn.is_disabled(), 'tutorial: Continue waits while the caption is read')
+    # FRESH-A #2 / FRESH-B C5: Continue never looks disabled; a tap in the first 0.6 s is kept and acted on then
+    c.ok(not btn.is_disabled(), 'tutorial: Continue looks ready at once (never greyed out)')
     c.ok(pg.inner_text('.tut-next').startswith('Next:'), 'tutorial: the next action is stated')
-    pg.wait_for_timeout(1800)
-    c.ok(btn.is_disabled(), 'tutorial: still held at 1.8 s')
-    pg.wait_for_function("() => { const b = document.querySelector('[data-continue]'); return b && !b.disabled; }", timeout=6000)
+    c.ok(pg.evaluate("document.activeElement && document.activeElement.hasAttribute('data-continue')"), 'tutorial: Continue has the focus, so Enter works')
     btn.click()
     # Worked example.
     wait_state(pg, 'example', 15000)
@@ -64,7 +63,8 @@ def one(h, c, size):
     c.ok(len(set(pos)) == len(pos), 'tutorial: practice answers sit in different keys', pos)
     pg.wait_for_selector('[data-step="end"]', timeout=8000)
     c.ok(pg.locator('[data-step="end"] a.chimera-link[href="https://discord.gg/chmr"]').count() == 1, 'tutorial: ends with the Chimera link')
-    pg.click('[data-step="end"] [data-continue]')
+    pg.evaluate("() => document.activeElement && document.activeElement.blur()")
+    pg.keyboard.press('Enter')                         # FRESH-A #7: Enter starts the set on the last card
 
     # Set 1.
     pg.wait_for_selector('.trial[data-ex="demo"] .trial-body', timeout=8000)

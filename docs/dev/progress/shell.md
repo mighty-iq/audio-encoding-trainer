@@ -145,3 +145,11 @@ all failing before). Status per finding:
 - A5 fixed: the ✓/✕ mark is a small badge on the key's corner, so it never covers the end of a long label.
 - P13 held back: a no-break space inside U.fmtDb/fmtM also lands in lab's CSV export and changes two lab tests;
   proposed to the lead (lab strips U+00A0 in CSV, then the formatter changes in one line).
+- P1 fixed: a tutorial step whose sound cannot be prepared allows two tries, then says so and moves on.
+- P16 and P7 fixed: a set with no answered trial (sounds not prepared, too many interruptions, or End set before the
+  first answer) is passed over with the reason on its own screen, and the session goes on with the next set.
+- FRESH-A #6 fixed: one definition of a session (≥ 1 answered trial) for the log (`answered` on each entry; empty
+  sessions are never logged), the week ring and today's note; Session done says when nothing was logged.
+- FRESH-A #2 / FRESH-B C5 fixed: tutorial Continue is never greyed out; it acts from 0.6 s (an earlier tap is kept),
+  has the focus, and Enter or Space press it on every card, "You are ready" included. Also C24 on Session done.
+- Tests: tests/e2e/shell_round2.py (P1, P16, P7, #6); shell_session checks the new Continue and Enter.
