@@ -95,7 +95,10 @@
       else { tw = C.pick(rng, wordsOf(target)); tclip = X.clipFor(target, 'word', tw); }
       used.push(C.norm(tw));
       parts.push({ clip: tclip, at: 0.4, db: 0, role: 'target' });
-      var crowd = C.sample(rng, X.voicePool({ filter: function (vo, v) { return phr ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }, avoid: [target] }), nOther), spoken = [];
+      // the crowd from the other met voices first, so their words follow the answer mix of the foils (review ST-03)
+      var crowdAll = X.voicePool({ filter: function (vo, v) { return phr ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }, avoid: [target] });
+      var crowd = C.sample(rng, met.filter(function (v) { return v !== target && findable(v); }), nOther), spoken = [];
+      if (crowd.length < nOther) crowd = crowd.concat(C.sample(rng, crowdAll.filter(function (v) { return crowd.indexOf(v) < 0; }), nOther - crowd.length));
       crowd.forEach(function (v) {
         if (phr) {
           var cp = C.pick(rng, A.callsignBy(v).filter(function (p) { return used.indexOf(p.word) < 0; }));
@@ -107,7 +110,8 @@
           if (used.indexOf(C.norm(w2)) < 0 && X.has(v, 'word', w2)) { used.push(C.norm(w2)); spoken.push(w2); parts.push({ clip: X.clipFor(v, 'word', w2), at: 0.4 + rng.next() * 0.1, db: -snr, role: 'masker' }); others.push(v); break; }
         }
       });
-      var pcv = X.idx().poolCache = X.idx().poolCache || {}, dv = phr ? pcv['voices:dist'] || (pcv['voices:dist'] = C.answerDist(A.callsign(), function (p) { return p.word; })) : null;
+      // foils follow the words reachable from the friends that can be asked about (review ST-03)
+      var csAll = phr ? A.callsign() : null, dv = phr ? X.slotDist('voices:w', X.reach('voices:cs', csAll, met.filter(findable), function (p) { return [p.clip]; }), csAll, function (p) { return p.word; }) : null;
       slots = [C.slot(rng, { label: 'What did ' + nameOf(target) + ' say?', answer: tw, spoken: spoken, pool: dv ? dv.support : nouns, draw: dv && dv.draw, freq: dv && dv.freq, neighbours: X.neighbours })];
       prompt = 'Find ' + nameOf(target) + ' in the crowd.';
       fb = nameOf(target) + ' said “' + tw + '”.';

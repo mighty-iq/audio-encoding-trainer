@@ -98,7 +98,8 @@
   }
   function sameDayCount(log, now) {
     var day = new Date(now).toDateString(), n = 0;
-    ((log && log.sessions) || []).forEach(function (s) { if (s.start && new Date(s.start).toDateString() === day) n++; });
+    // sessions with at least one answered trial (FRESH-A #6); the current one is in the log
+    ((log && log.sessions) || []).forEach(function (s) { if (s.start && new Date(s.start).toDateString() === day && (E.planner ? E.planner.answered(s) : true)) n++; });
     return n;
   }
 

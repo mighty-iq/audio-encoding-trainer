@@ -56,9 +56,9 @@
     var k1 = hit.item.words[hit.item.keys[0]], k2 = hit.item.words[hit.item.keys[1]];
     var carrierWords = carrier ? (meta(carrier).words || []) : [];
     var avoid1 = [k2].concat(carrierWords), avoid2 = [k1].concat(carrierWords);
-    var dist = idx.poolCache['far:dist'] || (idx.poolCache['far:dist'] = [0, 1].map(function (j) {
-      return C.answerDist(ok, function (it) { return C.norm(it.words[it.keys[j]]); });
-    }));
+    // foils follow the answers reachable with this voice pool (the answer's own filter; review ST-03)
+    var R = relaxed.indexOf('all voices') < 0 ? X.reach('far', ok, pool) : ok;
+    var dist = [0, 1].map(function (j) { return X.slotDist('far:' + j + (R === ok ? ':all' : ''), R, ok, function (it) { return C.norm(it.words[it.keys[j]]); }); });
     var cs = hit.item.kind === 'phrase';
     var s1 = C.slot(rng, { label: cs ? 'Word' : 'First word', answer: k1, pool: dist[0].support, draw: dist[0].draw, freq: dist[0].freq, neighbours: X.neighbours, avoid: avoid1 });
     var s2 = C.slot(rng, { label: cs ? 'Number' : 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, freq: dist[1].freq, neighbours: X.neighbours, avoid: avoid2, type: cs ? 'number' : undefined });

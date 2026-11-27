@@ -62,7 +62,7 @@ function trueIdx(ES, S, ex, ck) {
 function simMode(mode) {
   const ES = loadEngine(), E = ES.engine;
   if (opt('drift', null)) E.model.driftScale = +opt('drift', 1);
-  const out = { mode, learners: [], times: [], plateau: [], path: [], variety: { diffVoice: 0, n: 0, diffFam: 0, nFam: 0 },
+  const out = { mode, learners: [], times: [], plateau: [], path: [], first: { n: 0, all: 0, maxNew: 0 }, variety: { diffVoice: 0, n: 0, diffFam: 0, nFam: 0 },
     focus: { dist: 0, farEdge: 0, farSets: 0, sets: 0 } };
   const lab = mode === 'focus' ? { weakest: 'rooms' } : null;
   const ctrlNext = E.controller.next;
@@ -81,6 +81,13 @@ function simMode(mode) {
       for (let k = 0; k < nSess; k++) {
         now = DAY0 + day * DAY + k * 3 * 3600000;
         const dayOff = 0.12 * gauss(r), plan = E.planner.session({ learner: lr, log, now, mode, lab, rng: r.fork('plan' + day + ':' + k) });
+        // first weeks (FRESH-B C1): exercises met by the third session, new ones per session
+        if (log.sessions.length < 3) {
+          const metBefore = new Set(log.sessions.flatMap((x) => x.sets.map((t) => t.ex)));
+          const nNew = new Set(plan.sets.map((x) => x.exId).filter((ex) => !metBefore.has(ex))).size;
+          out.first.maxNew = Math.max(out.first.maxNew, nNew);
+          if (log.sessions.length === 2) { const met = new Set([...metBefore, ...plan.sets.map((x) => x.exId)]); out.first.n++; if (E.exercises.every((ex) => met.has(ex))) out.first.all++; }
+        }
         const sess = { id: 's' + sid++, start: now, end: now, activeMs: 0, mode, sets: [] };
         for (const st of plan.sets) {
           out.focus.sets++; if (st.exId === 'far') out.focus.farSets++;
@@ -177,6 +184,7 @@ function summarise(o) {
   s.plateau = { firings, falseFirings, stalledPairs, stalledDetected, detectRate: r3(stalledDetected / Math.max(1, stalledPairs)),
     latencyMedian: q(latencies, 0.5), latencyP90: q(latencies, 0.9), improvingPairs: improvPairs, improvingWithFalseAlarm: improvFalse,
     falseAlarmRate: r3(improvFalse / Math.max(1, improvPairs)), byKind: o.plateau.reduce((a, p) => { a[p.kind] = (a[p.kind] || 0) + 1; return a; }, {}) };
+  s.firstWeeks = { learners: o.first.n, metAllBySession3: r3(o.first.all / Math.max(1, o.first.n)), maxNewPerSession: o.first.maxNew };
   if (o.mode === 'path') {
     const byEx = {};
     o.path.forEach((p) => { (byEx[p.ex] = byEx[p.ex] || []).push(p); });

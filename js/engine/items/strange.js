@@ -60,7 +60,8 @@
       return it.keys && it.keys.length >= 2 && it.keys.every(function (k) { return answers.indexOf(C.norm(it.words[k])) >= 0; });
     }));
     var hit = X.itemVoice(rng, ok, 'any', pool, C.recentOf(ctx));
-    if (!hit) { hit = X.itemVoice(rng, ok, 'any', Object.keys(withMat), []); if (hit) relaxed.push('all voices'); }
+    // relaxation: every voice with material, accented ones only for the accent family
+    if (!hit) { hit = X.itemVoice(rng, ok, 'any', Object.keys(withMat).filter(function (x) { return d.id !== 'accent' || isAccented(X.voice(x)); }), []); if (hit) relaxed.push('all voices'); }
     if (!hit) throw new Error('strange: no speech material in this build');
     var fx = [], beds = [];
     if (d.id === 'fast') fx.push({ type: 'wsola', rate: v });
@@ -81,10 +82,9 @@
     if (fx.length) part.fx = fx;
     var audio = { out: { db: -20 }, dur: Math.round((0.35 + dur + 0.5) * 100) / 100, spatial: 'mono', parts: [part], beds: beds, room: null };
     var k1 = hit.item.words[hit.item.keys[0]], k2 = hit.item.words[hit.item.keys[1]];
-    var dk = fb ? 'strange:fb:dist' : 'strange:dist';
-    var dist = idx.poolCache[dk] || (idx.poolCache[dk] = [0, 1].map(function (j) {
-      return C.answerDist(ok, function (it) { return C.norm(it.words[it.keys[j]]); });
-    }));
+    // foils follow the answers reachable with this voice pool (the answer's own filter; review ST-03)
+    var R = relaxed.indexOf('all voices') < 0 ? X.reach(fb ? 'strange:fb' : 'strange', ok, pool) : ok;
+    var dist = [0, 1].map(function (j) { return X.slotDist((fb ? 'strange:fb:' : 'strange:') + j + (R === ok ? ':all' : ''), R, ok, function (it) { return C.norm(it.words[it.keys[j]]); }); });
     var s1 = C.slot(rng, { label: fb ? 'Word' : 'First word', answer: k1, pool: dist[0].support, draw: dist[0].draw, freq: dist[0].freq, neighbours: X.neighbours, avoid: [k2] });
     var s2 = C.slot(rng, { label: fb ? 'Number' : 'Second word', answer: k2, pool: dist[1].support, draw: dist[1].draw, freq: dist[1].freq, neighbours: X.neighbours, avoid: [k1], type: fb ? 'number' : undefined });
     var slots = [s1, s2].filter(function (sl, j) { return dist[j].support.length >= 3 && sl.options.length >= 2; });

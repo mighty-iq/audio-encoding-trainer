@@ -16,7 +16,17 @@
 
   function dayKey(t) { return new Date(t).toDateString(); }
   function timesText(n) { return (['', 'once', 'twice', 'three times', 'four times', 'five times', 'six times'][n] || n + ' times'); }
-  function sessions(log) { return ((log && log.sessions) || []).filter(function (s) { return s && s.start; }); }
+  // Sessions that count: at least one answered trial (s.answered when the shell logs it, else a set with n ≥ 1);
+  // an opened-and-left session is not a session (FRESH-A #6).
+  function answered(s) { return typeof s.answered === 'number' ? s.answered > 0 : (s.sets || []).some(function (t) { return (t.n || 0) > 0; }); }
+  function sessions(log) { return ((log && log.sessions) || []).filter(function (s) { return s && s.start && answered(s); }); }
+  // Exercises the player has already played (a set with answered trials, or trials in the learner record).
+  function played(log, lr) {
+    var out = {};
+    sessions(log).forEach(function (s) { (s.sets || []).forEach(function (t) { if (t.ex && (t.n || 0) > 0) out[t.ex] = 1; }); });
+    Object.keys((lr && lr.state && lr.state.recent) || {}).forEach(function (ex) { if ((lr.state.recent[ex] || []).length) out[ex] = 1; });
+    return out;
+  }
   function weights(mode, opts) {
     opts = opts || {};
     var avail = opts.available || E.exercises, lr = E.lrOf(opts.learner), w = {};
@@ -63,7 +73,7 @@
     // "Yesterday" only when the last training day was the previous calendar day (it can be up to 48 h back)
     var when = lastDay === dayKey(now - DAY) ? 'Yesterday\'s hardest: ' : 'Your last day\'s hardest: ';
     return { exId: best.ex, hint: { focus: best.focus, family: d.family || null, dials: dials, p: E.model.target }, avoidVoices: best.voices || [],
-      text: when + d.label.toLowerCase() + ' at ' + (d.kind === 'ord' ? d.levels[dials[best.focus]] : dials[best.focus] + ' ' + d.unit) + ', now with a voice that was not in that set.' };
+      text: when + E.dialPhrase(best.ex, best.focus, dials[best.focus]) + ', now with a voice that was not in that set.' };
   }
   function freshEars(opts) {
     opts = opts || {};
@@ -98,6 +108,17 @@
     else if (night && mode !== 'path') sets.push({ exId: night.exId, trials: E.dialMeta[night.exId].setTrials, kind: 'overnight', hint: night.hint, avoidVoices: night.avoidVoices, text: night.text, interlude: null });
     var used = {};
     sets.forEach(function (s) { used[s.exId] = 1; });
+    // a new player meets every exercise within the first three sessions (FRESH-B C1): up to three not yet played
+    // come first, the owner's priorities first; no further new exercise joins the session
+    var allowed = null;
+    if (mode === 'edge' || mode === 'path' || mode === 'variety') {
+      var pl = played(opts.log, lr), unplayed = avail.filter(function (ex) { return !pl[ex]; });
+      if (unplayed.length) {
+        var intro = unplayed.slice().sort(function (a, b) { return (W[b] || 0) - (W[a] || 0) || avail.indexOf(a) - avail.indexOf(b); }).slice(0, 3);
+        allowed = {}; avail.forEach(function (ex) { if (pl[ex] || intro.indexOf(ex) >= 0) allowed[ex] = 1; });
+        intro.forEach(function (ex) { if (sets.length < nSets && !used[ex]) { sets.push({ exId: ex, trials: E.dialMeta[ex].setTrials, kind: 'normal', interlude: null, newEx: true }); used[ex] = 1; } });
+      }
+    }
     var nInter = 0;
     // Focus mode: the exercise behind the weakest probe takes ~60 % of sets (it may repeat, never back to back)
     var fex = mode === 'focus' && opts.lab && opts.lab.weakest && E.controller.PROBE_MAP[opts.lab.weakest] ? E.controller.PROBE_MAP[opts.lab.weakest].ex : null;
@@ -106,8 +127,9 @@
     while (sets.length < nSets) {
       var last = sets.length ? sets[sets.length - 1].exId : null, left = nSets - sets.length;
       if (fex && nF > 0 && (last !== fex || nF >= left)) { sets.push({ exId: fex, trials: E.dialMeta[fex].setTrials, kind: 'normal', interlude: null, focusEx: true }); nF--; continue; }
-      var cand = avail.filter(function (ex) { return !used[ex] && ex !== last && ex !== fex; });
-      if (!cand.length) { used = {}; cand = avail.filter(function (ex) { return ex !== last && ex !== fex; }); if (!cand.length) cand = avail; }
+      var pool = allowed ? avail.filter(function (ex) { return allowed[ex]; }) : avail;
+      var cand = pool.filter(function (ex) { return !used[ex] && ex !== last && ex !== fex; });
+      if (!cand.length) { used = {}; cand = pool.filter(function (ex) { return ex !== last && ex !== fex; }); if (!cand.length) cand = pool; }
       var ex = C.weighted(rng, cand, cand.map(function (k) { return w[k]; }));
       used[ex] = 1;
       sets.push({ exId: ex, trials: E.dialMeta[ex].setTrials, kind: 'normal', interlude: null });
@@ -119,5 +141,5 @@
     return { sets: sets, minutes: minutes, notes: notes, mode: mode };
   }
 
-  E.planner = { session: session, overnight: overnight, freshEars: freshEars, weights: weights, WEIGHTS: W };
+  E.planner = { session: session, overnight: overnight, freshEars: freshEars, weights: weights, WEIGHTS: W, answered: answered, played: played };
 })(typeof window !== 'undefined' ? window : globalThis);

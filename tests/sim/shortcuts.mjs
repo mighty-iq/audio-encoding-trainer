@@ -1,8 +1,35 @@
 // Shortcut responders written from the player's side. They see the prompt and the option list (and, for the
 // "heard" responder, every word spoken in the mix without knowing who said it). Each must stay near chance:
 // first / last position, most frequent past answer, only options seen as answers before, most different and most
-// typical option (letter-bigram similarity), longest and shortest option, and the answer-position distribution.
+// typical option (letter-bigram similarity), the phonetic hub (the option whose CMUdict phonemes are closest to the
+// others'), longest and shortest option, and the answer-position distribution.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { norm } from './solver.mjs';
+
+// CMUdict (BSD) for the hub responder: $EARSHOT_CMUDICT, else ../corpora/cmudict/cmudict.dict next to the
+// repository (raw corpora live outside it); without it, letters stand in for phonemes.
+let LEX = null;
+function lexicon() {
+  if (LEX) return LEX;
+  LEX = new Map();
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const file = [process.env.EARSHOT_CMUDICT, path.join(root, '..', 'corpora', 'cmudict', 'cmudict.dict')].find((f) => f && fs.existsSync(f));
+  if (file) for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+    const m = line.match(/^([a-z'.-]+)(\(\d+\))?\s+(.+?)\s*(#.*)?$/); if (!m || m[2]) continue;
+    LEX.set(m[1], m[3].split(' ').map((p) => p.replace(/[0-9]/g, '')));
+  }
+  LEX.found = !!file;
+  return LEX;
+}
+function phones(o) { const L = lexicon(); return norm(o).split(' ').flatMap((w) => L.get(w) || w.split('')); }
+function lev(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length] / Math.max(1, a.length, b.length);
+}
 
 function bigrams(s) { s = ' ' + norm(s) + ' '; const out = new Set(); for (let i = 0; i < s.length - 1; i++) out.add(s.slice(i, i + 2)); return out; }
 function dice(a, b) { const A = bigrams(a), B = bigrams(b); let n = 0; A.forEach((x) => { if (B.has(x)) n++; }); return (2 * n) / (A.size + B.size || 1); }
@@ -20,16 +47,17 @@ function heardWords(ES, spec) {
   return out;
 }
 
-const RESP = ['first', 'last', 'frequent', 'seen', 'different', 'typical', 'longest', 'shortest', 'heard'];
+const RESP = ['first', 'last', 'frequent', 'seen', 'different', 'typical', 'hub', 'longest', 'shortest', 'heard'];
 
 // Score every responder on every word slot of a spec; `bins` are the level labels this spec belongs to.
 export function scoreSpec(ES, st, spec, bins, rng) {
   const heard = heardWords(ES, spec), ex = spec.ex;
   spec.question.slots.forEach((sl, si) => {
     if (sl.kind === 'locate' || !sl.options || sl.options.length < 2) return;
-    const key = ex + '|' + sl.label.replace(/What did .* say\?/, 'What did X say?'), opts = sl.options, n = opts.length, ans = norm(sl.answer);
+    const key = (st.player || '') + ex + '|' + sl.label.replace(/What did .* say\?/, 'What did X say?'), opts = sl.options, n = opts.length, ans = norm(sl.answer);
     const past = (st.past[key] = st.past[key] || {});
     const sims = opts.map((o, i) => opts.reduce((a, p, j) => (j === i ? a : a + dice(o, p)), 0) / (n - 1));
+    const ph = opts.map(phones), hubD = opts.map((o, i) => ph.reduce((a, p, j) => (j === i ? a : a + lev(ph[i], p)), 0));
     const pickBy = (score, best) => { const v = opts.map(score), m = best(...v); return choose(rng, opts.filter((o, i) => v[i] === m)); };
     const seenOpts = opts.filter((o) => past[norm(o)]);
     const heardOpts = opts.filter((o) => heard.has(norm(o)));
@@ -39,6 +67,7 @@ export function scoreSpec(ES, st, spec, bins, rng) {
       seen: choose(rng, seenOpts.length ? seenOpts : opts),
       different: pickBy((o) => -sims[opts.indexOf(o)], Math.max),
       typical: pickBy((o) => sims[opts.indexOf(o)], Math.max),
+      hub: pickBy((o) => -hubD[opts.indexOf(o)], Math.max),
       longest: pickBy((o) => norm(o).length, Math.max),
       shortest: pickBy((o) => -norm(o).length, Math.max),
       heard: heardOpts.length >= 2 ? choose(rng, heardOpts) : null

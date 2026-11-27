@@ -55,22 +55,34 @@
     if (pool.length < 2) { pool = allVoices.slice(); relaxed.push('all voices'); }
     if (!pool.length) throw new Error('crowd: no voice material in this build');
     var recent = C.recentOf(ctx), tPool = pool.filter(function (v) { return recent.indexOf(v) < 0; });
-    var target = C.pick(rng, tPool.length ? tPool : pool);
+    // phrase builds: the word first, uniformly among the call-sign words of the pool, then a voice of the pool that
+    // says it, so no word is the answer more often than another, as foils are drawn (review ST-03)
+    var vPool = tPool.length ? tPool : pool, byWord = {}, tPick = null;
+    if (phrase) {
+      vPool.forEach(function (v) { A.callsignBy(v).forEach(function (p) { (byWord[C.norm(p.word)] = byWord[C.norm(p.word)] || []).push(p); }); });
+      var wKeys = Object.keys(byWord);
+      if (wKeys.length) tPick = C.pick(rng, byWord[wKeys[C.ri(rng, wKeys.length)]]);
+    }
+    var target = tPick ? tPick.voice : C.pick(rng, vPool);
     var names = X.pool('name', V.names || [], 2), nouns = X.pool('word', V.nouns || [], 2), nums = X.pool('number', V.numbers || [], 2);
     var pc = X.idx().poolCache = X.idx().poolCache || {};
-    var dist = phrase ? pc['crowd:dist'] || (pc['crowd:dist'] = [C.answerDist(A.callsign(), function (p) { return p.word; }), C.answerDist(A.callsign(), function (p) { return p.number; })]) : null;
+    // foils follow the answers reachable with this voice pool (the target's own filter; review ST-03)
+    var csAll = phrase ? A.callsign() : null, csR = phrase ? X.reach('crowd:cs', csAll, pool, function (p) { return [p.clip]; }) : null;
+    var dist = phrase ? [X.slotDist('crowd:w', csR, csAll, function (p) { return p.word; }), X.slotDist('crowd:n', csR, csAll, function (p) { return p.number; })] : null;
     // a slot is asked only when this build has at least three different answers for it
     var askNum = !dist || dist[1].support.length >= 3;
     var used = { n: [], w: [], k: [] }, tal = [], T;
     if (phrase) {
-      var tp = C.pick(rng, A.callsignBy(target));
+      var tp = tPick || C.pick(rng, A.callsignBy(target));
       T = { v: target, name: tp.name, word: tp.word, num: tp.number, clips: [tp.clip], text: tp.text };
     } else {
       var tn = wordFor(rng, target, 'name', names), tw = wordFor(rng, target, 'word', nouns), tk = wordFor(rng, target, 'number', nums);
       T = { v: target, name: tn, word: tw, num: tk, clips: [X.clipFor(target, 'name', tn), X.clipFor(target, 'word', tw), X.clipFor(target, 'number', tk)], text: cap(tn) + ', ' + tw + ', ' + tk + '.' };
     }
     used.n.push(T.name); used.w.push(T.word); used.k.push(T.num);
-    var mk = X.maskers(rng, target, simLevel, nMask, simLevel >= 1 ? allVoices : pool, null, allVoices);
+    // maskers from the player's pool first (their words then follow the answer mix of the foils; review ST-03),
+    // every voice only when the pool lacks the wanted kind
+    var mk = X.maskers(rng, target, simLevel, nMask, pool, null, allVoices);
     dials.similar = mk.level;
     var twinLost = false, tv0 = X.voice(target);
     mk.list.forEach(function (m) {
@@ -140,8 +152,10 @@
     var audio = { out: { db: -20 }, dur: Math.round((end + 0.6) * 100) / 100, spatial: hp ? 'hrtf' : 'mono', parts: parts, beds: beds, room: room };
     var side = tAz < -10 ? 'on your left' : tAz > 10 ? 'on your right' : 'in front of you', CS = cap(T.name);
     var prompt = cue === 'preview' ? 'What did the voice you heard first say next?' : cue === 'location' ? 'What did the voice ' + side + ' say?' : 'What did ' + CS + ' say?';
-    var s1 = C.slot(rng, { label: 'Word', answer: T.word, spoken: tal.map(function (m) { return m.word; }), pool: dist ? dist[0].support : nouns, draw: dist && dist[0].draw, freq: dist && dist[0].freq, neighbours: X.neighbours, avoid: cueWords });
-    var s2 = C.slot(rng, { label: 'Number', answer: T.num, spoken: tal.map(function (m) { return m.num; }), pool: dist ? dist[1].support : nums, draw: dist && dist[1].draw, freq: dist && dist[1].freq, neighbours: X.neighbours, avoid: cueWords, type: 'number' });
+    // foils uniform over the reachable words and numbers, as the answer word is (no frequency weighting)
+    var uni = function (S) { return function (r) { return S[C.ri(r, S.length)]; }; };
+    var s1 = C.slot(rng, { label: 'Word', answer: T.word, spoken: tal.map(function (m) { return m.word; }), pool: dist ? dist[0].support : nouns, draw: dist ? uni(dist[0].support) : undefined, neighbours: X.neighbours, avoid: cueWords });
+    var s2 = C.slot(rng, { label: 'Number', answer: T.num, spoken: tal.map(function (m) { return m.num; }), pool: dist ? dist[1].support : nums, draw: dist ? uni(dist[1].support) : undefined, neighbours: X.neighbours, avoid: cueWords, type: 'number' });
     var others = tal.map(function (m) { return '“' + m.word + ', ' + m.num + '”'; }).join(' and '), said = { v0: [T.name, T.word, T.num] };
     tal.forEach(function (m, i) { said['v' + (i + 1)] = [m.name, m.word, m.num]; });
     var offs = targetParts.map(function (p) { var c = meta(p.clip); return (c && c.diff) || 0; });
@@ -153,8 +167,8 @@
       setting: { dials: dials, focus: setting.focus, anchor: !!setting.anchor, warmup: !!setting.warmup, noUpdate: !tal.length || undefined },
       audio: audio,
       question: { prompt: prompt, slots: askNum ? [s1, s2] : [s1] },
-      feedback: { text: (cue === 'callsign' ? CS : 'Your voice') + ' said “' + T.word + ', ' + T.num + '”. ' + (others ? 'The others said ' + others + '.' : ''),
-        replays: [{ label: 'Your voice alone', audio: { out: audio.out, dur: audio.dur, spatial: audio.spatial, parts: targetParts, beds: [], room: room } },
+      feedback: { text: (cue === 'callsign' ? CS : 'The voice you followed') + ' said “' + T.word + ', ' + T.num + '”. ' + (others ? 'The others said ' + others + '.' : ''),
+        replays: [{ label: 'The voice you follow, alone', audio: { out: audio.out, dur: audio.dur, spatial: audio.spatial, parts: targetParts, beds: [], room: room } },
           { label: 'The mix again', audio: audio }] },
       picture: { voices: [{ id: 'v0', role: 'target', az: tAz, dist: 1, label: cue === 'callsign' ? CS : '' }].concat(tal.map(function (m, i) {
         return { id: 'v' + (i + 1), role: 'other', az: hp ? m.az : 0, dist: 1, label: '' }; })), reveal: cue === 'location' },

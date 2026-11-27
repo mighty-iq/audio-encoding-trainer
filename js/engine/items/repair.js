@@ -11,6 +11,21 @@
 
   function val(id, i) { var d = E.dialDef('repair', id); return d.values[Math.max(d.min, Math.min(d.max, Math.round(i)))]; }
   var PRED = ['hi', 'mid', 'lo'];
+  // Sound-alikes per word: the items' authored ones (both ways) plus the vocab neighbours. They are options only
+  // when they are answers reachable in the same pool (review ST-02): a sound-alike that is never an answer would be
+  // the one option never seen as right, and authored sound-alikes of the answer alone made it the phonetic centre.
+  function soundAlikes() {
+    var cache = X.idx().poolCache = X.idx().poolCache || {};
+    if (cache['repair:sa']) return cache['repair:sa'];
+    var m = {};
+    I.adapt.repairItems().forEach(function (it) {
+      var k = C.norm(it.words[it.key]);
+      (it.foils || []).forEach(function (f) { var b = C.norm(f); if (!b || b === k) return; (m[k] = m[k] || {})[b] = 1; (m[b] = m[b] || {})[k] = 1; });
+    });
+    cache['repair:sa'] = m;
+    return m;
+  }
+  function neighboursOf(w) { var m = soundAlikes()[C.norm(w)], a = X.neighbours(w); return m ? C.uniq(a.concat(Object.keys(m))) : a; }
 
   function make(rng, setting, ctx) {
     ctx = ctx || {};
@@ -47,22 +62,22 @@
     dials.context = PRED.indexOf(hit.item.pred) >= 0 ? PRED.indexOf(hit.item.pred) : dials.context;
     var c = X.clip(hit.clip), wt = c.wt[hit.item.key], w0 = wt[0], w1 = wt[1], lost = (w1 - w0) * g;
     var t0 = w0 + (w1 - w0 - lost) / 2, t1 = t0 + lost;
+    // a full gap starts 60 ms before the word's timed onset (an onset fragment survived on some clips; review
+    // ST-11), never reaching into the word before
+    var prevEnd = hit.item.key > 0 && c.wt[hit.item.key - 1] ? c.wt[hit.item.key - 1][1] : 0;
+    if (g >= 0.999) t0 = Math.min(w0, Math.max(prevEnd + 0.005, w0 - 0.06, 0));
     var fx = [{ type: 'mask', t0: Math.round(t0 * 1000) / 1000, t1: Math.round(t1 * 1000) / 1000, fill: fill.fill, db: fill.db !== undefined ? fill.db : null }];
     if (gate.rate > 0) fx.push({ type: 'gate', rateHz: gate.rate, duty: gate.duty, fill: fill.fill === 'noise' ? 'noise' : 'silence' });
     var part = { clip: hit.clip, at: 0.35, db: 0, role: 'target', fx: fx };
     var audio = { out: { db: -20 }, dur: Math.round((0.35 + (c.dur || 2) + 0.5) * 100) / 100, spatial: 'mono', parts: [part], beds: [], room: null };
     var clear = { out: audio.out, dur: audio.dur, spatial: 'mono', parts: [{ clip: hit.clip, at: 0.35, db: 0, role: 'target' }], beds: [], room: null };
-    // foils follow the answers of the same candidate list the item came from (same level, same variety filter)
-    // …and from the same voice pool the item was drawn from (a pool-wide answer mix would make the pool's own
-    // answers the "most familiar" options)
+    // options: the answers of the same candidate list (same level, same variety filter) reachable with this voice
+    // pool, as the answer was (review ST-03); sound-alike pairs only among them (see soundAlikes)
     var key = hit.item.words[hit.item.key], lvlItems = cand.filter(function (it) { return it.pred === hit.item.pred; });
-    var inPool = {}; pool.forEach(function (v) { inPool[v] = 1; });
-    var poolItems = lvlItems.filter(function (it) { return A.clipsOf(it).some(function (id) { return inPool[X.clip(id).voice]; }); });
-    if (relaxed.indexOf('all voices') < 0 && C.uniq(poolItems.map(function (it) { return it.words[it.key]; })).length >= 8) lvlItems = poolItems;
-    var idx = X.idx(); idx.poolCache = idx.poolCache || {};
-    var dk = 'repair:dist:' + hit.item.pred + ':' + (breadth < 0.4 ? 'late' : 'any') + ':' + lvlItems.length + ':' + (lvlItems === poolItems ? pool.join(',') : 'all');
-    var dist = idx.poolCache[dk] || (idx.poolCache[dk] = C.answerDist(lvlItems, function (it) { return C.norm(it.words[it.key]); }));
-    var s1 = C.slot(rng, { label: 'Lost word', answer: key, pool: hit.item.foils ? dist.support.concat(hit.item.foils) : dist.support, draw: dist.draw, freq: dist.freq, neighbours: X.neighbours, context: hit.item.alts || [], prefer: hit.item.foils || null,
+    var nm = 'repair:' + hit.item.pred + ':' + (breadth < 0.4 ? 'late' : 'any');
+    var R = relaxed.indexOf('all voices') < 0 ? X.reach(nm, lvlItems, pool) : lvlItems;
+    var dist = X.slotDist(nm + (R === lvlItems ? ':all' : ''), R, lvlItems, function (it) { return C.norm(it.words[it.key]); });
+    var s1 = C.slot(rng, { label: 'Lost word', answer: key, pool: dist.support, draw: dist.draw, freq: dist.freq, neighbours: neighboursOf, context: hit.item.alts || [],
       avoid: hit.item.words.filter(function (w, i) { return i !== hit.item.key; }) });
     C.remember(ctx, hit.voice, null);
     var shown = hit.item.words.map(function (w, i) { return i === hit.item.key ? '[' + w + ']' : w; }).join(' ');

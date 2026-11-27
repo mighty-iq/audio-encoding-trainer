@@ -70,8 +70,10 @@ export const tests = [
   } },
   { name: 'planner: 15 minutes → 5 sets, no exercise twice in a row, priorities weigh in', fn(ES, assert) {
     const E = ES.engine, lr = E.learner.create(null, () => T0), cnt = {};
+    // a player who has played every exercise (a new player first meets them: see the next test)
+    const all = { sessions: [{ id: 'p', start: T0 - 3600000, end: T0 - 3000000, sets: E.exercises.map((ex) => ({ ex, n: 10 })) }] };
     for (let i = 0; i < 300; i++) {
-      const p = E.planner.session({ learner: lr, log: { sessions: [] }, minutes: 15, rng: ES.core.rng('pl' + i) });
+      const p = E.planner.session({ learner: lr, log: all, minutes: 15, rng: ES.core.rng('pl' + i), now: T0 });
       assert.equal(p.sets.length, 5);
       p.sets.forEach((s, k) => { cnt[s.exId] = (cnt[s.exId] || 0) + 1; if (k) assert.notEqual(s.exId, p.sets[k - 1].exId); });
       assert.ok(p.sets.filter((s) => s.interlude).length <= 2);
@@ -85,7 +87,7 @@ export const tests = [
     assert.equal(p.sets[0].kind, 'overnight'); assert.equal(p.sets[0].hint.focus, 'tmr'); assert.deepEqual(p.sets[0].avoidVoices, ['v1']);
     p = E.planner.session({ learner: lr, log: log('crowd', 1, 0, T0 - 3 * DAY), now: T0 });
     assert.equal(p.sets[0].kind, 'fresh');
-    const today = { sessions: [0, 1, 2].map((i) => ({ id: 't' + i, start: T0 + i * 3600000, end: T0 + i * 3600000 + 600000, sets: [] })) };
+    const today = { sessions: [0, 1, 2].map((i) => ({ id: 't' + i, start: T0 + i * 3600000, end: T0 + i * 3600000 + 600000, sets: [{ ex: 'far', n: 5 }] })) };
     p = E.planner.session({ learner: lr, log: today, now: T0 + 4 * 3600000 });
     assert.ok(p.notes.some((n) => n.kind === 'sleep'));
   } },
@@ -94,7 +96,9 @@ export const tests = [
     let p = E.planner.session({ learner: lr, log: L, now: T0 + 3600000 });
     assert.equal(p.sets[0].kind, 'overnight');
     assert.ok(/^Yesterday's hardest: .*now with a voice that was not in that set\.$/.test(p.sets[0].text), p.sets[0].text);
-    const L2 = { sessions: L.sessions.concat([{ id: 'today', start: T0, end: T0 + 900000, sets: [] }]) };
+    const L2 = { sessions: L.sessions.concat([{ id: 'today', start: T0, end: T0 + 900000, sets: [{ ex: 'far', n: 4 }] }]) };
+    const L2e = { sessions: L.sessions.concat([{ id: 'opened', start: T0, end: T0 + 60000, sets: [] }]) };
+    assert.ok(E.planner.overnight({ learner: lr, log: L2e, now: T0 + 3600000 }), 'an empty session does not count as the day\'s first');
     assert.equal(E.planner.overnight({ learner: lr, log: L2, now: T0 + 3600000 }), null);
     assert.notEqual(E.planner.session({ learner: lr, log: L2, now: T0 + 3600000 }).sets[0].kind, 'overnight');
     const now = new Date(T0); now.setHours(1, 0, 0, 0); const last = new Date(now.getTime()); last.setDate(last.getDate() - 2); last.setHours(23, 0, 0, 0);
@@ -102,12 +106,39 @@ export const tests = [
     assert.ok(o && /^Your last day's hardest: /.test(o.text), o && o.text);
     const L3 = log('crowd', 1, 0, T0 - DAY); L3.sessions[0].sets[0].partial = true;
     assert.equal(E.planner.overnight({ learner: lr, log: L3, now: T0 + 3600000 }), null, 'a partial set is never the hardest');
-    const mk = (k) => ({ sessions: Array.from({ length: k }, (_, i) => ({ id: 't' + i, start: T0 + i * 3600000, end: T0 + i * 3600000 + 600000, sets: [] })) });
+    const mk = (k) => ({ sessions: Array.from({ length: k }, (_, i) => ({ id: 't' + i, start: T0 + i * 3600000, end: T0 + i * 3600000 + 600000, sets: [{ ex: 'far', n: 3 }] })) });
+    const empty = { sessions: mk(3).sessions.concat([{ id: 'e', start: T0 + 3.5 * 3600000, sets: [] }]) };
+    assert.ok(!E.planner.session({ learner: lr, log: { sessions: mk(2).sessions.concat(empty.sessions.slice(3)) }, now: T0 + 4 * 3600000 }).notes.some((n) => n.kind === 'sleep'), 'empty sessions are not counted');
     assert.ok(!E.planner.session({ learner: lr, log: mk(2), now: T0 + 3 * 3600000 }).notes.some((n) => n.kind === 'sleep'));
     const sl = E.planner.session({ learner: lr, log: mk(3), now: T0 + 4 * 3600000 }).notes.find((n) => n.kind === 'sleep');
     assert.ok(sl && /^You have trained three times today\. Sleep consolidates practice, so tomorrow is a good time/.test(sl.text), sl && sl.text);
     const pf = E.planner.session({ learner: lr, log: { sessions: [] }, mode: 'focus', lab: { weakest: 'rooms' }, rng: ES.core.rng('fx') });
     assert.ok(pf.sets.some((x) => x.focusEx === true) && pf.sets.every((x) => x.focus === undefined));
+  } },
+  { name: 'planner (FRESH-B C1): a new player meets every exercise within three sessions, at most three new a session', fn(ES, assert) {
+    const E = ES.engine;
+    for (const mode of ['edge', 'path', 'variety']) {
+      const lr = E.learner.create(null, () => T0), L = { sessions: [] }, met = new Set();
+      for (let k = 0; k < 3; k++) {
+        const p = E.planner.session({ learner: lr, log: L, mode, now: T0 + k * DAY, rng: ES.core.rng(mode + k) });
+        const fresh = [...new Set(p.sets.map((x) => x.exId))].filter((ex) => !met.has(ex));
+        assert.ok(fresh.length <= 3, mode + ' session ' + (k + 1) + ': ' + fresh.length + ' new');
+        fresh.forEach((ex) => met.add(ex));
+        L.sessions.push({ id: 's' + k, start: T0 + k * DAY, end: T0 + k * DAY + 900000, sets: p.sets.map((x) => ({ ex: x.exId, n: 10 })) });
+      }
+      assert.deepEqual([...met].sort(), E.exercises.slice().sort(), mode);
+    }
+  } },
+  { name: 'dials: plain phrases (P10, P11, ST-08)', fn(ES, assert) {
+    const E = ES.engine, P = E.dialPhrase;
+    assert.equal(P('crowd', 'tmr', -2), 'the voice you follow 2 dB quieter than the others');
+    assert.equal(P('far', 'noise', 1), 'speech 1 dB over the room noise');
+    assert.equal(P('strange', 'muffled', 3), 'speech muffled to 1.2 kHz');
+    assert.equal(P('repair', 'context', 2), 'little context');
+    assert.equal(E.dialDef('crowd', 'tmr').label, 'The voice you follow vs the others');
+    assert.ok(E.dialDef('strange', 'whisper').levels.every((l) => !/whisper/i.test(l)));
+    assert.ok(E.dialDef('strange', 'accent').levels.every((l) => !/mild|moderate|strong/.test(l) && /accented voice/.test(l)));
+    E.exercises.forEach((ex) => E.dials[ex].forEach((d) => { const t = P(ex, d.id, d.kind === 'ord' ? d.max : d.min); assert.ok(t && !/-[0-9]/.test(t), ex + '.' + d.id + ': ' + t); }));
   } },
   { name: 'planner: focus mode gives the weakest probe\'s exercise 60 % of sets', fn(ES, assert) {
     const E = ES.engine, lr = E.learner.create(null, () => T0); let far = 0, all = 0;
@@ -136,7 +167,7 @@ export const tests = [
     // breaker texts in order (variety, focus, anchors, strategy, sleep, switch): no promises the code does not keep
     const L = lr(), seen = {};
     for (let k = need; k < need + 40 && Object.keys(seen).length < 6; k++) {
-      const g = log('crowd', k, 0); g.sessions.push({ id: 'x', start: T0 + (k - 1) * DAY + 3600000, end: T0 + (k - 1) * DAY + 4000000, sets: [] });
+      const g = log('crowd', k, 0); g.sessions.push({ id: 'x', start: T0 + (k - 1) * DAY + 3600000, end: T0 + (k - 1) * DAY + 4000000, sets: [{ ex: 'far', n: 6 }] });
       const r = P.check('crowd', { learner: L, log: g, now: T0 + (k - 1) * DAY + 4000000 });
       if (r) { seen[r.breaker.kind] = r.breaker.text; P.apply('crowd', r, { learner: L, log: g }); }
     }

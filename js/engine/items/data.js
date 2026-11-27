@@ -154,6 +154,30 @@
   function babbleClips(rng, avoidVoices, n) {
     return C.shuffle(rng, sentenceVoices(avoidVoices)).slice(0, n).map(function (v) { return C.pick(rng, kindsOf(v, 'sentence')); });
   }
+  // The items an answer can come from with this voice pool (any clip by a pool voice; clipsOf(it) → clip ids), and
+  // their answer distribution: foils follow it, so a word that was right before is no likelier to be right again
+  // (review ST-03). Memoised per list name and pool.
+  function reach(name, items, pool, clipsOf) {
+    var X = idx(), key = 'reach:' + name + ':' + items.length + ':' + pool.slice().sort().join(',');
+    X.poolCache = X.poolCache || {};
+    if (X.poolCache[key]) return X.poolCache[key];
+    var inPool = {}; pool.forEach(function (v) { inPool[v] = 1; });
+    var get = clipsOf || function (it) { return I.adapt.clipsOf(it); };
+    var out = items.filter(function (it) { return get(it).some(function (id) { return inPool[X.man[id].voice]; }); });
+    out.key = key;
+    X.poolCache[key] = out;
+    return out;
+  }
+  function distOf(name, list, getAns) {
+    var X = idx(), key = 'dist:' + name + ':' + (list.key || list.length);
+    X.poolCache = X.poolCache || {};
+    return X.poolCache[key] || (X.poolCache[key] = C.answerDist(list, getAns));
+  }
+  // A slot's answer distribution: over the reachable items when they hold ≥ 4 different answers, else over all.
+  function slotDist(name, reachable, all, getAns) {
+    var d = distOf(name, reachable, getAns);
+    return d.support.length >= 4 || reachable === all ? d : distOf(name + ':all', all, getAns);
+  }
   // Background bed spec (review M3): 'babble' = one train sentence clip per talker, from voices other than `avoid`
   // ({kind:'babble', clips, db}; never a recorded bed id, which the renderer cannot split into talkers); any other
   // kind = a recorded bed of that kind ({kind:'ambience', bed:id, db}). With fewer than 3 babble talkers in the build
@@ -221,5 +245,5 @@
 
   I.data = { itemVoice: itemVoice, keyPool: keyPool, idx: idx, clip: clip, textOf: textOf, voice: voice, has: has, clipFor: clipFor, kindsOf: kindsOf, pool: pool,
     isProbeWord: isProbeWord, neighbours: neighbours, semis: semis, voicePool: voicePool, maskers: maskers, bed: bed,
-    babbleClips: babbleClips, bedSpec: bedSpec, bedTalkers: bedTalkers, room: room, fitSize: fitSize, ROOM_LEN: LEN, reset: function () { cache = null; } };
+    babbleClips: babbleClips, bedSpec: bedSpec, bedTalkers: bedTalkers, reach: reach, distOf: distOf, slotDist: slotDist, room: room, fitSize: fitSize, ROOM_LEN: LEN, reset: function () { cache = null; } };
 })(typeof window !== 'undefined' ? window : globalThis);

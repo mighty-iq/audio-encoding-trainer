@@ -4,7 +4,15 @@
    word, wrong question). Bet: listening under memory load on real-life content (bridging).
    Lab matrix words (the probe vocabulary: "eleven", "thirty", "warm" …) may occur inside a message, but Echo never
    asks for a detail that contains one and never offers one (token match: "eleven thirty", "twenty-four"); a message
-   with no other askable detail is skipped (lead's decision, 2026-11-26). */
+   with no other askable detail is skipped (lead's decision, 2026-11-26).
+   Shortcut-proof questions (lead's decisions, 2026-11-26/27; review ST-03): the messages in play are those with the
+   asked number of details, from every voice (one voice per message: a narrow voice pool would replay a handful of
+   messages until known by heart). A question is asked only when it has ≥ 3 different answers among them, and its
+   foils are those answers ("Where is the train going?" → the other destinations), drawn uniformly. The trial is
+   drawn through a lead detail: a question, one of its answers uniformly, then a message with that answer; the
+   other asked details favour rare answers (weight 1 / messages sharing it). One detail fewer than the message
+   holds is asked (at most 3), so the player keeps them all in mind. Each answer then comes up about as often as
+   any option, and remembering past answers does not help. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -53,7 +61,56 @@
     return out;
   }
   function contains(text, phrase) { return (' ' + C.norm(text) + ' ').indexOf(' ' + C.norm(phrase) + ' ') >= 0; }
-
+  function uniqNorm(a) { var s = {}, o = []; a.forEach(function (v) { var k = C.norm(v); if (k && !s[k]) { s[k] = 1; o.push(v); } }); return o; }
+  // The questions that can be asked among the messages in play: those with ≥ 3 different answers there. Their
+  // answers there are the options (all of them when there are 3), so the answer is a uniform pick among values that
+  // are answers just as often (review ST-03 and the lead's frequency decision). Cached per message set.
+  function inPlay(list, cats) {
+    var cache = X.idx().poolCache = X.idx().poolCache || {}, key = 'echo:play:' + list.map(function (m) { return m.id; }).join('|');
+    if (cache[key]) return cache[key];
+    var F = list.map(function (m) { return askable(m, cats); }), vals = {}, c = {};
+    F.forEach(function (A) { A.forEach(function (f) { var k = C.norm(f.value); (vals[f.q] = vals[f.q] || {})[k] = f.value; (c[f.q] = c[f.q] || {})[k] = (c[f.q][k] || 0) + 1; }); });
+    var sets = {}; Object.keys(vals).forEach(function (q) { var vs = Object.keys(vals[q]).map(function (k) { return vals[q][k]; }); if (vs.length >= 3) sets[q] = vs; });
+    cache[key] = { F: F.map(function (A) { return A.filter(function (f) { return sets[f.q]; }); }), sets: sets, c: c };
+    return cache[key];
+  }
+  // messages of the last tutorial trials: the next real trials use others (FRESH-A #3; in memory for the visit)
+  var TUTORED = [];
+  function valueAt(cn, i, q) { var f = cn.F[i].filter(function (x) { return x.q === q; })[0]; return f ? C.norm(f.value) : null; }
+  // One trial's details: a lead detail (a question as common as it is in play, one of its answers uniformly, then a
+  // message with that answer) and up to two more from that message, one fewer than it holds, weighted by u[q][answer].
+  function drawDetails(rng, msgs, cn, ids, u) {
+    var inst = []; ids.forEach(function (i) { cn.F[i].forEach(function (f) { inst.push(f.q); }); });
+    var q = inst[C.ri(rng, inst.length)], sameQ = ids.filter(function (i) { return valueAt(cn, i, q) !== null; });
+    var vals = C.uniq(sameQ.map(function (i) { return valueAt(cn, i, q); })), v = vals[C.ri(rng, vals.length)];
+    var mi = C.pick(rng, sameQ.filter(function (i) { return valueAt(cn, i, q) === v; }));
+    var leadF = cn.F[mi].filter(function (f) { return f.q === q; })[0], facts = [leadF];
+    var nQ = Math.min(3, msgs[mi].facts.length - 1, cn.F[mi].length), rest = cn.F[mi].filter(function (f) { return f !== leadF; });
+    while (facts.length < nQ && rest.length) {
+      var pk = C.weighted(rng, rest, rest.map(function (f) { return (u[f.q] && u[f.q][C.norm(f.value)]) || 1; }));
+      facts.push(pk); rest = rest.filter(function (f) { return f !== pk; });
+    }
+    return { mi: mi, facts: facts };
+  }
+  // Weights for the extra details of a message set: start at 1 / messages sharing the answer, then four rounds of
+  // simulated draws (2,000 each, a fixed seed) in which each answer's weight is divided by how often it came up
+  // against its question's mean, so the answers of every question are asked about equally often. Cached.
+  function extraWeights(msgs, cn) {
+    var cache = X.idx().poolCache, key = 'echo:u:' + msgs.map(function (m) { return m.id; }).join('|');
+    if (cache[key]) return cache[key];
+    var u = {}, ids = msgs.map(function (m, i) { return i; }).filter(function (i) { return cn.F[i].length > 0; }), rng = ES.core.rng('echo:weights');
+    Object.keys(cn.sets).forEach(function (q) { u[q] = {}; cn.sets[q].forEach(function (v) { var k = C.norm(v); u[q][k] = 1 / ((cn.c[q] && cn.c[q][k]) || 1); }); });
+    for (var round = 0; round < 4 && ids.length; round++) {
+      var cnt = {};
+      for (var t = 0; t < 2000; t++) drawDetails(rng, msgs, cn, ids, u).facts.forEach(function (f) { var q = cnt[f.q] = cnt[f.q] || {}, k = C.norm(f.value); q[k] = (q[k] || 0) + 1; });
+      Object.keys(u).forEach(function (q) {
+        var ks = Object.keys(u[q]), mean = ks.reduce(function (a, k) { return a + ((cnt[q] && cnt[q][k]) || 0); }, 0) / ks.length;
+        ks.forEach(function (k) { var n = (cnt[q] && cnt[q][k]) || 0.5; u[q][k] *= Math.max(0.25, Math.min(4, Math.pow(mean / n, 0.8))); });
+      });
+    }
+    cache[key] = u;
+    return u;
+  }
   function make(rng, setting, ctx) {
     ctx = ctx || {};
     var V = (ES.data && ES.data.vocab) || {}, breadth = C.breadthOf(setting, ctx);
@@ -68,13 +125,35 @@
       all = all.filter(function (it) { return askable(it, cats).length > 0; });
     }
     A.voicesWith(all).forEach(function (v) { withMat[v] = 1; });
-    var cand = [];
-    for (var off = 0; off < 4 && !cand.length; off++) cand = all.filter(function (it) { return Math.abs(it.facts.length - nDet) === off; });
-    var pool = X.voicePool({ filter: function (vo, v) { return withMat[v]; }, breadth: breadth, order: ctx.playerSeed || 'p', minN: 4, avoid: ctx.avoidVoices });
-    var hit = X.itemVoice(rng, cand, 'any', pool, C.recentOf(ctx));
-    if (!hit) { hit = X.itemVoice(rng, cand, 'any', Object.keys(withMat), []); if (hit) relaxed.push('all voices'); }
-    if (!hit) throw new Error('echo: no speech material in this build');
-    var it = hit.item, actual = it.facts.length;
+    // the messages in play: the asked number of details (nearest available), every voice; a message already heard
+    // in this set or in the tutorial is left out (FRESH-A #3); widened to neighbouring counts while none is left
+    // or no question has three different answers there
+    var memo = C.memo(ctx), seenSet = memo.echoSeen = memo.echoSeen || [], skipM = {};
+    seenSet.concat(ctx.tutorial ? [] : TUTORED).forEach(function (id) { skipM[id] = 1; });
+    var skipV = {}; (C.recentOf(ctx) || []).concat(ctx.avoidVoices || []).forEach(function (v) { skipV[v] = 1; });
+    var msgs = [], cn = null, ids = [], off;
+    for (var pass = 0; pass < 2 && !ids.length; pass++) {
+      for (off = 0; off < 4; off++) {
+        msgs = all.filter(function (it) { return Math.abs(it.facts.length - nDet) <= off && A.clipsOf(it).length > 0; });
+        if (!msgs.length || (off === 0 && !msgs.some(function (m) { return m.facts.length === nDet; }))) continue;
+        cn = inPlay(msgs, cats);
+        var usable = msgs.map(function (m, i) { return i; }).filter(function (i) { return cn.F[i].length > 0 && (pass > 0 || !skipM[msgs[i].id]); });
+        var fresh = usable.filter(function (i) { return A.clipsOf(msgs[i]).some(function (id) { return !skipV[X.clip(id).voice]; }); });
+        ids = fresh.length ? fresh : usable;
+        if (ids.length) break;
+      }
+    }
+    if (!ids.length) throw new Error('echo: no speech material in this build');
+    if (off > 0) relaxed.push('details widened');
+    // balanced draw (lead's decision): a lead question (as common as it is among the messages in play), one of its
+    // answers uniformly, then a message with that answer; so each answer of the lead question comes up equally
+    // often, and messages with rare answers are drawn more often for the other questions too
+    var drawn = drawDetails(rng, msgs, cn, ids, extraWeights(msgs, cn)), mi = drawn.mi, it = msgs[mi];
+    seenSet.push(it.id); if (seenSet.length > 40) seenSet.shift();
+    if (ctx.tutorial) { TUTORED.push(it.id); if (TUTORED.length > 8) TUTORED.shift(); }
+    var clipIds = A.clipsOf(it), freshClips = clipIds.filter(function (id) { return !skipV[X.clip(id).voice]; });
+    var hitClip = C.pick(rng, freshClips.length ? freshClips : clipIds), hit = { item: it, clip: hitClip, voice: X.clip(hitClip).voice };
+    var actual = it.facts.length;
     dials.details = Math.max(0, Math.min(3, actual - 2));
     var fx = rate > 1.001 ? [{ type: 'wsola', rate: rate }] : null;
     var c = X.clip(hit.clip), dur = (c.dur || 3) / (rate || 1);
@@ -84,13 +163,16 @@
     var beds = [X.bedSpec(rng, breadth < 0.4 ? ['cafe'] : ['cafe', 'party', 'babble'], bo) || X.bedSpec(rng, ['babble'], bo) || { kind: 'ssn', db: -snr }];
     var audio = { out: { db: -20 }, dur: Math.round((0.6 + dur + 0.8) * 100) / 100, spatial: 'mono', parts: [part], beds: beds, room: null };
     C.remember(ctx, hit.voice, null);
-    var nQ = Math.min(3, actual), facts = C.sample(rng, askable(it, cats), nQ);
+    var facts = C.shuffle(rng, drawn.facts);
     var slots = facts.map(function (f) {
       var others = it.facts.filter(function (g) { return g !== f && g.cat === f.cat; }).map(function (g) { return g.value; });
-      var idx = X.idx(), dk = 'echo:dist:' + actual + ':' + f.cat;
-      var dist = idx.poolCache[dk] || (idx.poolCache[dk] = C.answerDist(cand.filter(function (m) { return m.facts.length === actual; }), function (m) {
-        var g = m.facts.filter(function (x) { return x.cat === f.cat; })[0]; return g && !hasProbe(g.value) ? g.value : undefined; }));
-      var sl = C.slot(rng, { label: f.q, answer: f.value, pool: dist.support.length >= 4 ? dist.support : cats[f.cat], draw: dist.draw, freq: dist.freq, neighbours: X.neighbours, avoid: others, type: f.cat === 'number' ? 'number' : undefined });
+      // foils: the question's other answers among the messages in play ("Where is the train going?" → the other
+      // destinations), drawn uniformly; a question with three answers there shows all three
+      var S = cn.sets[f.q], draw = function (r) { return S[C.ri(r, S.length)]; };
+      // uniform foils from S (no sound-alike pairing here: the option set stays a uniform draw, so neither how
+      // familiar an option is nor how it pairs with another says which one is the answer)
+      var sl = C.slot(rng, { label: f.q, answer: f.value, pool: S, draw: draw, neighbours: function () { return []; }, avoid: others, type: f.cat === 'number' ? 'number' : undefined });
+
       Object.keys(sl.foils).forEach(function (o) { if (contains(it.text, o)) sl.foils[o] = 'context'; });
       sl.cat = f.cat;
       return sl;

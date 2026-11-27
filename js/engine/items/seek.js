@@ -49,23 +49,33 @@
     var nouns = phrase ? A.callsign().map(function (p) { return p.word; }).filter(function (w, i, a) { return a.indexOf(w) === i; }) : X.pool('word', V.nouns || [], 2);
     var pool = X.voicePool({ filter: function (vo, v) { return phrase ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }, breadth: breadth, order: ctx.playerSeed || 'p', minN: 5, avoid: ctx.avoidVoices });
     var recent = C.recentOf(ctx) || [], tp = pool.filter(function (v) { return recent.indexOf(v) < 0; });
-    var tv = C.pick(rng, tp.length ? tp : pool);
+    // the word first, uniformly among the words the pool's voices call, then a voice of the pool that calls it: no
+    // word is the answer more often than another, as foils are drawn (review ST-03)
+    var vSet = tp.length ? tp : pool, wordsBy = {};
+    vSet.forEach(function (v) { (phrase ? A.callsignBy(v).map(function (p) { return p.word; }) : nouns.filter(function (w) { return X.has(v, 'word', w); })).forEach(function (w) { (wordsBy[C.norm(w)] = wordsBy[C.norm(w)] || []).push(v); }); });
+    var wKeys = Object.keys(wordsBy), tw0 = wKeys.length ? wKeys[C.ri(rng, wKeys.length)] : null;
+    var tv = tw0 ? C.pick(rng, C.uniq(wordsBy[tw0])) : C.pick(rng, vSet);
     var used = [], start = { x: 0, y: -0.9 };
     var clipOf = {};
-    function wordOf(v) {
+    function wordOf(v, want) {
       if (phrase) {
-        var ps = A.callsignBy(v).filter(function (p) { return used.indexOf(p.word) < 0; }), p = C.pick(rng, ps);
+        var ps = A.callsignBy(v).filter(function (p) { return used.indexOf(p.word) < 0 && (!want || C.norm(p.word) === want); }), p = C.pick(rng, ps);
         if (!p) return null;
         used.push(p.word); clipOf[v + '|' + p.word] = p.clip; return p.word;
       }
+      if (want && X.has(v, 'word', want)) { used.push(want); clipOf[v + '|' + want] = X.clipFor(v, 'word', want); return want; }
       for (var k = 0; k < 40; k++) { var w = nouns[C.ri(rng, nouns.length)]; if (used.indexOf(C.norm(w)) < 0 && X.has(v, 'word', w)) { used.push(C.norm(w)); clipOf[v + '|' + C.norm(w)] = X.clipFor(v, 'word', w); return w; } }
       return null;
     }
-    var tw = wordOf(tv);
+    var tw = wordOf(tv, tw0) || wordOf(tv);
     var tpos = place(rng, [], 0, start);
     var target = { clip: clipOf[tv + '|' + C.norm(tw)], x: tpos.x, y: tpos.y, db: snr, gapMs: Math.round(gap * 1000) };
+    // decoys from the target's voice pool first, so their words follow the same answer mix (review ST-03)
     var others = X.voicePool({ filter: function (vo, v) { return phrase ? A.callsignBy(v).length > 0 : X.kindsOf(v, 'word').length > 0; }, avoid: [tv].concat(ctx.avoidVoices || []) });
-    var decoys = [], spots = [tpos], dvs = C.sample(rng, others, nDec);
+    var inPoolD = pool.filter(function (v) { return v !== tv && others.indexOf(v) >= 0; });
+    var dvs = C.sample(rng, inPoolD, nDec);
+    if (dvs.length < nDec) dvs = dvs.concat(C.sample(rng, others.filter(function (v) { return dvs.indexOf(v) < 0; }), nDec - dvs.length));
+    var decoys = [], spots = [tpos];
     dvs.forEach(function (v) {
       var w = wordOf(v), p = place(rng, spots, Math.max(3 * r, 0.45), start);
       if (!w || !p) return;
@@ -83,8 +93,11 @@
       target: target, decoys: decoys.map(function (d) { return { clip: d.clip, x: d.x, y: d.y, db: d.db, gapMs: d.gapMs }; }),
       found: r, spatial: spatial, seed: setting.seed != null ? String(setting.seed) : 'seek-' + sid.toString(36), start: start, headTurn: hp && breadth >= 0.5 };
     var audio = { out: { db: -20 }, spatial: spatial, parts: [], beds: [], room: null, live: live };
-    var pc = X.idx().poolCache = X.idx().poolCache || {}, dist = phrase ? pc['seek:dist'] || (pc['seek:dist'] = C.answerDist(A.callsign(), function (p) { return p.word; })) : null;
-    var w2 = C.slot(rng, { label: 'Which word was it calling?', answer: tw, spoken: decoys.map(function (d) { return d.word; }), pool: dist ? dist.support : nouns, draw: dist && dist.draw, freq: dist && dist.freq, neighbours: X.neighbours, avoid: pv ? wordsOf(pv.clip) : [] });
+    // foils follow the words reachable with this voice pool (the target's own filter; review ST-03)
+    var csAll = phrase ? A.callsign() : null, dist = phrase ? X.slotDist('seek:w', X.reach('seek:cs', csAll, pool, function (p) { return [p.clip]; }), csAll, function (p) { return p.word; }) : null;
+    // foils uniform over the reachable words, as the answer is (no frequency weighting: answers are uniform now)
+    var S2 = dist ? dist.support : nouns;
+    var w2 = C.slot(rng, { label: 'Which word was it calling?', answer: tw, spoken: decoys.map(function (d) { return d.word; }), pool: S2, draw: function (r2) { return S2[C.ri(r2, S2.length)]; }, neighbours: X.neighbours, avoid: pv ? wordsOf(pv.clip) : [] });
     var loc = { label: 'Find the voice', kind: 'locate', answer: { x: tpos.x, y: tpos.y, r: r }, gamma: Math.round(Math.PI * r * r / 4 * 1000) / 1000, options: [], foils: {} };
     return {
       id: 'seek-' + sid.toString(36), ex: 'seek', seed: setting.seed || null,

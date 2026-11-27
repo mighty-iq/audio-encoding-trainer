@@ -28,7 +28,7 @@
 
   var D = {};
   D.crowd = [
-    cont('tmr', 'Your voice vs the others', 'dB', -15, 12, 0.5, -1, { start: 8, slope: 0.18, prior: { m: -3, s: 5 } }),
+    cont('tmr', 'The voice you follow vs the others', 'dB', -15, 12, 0.5, -1, { start: 8, slope: 0.18, prior: { m: -3, s: 5 } }),
     ord('talkers', 'Other voices', 'voices', [1, 2, 3], ['1 other voice', '2 other voices', '3 other voices'],
       { slope: 0.7, prior: { m: 2, s: 1 } }),
     ord('similar', 'Voice similarity', '', [0, 1, 2, 3], ['other sex', 'same sex', 'same sex, similar pitch', 'near-twin voice'],
@@ -47,13 +47,15 @@
   D.strange = [
     ord('accent', 'Accent in babble', '', [{ tier: 1, snr: null }, { tier: 1, snr: 10 }, { tier: 2, snr: 10 }, { tier: 2, snr: 6 },
       { tier: 3, snr: 6 }, { tier: 3, snr: 3 }, { tier: 3, snr: 0 }, { tier: 3, snr: -3 }],
-      ['mild accent, quiet', 'mild accent, +10 dB', 'moderate accent, +10 dB', 'moderate accent, +6 dB',
-        'strong accent, +6 dB', 'strong accent, +3 dB', 'strong accent, 0 dB', 'strong accent, −3 dB'],
+      // tiers rank how hard a voice is to understand (recogniser accuracy at 0 dB), not how strong its accent is;
+      // the voices are other-language models reading English (RV-stimuli ST-08)
+      ['an easier accented voice, quiet', 'an easier accented voice, +10 dB', 'a harder accented voice, +10 dB', 'a harder accented voice, +6 dB',
+        'the hardest accented voices, +6 dB', 'the hardest accented voices, +3 dB', 'the hardest accented voices, 0 dB', 'the hardest accented voices, −3 dB'],
       { slope: 0.45, prior: { m: 4, s: 2 }, family: 'accent' }),
     ord('fast', 'Fast speech', '×', [1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.6, 3.0],
       ['1.3×', '1.5×', '1.7×', '1.9×', '2.1×', '2.3×', '2.6×', '3×'], { slope: 0.45, prior: { m: 4, s: 2 }, family: 'fast' }),
     ord('whisper', 'Whisper', 'dB', [null, 15, 10, 6, 3, 0],
-      ['whisper, quiet', 'whisper, +15 dB', 'whisper, +10 dB', 'whisper, +6 dB', 'whisper, +3 dB', 'whisper, 0 dB'],
+      ['in quiet', 'in noise, +15 dB', 'in noise, +10 dB', 'in noise, +6 dB', 'in noise, +3 dB', 'in noise, 0 dB'],
       { slope: 0.45, prior: { m: 2.5, s: 1.8 }, family: 'whisper' }),
     ord('phone', 'Phone line', '', [{ lo: 300, hi: 3400, snr: null }, { lo: 300, hi: 3400, snr: 15 }, { lo: 400, hi: 3000, snr: 12 },
       { lo: 500, hi: 2800, snr: 9 }, { lo: 600, hi: 2500, snr: 6 }, { lo: 700, hi: 2200, snr: 3 }],
@@ -128,6 +130,37 @@
     D[ex].forEach(function (d) { d.margin = Math.round(Math.max(0, logit(MODEL.fc) - zStar) / d.slope * 10) / 10; });
   });
 
+  // A dial setting in plain words for running text (RV-play P10): "the voice you follow 2 dB quieter than the
+  // others", "speech muffled to 1.2 kHz", "little context". Values in dial units (ordinal = level index); level
+  // differences in words (over / under, louder / quieter), a proper minus sign anywhere a sign is left.
+  function signed(v) { var r = Math.round(v * 2) / 2; return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r); }
+  function mag(v) { return Math.abs(Math.round(v * 2) / 2); }
+  function over(v, what) { return mag(v) === 0 ? 'as loud as ' + what : mag(v) + ' dB ' + (v > 0 ? 'over ' : 'under ') + what; }
+  function louder(v, what) { return mag(v) === 0 ? 'as loud as ' + what : mag(v) + ' dB ' + (v > 0 ? 'louder than ' : 'quieter than ') + what; }
+  var PHRASE = {
+    'crowd.tmr': 'the voice you follow {louder:the others}', 'crowd.talkers': '{l} talking',
+    'crowd.similar': 'other voices: {l}', 'crowd.space': 'voices {l} apart',
+    'far.dist': 'the talker {l} away', 'far.rt60': 'an echo lasting {l}', 'far.noise': 'speech {over:the room noise}',
+    'strange.accent': '{l}', 'strange.fast': 'speech at {l} speed', 'strange.whisper': 'a whisper {l}',
+    'strange.phone': 'a phone call with a {l}', 'strange.muffled': 'speech muffled to {l}', 'strange.vocoded': 'a robot voice with {l}',
+    'repair.gap': '{l} of the word lost', 'repair.context': '{l}', 'repair.gate': 'the sentence broken up, {l}', 'repair.fill': 'gaps filled with {l}',
+    'echo.snr': 'speech {over:the noise}', 'echo.details': '{l} to remember', 'echo.rate': 'speech at {l} speed',
+    'echo.delay': 'a {l} wait before the questions',
+    'seek.snr': 'the voice {over:the noise} up close', 'seek.decoys': '{l}', 'seek.size': 'a {l} target', 'seek.gap': '{l} between calls',
+    'voices.cast': '{l} to choose from', 'voices.similar': 'voices: {l}', 'voices.snr': 'speech {over:the noise}', 'voices.length': '{l}'
+  };
+  function phrase(ex, id, v) {
+    var d = (D[ex] || []).filter(function (x) { return x.id === id; })[0];
+    if (!d || v === undefined || v === null) return '';
+    var lvl = d.kind === 'ord' ? d.levels[Math.max(d.min, Math.min(d.max, Math.round(v)))] : null;
+    if (id === 'gate' && lvl === 'whole sentence') return 'the whole sentence';
+    if (id === 'space' && lvl === 'same place') return 'voices in the same place';
+    if (ex === 'echo' && id === 'rate' && lvl === 'normal') return 'speech at normal speed';
+    var t = PHRASE[ex + '.' + id] || (d.label.toLowerCase() + ': {l}');
+    return t.replace(/\{over:([^}]*)\}/, function (m, w) { return over(v, w); }).replace(/\{louder:([^}]*)\}/, function (m, w) { return louder(v, w); })
+      .replace('{l}', lvl === null ? signed(v) + (d.unit ? ' ' + d.unit : '') : lvl);
+  }
+  ES.engine.dialPhrase = phrase;
   ES.engine.dials = D;
   ES.engine.dialMeta = META;
   ES.engine.model = MODEL;

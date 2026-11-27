@@ -47,7 +47,8 @@
   var NUMW = {};
   ('zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen ' +
     'eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred').split(' ').forEach(function (w) { NUMW[w] = 1; });
-  function isNum(w) { var k = norm(w); return !!k && (!!NUMW[k] || /^[0-9]+$/.test(k)); }
+  // a number word or numeral, also several ("twenty-four", "twenty one")
+  function isNum(w) { var t = norm(w).split(' ').filter(Boolean); return t.length > 0 && t.every(function (k) { return !!NUMW[k] || /^[0-9]+$/.test(k); }); }
   function homophones(a, b) {
     a = norm(a); b = norm(b);
     if (a === b) return true;
@@ -100,33 +101,39 @@
     (o.prefer || []).forEach(function (w) { add(w); });
     var spoken = uniq((o.spoken || []).filter(function (w) { return norm(w) !== norm(T); }));
     var ctx = uniq(o.context || []);
+    // Pairs or none: two same-length sound-alike pairs (T, T') and (A, A'), A a masker's or a context word, or drawn
+    // among words that have such a twin; when either twin is missing (small pools) the options are unpaired, so the
+    // answer is never the one option with a sound-alike beside it and pairs never differ by length (reviews ST-02,
+    // option length). Unpaired fillers come from the answer's class (with or without a twin in the pool).
+    function snapshot() { var u2 = {}; Object.keys(used).forEach(function (k) { u2[k] = used[k]; }); return { o: out.slice(), u: u2 }; }
+    function restore(sn) { out.length = 0; sn.o.forEach(function (w) { out.push(w); }); Object.keys(used).forEach(function (k) { delete used[k]; }); Object.keys(sn.u).forEach(function (k) { used[k] = sn.u[k]; }); }
+    function pairUp(A) {
+      var sn = snapshot(), tT = twin(T);
+      if (tT === undefined || !add(tT)) { restore(sn); return false; }
+      var a = A !== undefined ? A : randomOne(function (w) { return twin(w) !== undefined; });
+      if (a === undefined || !add(a)) { restore(sn); return false; }
+      var tA = twin(a);
+      if (tA === undefined || !add(tA)) { restore(sn); return false; }
+      return true;
+    }
+    var tClass = twin(T) !== undefined, unpaired = false;
+    var loose = function (w) { return (twin(w) !== undefined) === tClass && !nbOfAny(w); };
     if (spoken.length >= n - 1) {
       spoken.slice(0, n - 1).forEach(add);
     } else if (spoken.length === 2) {
-      spoken.forEach(add); add(randomOne());
+      spoken.forEach(add); add(randomOne(function (w) { return !nbOfAny(w); }));
     } else if (spoken.length === 1) {
-      add(spoken[0]);
-      add(nbOf(T)[0]);
-      add(nbOf(spoken[0])[0]);
+      if (!pairUp(spoken[0])) { add(spoken[0]); unpaired = true; }
     } else if (ctx.length) {
-      var C = shuffle(rng, ctx.filter(ok))[0];
-      add(nbOf(T)[0]);
-      if (add(C)) add(nbOf(C)[0]);
-    } else {
-      // no other voice's words and no context: two same-length sound-alike pairs (T, T') (R, R') with R drawn among
-      // words that have such a twin; when T has none, four unpaired words that have none either. Neither option
-      // length nor pairing then tells the answer apart (review: longest-option bias in Far and Repair).
-      var tT = twin(T);
-      if (tT !== undefined) {
-        add(tT);
-        var R = randomOne(function (w) { return twin(w) !== undefined; });
-        if (add(R)) add(twin(R));
-      } else {
-        for (var u = 0; u < n - 1; u++) add(randomOne(function (w) { return twin(w) === undefined && !nbOfAny(w); }));
-      }
-    }
+      var Cw = shuffle(rng, ctx.filter(ok))[0];
+      if (Cw === undefined || !pairUp(Cw)) { if (Cw !== undefined) add(Cw); unpaired = true; }
+    } else if (!pairUp()) unpaired = true;
+    if (unpaired) while (out.length < n) { if (!add(randomOne(loose))) break; }
     var guard = 0;
-    while (out.length < n && guard++ < 50) { if (!add(randomOne())) { var any = shuffle(rng, (o.pool || []).filter(ok))[0]; if (!add(any)) break; } }
+    while (out.length < n && guard++ < 50) {
+      var fw = unpaired ? randomOne(function (w) { return !nbOfAny(w); }) : randomOne();
+      if (!add(fw)) { var any = shuffle(rng, (o.pool || []).filter(ok))[0]; if (!add(any)) break; }
+    }
     var spokenSet = {}; spoken.forEach(function (w) { spokenSet[norm(w)] = 1; });
     var ctxSet = {}; ctx.forEach(function (w) { ctxSet[norm(w)] = 1; });
     var foils = {}, numSlot = o.type === 'number' || (!o.type && isNum(T) && out.length > 1 && out.slice(1).every(isNum));

@@ -73,6 +73,40 @@ export const tests = [
     const withMx = (V.echo || []).filter((it) => it.facts.some((f) => hasMx(f.value)) && used.has(norm(it.text)));
     assert.ok(withMx.length >= 5, 'messages with a matrix word are still played (others asked): ' + withMx.length);
   } },
+  { name: 'Echo variety (FRESH-A #3): ≥ 8 different messages in a 10-trial set, and the tutorial\'s messages are not reused', fn(ES, assert) {
+    const R = real(); if (!R) return;
+    const E = R.engine;
+    for (const [mode, k] of [['edge', 0], ['variety', 1], ['edge', 2]]) {
+      const lr = E.learner.create(null, () => 0);
+      // a tutorial trial first (as the Echo tutorial makes it), then a real set
+      const tut = E.items.echo.make(R.core.rng('tut' + k), { dials: { snr: 16, details: 0, rate: 0, delay: 0 }, anchor: true, warmup: true }, { tutorial: true, mode: 'tutorial', breadth: 0 });
+      const sc = E.flow.start('echo', { learner: lr, mode, seed: 'var' + k, trials: 10 });
+      const texts = []; let sp;
+      while ((sp = E.flow.next(sc))) { texts.push(sp.meta.text); E.flow.answer(sc, sp, { picks: sp.question.slots.map((x) => x.answer) }); }
+      assert.ok(new Set(texts).size >= 8, mode + ': ' + new Set(texts).size + ' different messages in 10');
+      assert.notEqual(texts[0], tut.meta.text, 'the first real trial is not the tutorial\'s message');
+    }
+    // the top level (five details) has only a few messages: the set still varies (neighbouring levels join)
+    const lr5 = E.learner.create(null, () => 0), seen = new Set(), memo = { set: {} };
+    for (let i = 0; i < 10; i++) seen.add(E.items.echo.make(R.core.rng('d5:' + i), { dials: { snr: 10, details: 3, rate: 0, delay: 0 } }, Object.assign(memo, { learner: lr5 })).meta.text);
+    assert.ok(seen.size >= 8, 'five-detail set: ' + seen.size);
+  } },
+  { name: 'Repair (ST-02, ST-11): no option is the phonetic centre; authored sound-alikes are neighbours; full gaps start early', fn(ES, assert) {
+    const R = real(); if (!R) return;
+    const E = R.engine, C = R.data.manifest.clips, V = R.data.vocab, X = buildIndex(R);
+    const authored = {}; (V.repair || []).forEach((it) => (it.foils || []).forEach((f) => { authored[f] = 1; }));
+    let authoredShown = 0, n = 0;
+    for (let s = 0; s < 1500; s++) {
+      const rng = R.core.rng('st02:' + s), st = randomSetting(R, 'repair', rng.fork('set'));
+      const sp = E.items.repair.make(rng.fork('make'), { dials: st.dials, focus: Object.keys(st.dials)[0] }, { breadth: s % 2 ? 0.3 : 1, playerSeed: 'r' + (s % 3) });
+      const sl = sp.question.slots[0], part = sp.audio.parts[0], c = C[part.clip], mask = part.fx.find((x) => x.type === 'mask'), w = c.wt[sp.meta.key];
+      assert.ok(c.wt && w, 'a target clip has word times');
+      if (E.dials.repair[0].values[sp.setting.dials.gap] >= 0.999) assert.ok(mask.t0 < w[0] - 0.0399 || mask.t0 <= (sp.meta.key > 0 ? c.wt[sp.meta.key - 1][1] + 0.0051 : 0), 'full gap starts early: ' + mask.t0 + ' vs ' + w[0]);
+      Object.entries(sl.foils).forEach(([f, t]) => { n++; if (authored[f] && t === 'neighbour') authoredShown++; });
+      assert.deepEqual(checkSpec(R, X, sp), []);
+    }
+    assert.ok(n > 4000 && authoredShown > 0, 'authored sound-alikes shown as neighbours: ' + authoredShown);
+  } },
   { name: 'M3: babble beds carry one talker clip per voice (never a recorded bed id the renderer cannot split)', fn(ES, assert) {
     const R = real(); if (!R) return;
     const E = R.engine, C = R.data.manifest.clips; let babble = 0;

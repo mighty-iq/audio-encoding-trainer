@@ -12,7 +12,7 @@ const has = (text, w) => (' ' + norm(text) + ' ').includes(' ' + norm(w) + ' ');
 const ROOM_LEN = { small: 5, medium: 10, large: 22, hall: 38 };
 const NUMW = new Set(('zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen ' +
   'seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred').split(' '));
-const isNum = (w) => NUMW.has(norm(w)) || /^[0-9]+$/.test(norm(w));
+const isNum = (w) => { const t = norm(w).split(' ').filter(Boolean); return t.length > 0 && t.every((x) => NUMW.has(x) || /^[0-9]+$/.test(x)); };
 
 export function buildIndex(ES) {
   const D = ES.data, clips = D.manifest.clips, voices = D.voices, V = D.vocab;
@@ -21,6 +21,8 @@ export function buildIndex(ES) {
   const nb = {}; // symmetric: either word listing the other makes them neighbours
   const link = (a, b) => { if (!a || !b || a === b) return; (nb[a] = nb[a] || new Set()).add(b); (nb[b] = nb[b] || new Set()).add(a); };
   Object.entries(V.neighbours || {}).forEach(([k, a]) => a.forEach((x) => link(norm(k), norm(x))));
+  // Repair items' authored sound-alikes are neighbours of their keyword, both ways (review ST-02)
+  (V.repair || []).forEach((it) => { const kw = norm(it.keyword || (it.words || [])[it.key]); (it.foils || []).forEach((f) => link(kw, norm(f))); });
   const echoByText = new Map((V.echo || []).map((it) => [norm(it.text), it]));
   const repairByText = new Map((V.repair || []).map((it) => [norm(it.text), it]));
   return { clips, voices, V, probeWords, nb, echoByText, repairByText };
@@ -183,8 +185,10 @@ export function checkSpec(ES, X, spec) {
     if (hit.length !== 1) E('mask covers ' + hit.length + ' words');
     else if (norm(hit[0]) !== norm(slots[0].answer)) E('answer is not the masked word');
     const k = c.words.findIndex((w) => norm(w) === norm(slots[0].answer)), w = c.wt[k];
-    const frac = (mask.t1 - mask.t0) / (w[1] - w[0]);
-    if (Math.abs(frac - val(ES, 'repair', 'gap', dset.gap)) > 0.02) E('gap fraction ' + frac.toFixed(2) + ' vs dial');
+    const frac = (mask.t1 - mask.t0) / (w[1] - w[0]), gw = val(ES, 'repair', 'gap', dset.gap);
+    // a full gap starts up to 60 ms before the timed onset (review ST-11) and never covers the word before
+    if (gw >= 0.999) { if (Math.abs(mask.t1 - w[1]) > 1e-3 || mask.t0 > w[0] + 1e-3 || mask.t0 < w[0] - 0.0605) E('full gap ' + mask.t0 + '–' + mask.t1 + ' vs word ' + w); }
+    else if (Math.abs(frac - gw) > 0.02) E('gap fraction ' + frac.toFixed(2) + ' vs dial');
     const item = X.repairByText.get(norm(c.text));
     slots[0].options.forEach((o) => { if (norm(o) !== norm(slots[0].answer) && has(c.text, o)) E('foil ' + o + ' occurs in the sentence'); });
     labelCheck(slots[0], 0, { context: (kk) => !!item && (item.alts || []).map(norm).includes(kk) });
@@ -200,7 +204,7 @@ export function checkSpec(ES, X, spec) {
         sl.options.forEach((o) => { if (norm(o) !== norm(sl.answer) && w.includes(norm(o))) E('fallback foil in the phrase'); });
       });
       if (new Set(slots.map((s) => norm(s.answer))).size !== slots.length) E('two questions with one answer');
-      if (slots.length - 2 !== dset.details && !(slots.length < 2)) E('details dial vs questions');
+      if (slots.length < 1 || slots.length > dset.details + 2) E('details dial vs questions');
       return err;
     }
     if (item.facts.length - 2 !== dset.details) E('details dial ' + dset.details + ' vs ' + item.facts.length + ' facts');

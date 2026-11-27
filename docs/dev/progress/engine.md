@@ -2,13 +2,14 @@
 
 Owner paths: js/engine/**, tests/unit/engine*, tests/sim/**, tests/fixtures/{data-fixture,rng}.js. Never pushes.
 
-## Status (2026-11-26 20:40 UTC)
+## Status (2026-11-27 00:15 UTC)
 CONTRACTS §5 implemented for all seven exercises (missions has no dials). Unit tests: 38 engine tests pass with
 `node tests/unit/run.mjs engine` (whole suite green). Full verification: `node tests/sim/run.mjs --real` (results in
 the Results section). Engine files load in the order of tools/build-index.mjs (items/adapt.js loads via `items/*`).
 Lead follow-ups of 19:40 UTC done in 61c3b41 (Seek live fields and preview, noteMet, foil types, plateau retune),
 plus game's 19:16 request (venue sets keep their Strange family). Fix round 1: every engine finding fixed (section
-"Fix round 1"); 46 engine tests, whole suite green.
+"Fix round 1"). Round 2 (section "Round 2"): answer-only cues at chance + 0.05 on real data for mixed and single
+players; 51 engine tests pass.
 
 ## Files
 - dials.js — dials per exercise (real units; ordinal ladders easy → hard, model unit = level index), slope priors
@@ -56,7 +57,10 @@ eligible item), neighbours only when they can be answers for that slot, symmetri
 → (T, T') (R, R') with T', R' sound-alikes of the SAME length and R drawn among words that have one (when T has
 none: four unpaired words that have none either); one masker → (T, nT) (M, nM); two → T, M1, M2, R; three → all
 spoken. Neighbour lists are symmetric (either word listing the other), and a pair partner is the neighbour
-closest in length. Homophones never shown.
+closest in length. Pairs or none: when a twin is missing (small pools) every option is unpaired. Homophones never
+shown. Foils come from the answers reachable with the player's voice pool and level (the answer's own filter), and
+in one-slot builds the answer word is drawn first, uniformly among those answers, with foils drawn uniformly too
+(Seek, Crowd's word, Echo's lead detail), so no option is more familiar than the answer (round 2).
 A slot is asked only if the build has ≥ 3 different answers for it. Foil types: 'masker' (another voice said it),
 'neighbour' (sound-alike from vocab neighbours), 'context' (fits the sentence / said in Echo's message for another
 question), 'number' (another number: numbers are never called sound-alikes; set by number slots and inferred when
@@ -189,6 +193,63 @@ Each finding in engine files or assigned to the engine, with its test (tests/uni
 - Sanity simulation after the round (100 learners × 60 days per mode): accuracy, edge accuracy, anchors and
   warm-ups as before; plateau false alarms 5.5–7.2 % and detection 51–83 % across modes (sampling noise ±2 %).
 
+## Round 2 (docs/dev/reviews/RV-stimuli.md, FRESH-A/B, RV-play-a11y; lead's decisions 2026-11-26/27)
+- Echo frequency (lead): a question is asked only with ≥ 3 answers among the messages in play, its foils are those
+  answers (uniform; "Where is the train going?" → destinations); trials are drawn through a lead detail (question,
+  answer uniformly, message); the other details use weights calibrated by simulated draws (cached); one detail fewer
+  than the message holds is asked (2–3 questions). A question with 3 answers shows 3 options: a same-form extra is
+  never an answer, which re-opened the "seen" cue. Echo uses every voice (one voice per message).
+- ST-03 fixed: foils from the reachable answers (X.reach/slotDist) in Crowd, Far, Strange, Repair, Seek, Voices,
+  Echo; decoys (Seek), maskers (Crowd) and the crowd (Voices find) from the player's pool first; Seek and Crowd draw
+  the answer word first; tests/sim/checks.mjs has single players (fixed pool, variety 0.3 or 1).
+- ST-02 fixed: Repair no longer shows the authored sound-alikes as a set; they are options only when reachable
+  answers, labelled 'neighbour'; pairs-or-none in every option structure. Phonetic-hub responder (CMUdict via
+  $EARSHOT_CMUDICT or ../corpora next to the repository; letters without it) in tests/sim/shortcuts.mjs.
+- ST-11 fixed: a full gap starts 60 ms before the timed onset (never into the word before); a clip without word
+  times is never a target (realdata test). ST-05 side note: isNum accepts "twenty-four" (solver and engine).
+- Strange: the accent family's fallback stays among accented voices (the one solver failure in 10,000).
+- FRESH-A #3 fixed: no Echo message repeats within a set while others are left (neighbouring levels join), and the
+  tutorial's messages are avoided; test: ≥ 8 different messages in 10 trials, also at five details.
+- FRESH-B C1 fixed: in Edge, Path and Variety up to three not-yet-played exercises open a session (priority order)
+  and no other new one joins: every exercise by the third session (sim 100 %, ≤ 3 new a session; Focus excluded).
+- Session counting: only sessions with an answered trial (`answered > 0` when logged, else a set with n ≥ 1) count
+  for the sleep note, the overnight check, fresh ears, played exercises and the sleep breaker.
+- Copy: overnight text from E.dialPhrase ("the voice you follow 2 dB quieter than the others", "speech muffled to
+  1.2 kHz", "little context"); Crowd "The voice you follow vs the others", "The voice you followed said …";
+  whisper levels "in quiet" / "in noise, +6 dB"; accent levels "an easier / a harder accented voice", "the hardest
+  accented voices" (ST-08: tiers rank intelligibility).
+- Verification (real data, `node tests/sim/cues.mjs --solo 6000`; 10,000 mixed seeds; solver 0 failures in every
+  run). Largest excess over chance in any level bin, before (2bd6a8d) → after:
+
+| Exercise · run | frequent | seen | typical | hub | longest | shortest | heard |
+|---|---|---|---|---|---|---|---|
+| crowd · mixed | +0.06 → +0.01 | +0.01 → +0.01 | +0.03 → +0.02 | +0.01 → +0.02 | +0.02 → +0.02 | +0.02 → +0.02 | +0.02 → +0.02 |
+| crowd · solo 0.3 | +0.13 → +0.04 | +0.07 → +0.03 | +0.02 → +0.03 | +0.02 → +0.01 | +0.05 → +0.01 | +0.03 → +0.03 | +0.02 → +0.01 |
+| crowd · solo 1 | +0.07 → +0.03 | +0.04 → +0.02 | +0.03 → +0.03 | +0.01 → +0.03 | +0.04 → +0.03 | +0.02 → +0.01 | +0.04 → +0.03 |
+| far · mixed | +0.08 → +0.03 | +0.02 → +0.03 | +0.02 → +0.01 | +0.00 → +0.01 | +0.02 → +0.01 | +0.03 → +0.00 | +0.00 → +0.00 |
+| far · solo 0.3 | +0.29 → +0.04 | +0.27 → +0.02 | +0.01 → +0.03 | −0.01 → +0.00 | +0.04 → +0.03 | +0.04 → +0.02 | +0.00 → +0.00 |
+| far · solo 1 | +0.05 → +0.07 | +0.03 → +0.01 | +0.01 → +0.02 | +0.04 → +0.01 | +0.05 → +0.02 | +0.03 → +0.02 | +0.00 → +0.00 |
+| strange · mixed | +0.16 → +0.04 | +0.04 → +0.03 | +0.04 → +0.04 | +0.06 → +0.05 | +0.07 → +0.06 | +0.04 → +0.04 | +0.00 → +0.00 |
+| strange · solo 0.3 | +0.33 → +0.10 | +0.11 → +0.03 | +0.07 → +0.07 | +0.08 → +0.08 | +0.10 → +0.05 | +0.04 → +0.06 | +0.00 → +0.00 |
+| strange · solo 1 | +0.13 → +0.06 | +0.06 → +0.06 | +0.07 → +0.06 | +0.08 → +0.04 | +0.06 → +0.08 | +0.09 → +0.08 | +0.00 → +0.00 |
+| repair · mixed | +0.13 → +0.03 | +0.01 → +0.01 | +0.29 → +0.02 | +0.54 → +0.01 | +0.09 → +0.00 | −0.07 → +0.01 | +0.00 → +0.00 |
+| repair · solo 0.3 | +0.30 → +0.03 | +0.26 → +0.02 | +0.34 → +0.03 | +0.57 → +0.01 | +0.04 → +0.00 | −0.02 → +0.03 | +0.00 → +0.00 |
+| repair · solo 1 | +0.06 → +0.04 | +0.01 → +0.01 | +0.33 → +0.00 | +0.56 → +0.01 | +0.08 → +0.01 | −0.03 → +0.04 | +0.00 → +0.00 |
+| echo · mixed | +0.20 → +0.05 | +0.09 → +0.01 | +0.01 → −0.00 | +0.00 → +0.01 | −0.00 → +0.00 | +0.00 → +0.01 | +0.00 → +0.00 |
+| echo · solo 0.3 | +0.42 → +0.04 | +0.21 → +0.01 | −0.00 → +0.00 | +0.03 → +0.02 | +0.01 → +0.01 | −0.00 → +0.01 | +0.00 → +0.00 |
+| echo · solo 1 | +0.21 → +0.03 | +0.10 → +0.01 | +0.00 → +0.01 | +0.02 → +0.01 | −0.00 → +0.01 | −0.00 → +0.01 | +0.00 → +0.00 |
+| seek · mixed | +0.09 → +0.01 | +0.01 → +0.01 | +0.02 → +0.02 | +0.01 → +0.02 | +0.04 → +0.01 | +0.00 → +0.02 | +0.03 → +0.02 |
+| seek · solo 0.3 | +0.23 → +0.05 | +0.07 → +0.01 | +0.01 → +0.01 | +0.01 → +0.02 | +0.07 → +0.01 | +0.02 → +0.03 | +0.06 → +0.01 |
+| seek · solo 1 | +0.04 → +0.02 | +0.03 → +0.02 | +0.03 → +0.04 | +0.03 → +0.02 | +0.05 → +0.01 | +0.02 → +0.03 | +0.05 → +0.00 |
+| voices · mixed | +0.11 → +0.02 | +0.02 → +0.02 | +0.01 → +0.01 | +0.01 → +0.02 | +0.02 → +0.01 | +0.01 → +0.01 | +0.01 → +0.03 |
+| voices · solo 0.3 | +0.20 → +0.03 | +0.13 → +0.02 | +0.02 → +0.00 | +0.04 → +0.04 | +0.04 → +0.03 | +0.01 → +0.01 | +0.05 → +0.00 |
+| voices · solo 1 | +0.21 → +0.03 | +0.13 → +0.04 | +0.01 → +0.00 | +0.04 → +0.04 | +0.06 → +0.05 | +0.01 → +0.01 | +0.03 → +0.05 |
+
+  No bin exceeds chance + 0.05 beyond 2.5 standard errors after the change. The nominal maxima above 0.05 (Strange,
+  Far solo 1) sit in bins of 250–900 trials; with 16,000 single-player trials they are Strange 0.058 (z 0.5) at
+  variety 0.3, 0.050 at variety 1, Far 0.030, Crowd 0.020. Position: no flag. Sanity simulation (100 learners × 60
+  days): accuracy and anchors unchanged; plateau false alarms 3.8–7.5 %, detection 54–81 %.
+
 ## Log
 - 2026-11-26 17:05 UTC — Started; requests to stimuli/audio/shell.
 - 2026-11-26 17:40 UTC — Core engine, generators, solver, shortcut responders landed; foils made answer-matched.
@@ -204,6 +265,8 @@ Each finding in engine files or assigned to the engine, with its test (tests/uni
   C19, C24, C33, L9, option-length bias; tests per finding.
 - 2026-11-26 23:06 UTC — Final set (eab5150): Echo never asks for or offers a Lab matrix word (token match; lead's
   decision), a185d3b; test over 2,000 real seeds.
+- 2026-11-27 00:15 UTC — Round 2: answer-only cues (ST-02, ST-03, Echo frequency), ST-11, ST-05 note, Echo
+  variety, first-weeks planner, answered sessions, copy (P10, P11, ST-08); before/after table above.
 
 ## Open issues
 - Starter pack: Strange, Repair and Echo run on the call-sign fallback until their own clips land; residual
@@ -212,10 +275,7 @@ Each finding in engine files or assigned to the engine, with its test (tests/uni
 - Strange text-first aid trials (exA's "Same or different?") not implemented; exposure interludes are text-first.
 - Plateau: Focus mode detects 47 % of flat stretches (structural: few sessions for its other exercises); the
   earliest call is at the 13th session with an exercise. All false alarms are at the band edge (0.15–0.3).
-- Real build: Voices most-frequent responder 0.30 (cast names; 1 bin of 18), single flagged bins in Strange and Seek;
-  re-check when the full packs land.
+- Answer-only cues: re-run `node tests/sim/cues.mjs` on every new pack (single players need ≥ 16,000 trials to
+  resolve 0.05 in Strange's many small bins).
 - Shell wiring of flow.skip / end({early}) / snapshot / resume (M6, M7, M11) and of learn:false (game, M8).
-- Echo on the final set: shortcut responders 'frequent' 0.39, 'seen' 0.31 (17 bins). Questions have their own answer
-  sets ("Where is the train going?" → 4 destinations) while foils come from the category; answers are skewed (Taylor
-  in 9 of 56 messages, 5 five-detail messages). Per-question foils fixed 'seen' (0.25) but not 'frequent' (0.41) in a
-  trial (/tmp variant, not committed); needs balanced content or a design call (round 2).
+- Echo's five-detail level has 5 messages: a set there borrows four-detail messages (meta.relaxed) to stay varied.
