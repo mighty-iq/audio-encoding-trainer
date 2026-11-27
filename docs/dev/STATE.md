@@ -1,11 +1,11 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-27 03:08 UTC
+Updated: 2026-11-27 12:00 UTC
 
 ## Phase
-3 — release gate. Release candidate 2 (1.0.0) on `build`: 91b22c3. Fix round 2 and the final independent check
-(2 S1, 6 S2, 6 S3; all fixed: d4bd2c5, cea76ac, 2020368, f6092df, ea7cc28) are done. Waiting for the owner's
-release checklist and yes to merge `build` → `main`.
+Released. Earshot 1.0.0 is on `main` (fast-forward to 0a0e7b8, 2026-11-27 ~11:58 UTC) with the owner's go-ahead; the
+owner skipped the release checklist ("fix later if needed"). GitHub Pages switch-on could not be checked from the
+container (API and github.io refused); the owner has the taps. Next work: owner feedback, then the 1.1 backlog.
 
 ## Running subagents
 - None.
@@ -30,10 +30,9 @@ release checklist and yes to merge `build` → `main`.
   fits 360×640. privacy_check clean on every push.
 
 ## Next three steps
-1. Owner: release checklist (db answers/owner) and yes; read any playtest reports (db collection playtest).
-2. Fix anything the checklist fails, rebuild earshot.html and sw.js, rerun the affected suites.
-3. On yes: merge `build` → `main` (sw.js current), push, check Pages (taps if it is off), save the build log and
-   merge lessons into claude/playbook.md; update the project status note.
+1. Owner: confirm Pages is on (Settings → Pages → Deploy from a branch → main, / (root)); post the announcement.
+2. Read playtest reports (db collection playtest) and any checklist answers (release checklist db answers/owner).
+3. Fix what the owner reports; then plan 1.1 from docs/dev/PLAN-v1.1.md.
 
 ## Open questions
 - Owner may rename the repo (Pages URL changes with it; the guide and announcement then need a rebuild).
