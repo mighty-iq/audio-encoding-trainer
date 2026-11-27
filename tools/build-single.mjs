@@ -39,6 +39,9 @@ function safeScript(code) { return code.replace(/<\/(script)/gi, '<\\/$1').repla
 export function build(opts = {}) {
   let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   let scripts = 0, bytesJs = 0;
+  // The single file is never installed as an app (js/core/pwa.js registers no worker for inline scripts): no manifest
+  // or home-screen icon link, which would point at files it does not carry.
+  html = html.replace(/<link rel="(?:manifest|apple-touch-icon)"[^>]*>\n?/g, '');
   html = html.replace(/<link rel="stylesheet" href="([^"]+)">/g, (m, href) => '<style>\n' + inlineCss(href) + '\n</style>');
   html = html.replace(/<script src="([^"]+)"><\/script>/g, (m, src) => {
     const abs = path.join(ROOT, src);
