@@ -4,7 +4,7 @@ Updated: 2026-11-27 12:00 UTC
 
 ## Phase
 Released. Earshot 1.0.0 is on `main` (fast-forward to 0a0e7b8, 2026-11-27 ~11:58 UTC) with the owner's go-ahead; the
-owner skipped the release checklist ("fix later if needed"). GitHub Pages switch-on could not be checked from the
+owner skipped the release checklist and left any fixes for later. GitHub Pages switch-on could not be checked from the
 container (API and github.io refused); the owner has the taps. Next work: owner feedback, then the 1.1 backlog.
 
 ## Running subagents
