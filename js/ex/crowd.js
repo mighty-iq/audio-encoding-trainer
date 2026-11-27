@@ -2,7 +2,7 @@
    bed and tap its word and number. The shell's Play screen runs it from the engine's TrialSpecs
    (js/engine/items/crowd.js); this module supplies the copy (Home, map, Help), the two-minute tutorial, the
    strategy cards and the presentation hooks: prepare(trial) → prompt, picture (who stands where), replays;
-   review(trial, result) → which voice a picked word came from (the intrusion message), with "your voice alone"
+   review(trial, result) → which voice a picked word came from (the intrusion message), with "the voice you follow alone"
    then "the crowd again" replayed after a miss. Shared helpers: ES.ex._kit (js/ex/strategies.js), used inside
    functions only, so the load order among js/ex/* does not matter. */
 (function (root) {
@@ -29,9 +29,9 @@
       return {
         goal: 'One voice says a call sign, then a word and a number. Follow it through the crowd and tap what it said. The other voices say words and numbers too.',
         dials: {
-          tmr: 'How loud your voice is against each other voice. Above 0 dB yours is louder; below 0 dB the others are louder.',
+          tmr: 'How loud the voice you follow is against each other voice. Above 0 dB it is louder; below 0 dB the others are louder.',
           talkers: 'How many other voices talk at the same time.',
-          similar: 'How alike the other voices sound, from the other sex to a near-twin of your voice.',
+          similar: 'How alike the other voices sound, from the other sex to a near-twin of the voice you follow.',
           space: 'How far apart the voices stand around you. Unlocks once the headphone check passes.'
         },
         why: 'Most of the difficulty in a crowd is choosing which talker to follow, not hearing the words. Crowd trains that choice with call signs and voices, and with headphones, places. In one study, gains from practice in babble did not carry over to babble in another language, so the crowd here keeps changing: voices, sexes, numbers of talkers and backgrounds.'
@@ -61,7 +61,7 @@
     if (cs) return cs;
     if (cue === 'preview') return 'the first voice';
     if (cue === 'location') return 'the voice ' + where(targetAz(t));
-    return 'your voice';
+    return 'the voice you follow';
   }
   /** Which voice said a word: "the blue voice ahead-left", "the near-twin voice", "the other voice". */
   function whoSaid(t, word) {
@@ -114,9 +114,11 @@
     }
     t.picture = picture(t);
     t.feedback = t.feedback || {};
+    var said = k.slotsOf(t).map(function (s) { return s.answer; }).join(', ');
+    if (said) t.feedback.text = (cs ? cs + ' (red)' : 'The red voice') + ' said ' + k.q(said) + '.';   // shown with the worked example
     var alone = k.findReplay(t, /alone/i), again = k.findReplay(t, /again|mix|crowd/i);
     t.feedback.replays = [
-      { label: (cs || 'Your voice') + ' alone', audio: alone ? alone.audio : k.audioAlone(t.audio) },
+      { label: (cs || 'The voice you follow') + ' alone', audio: alone ? alone.audio : k.audioAlone(t.audio) },
       { label: 'The crowd again', audio: again ? again.audio : t.audio }
     ];
     return t;
@@ -141,7 +143,7 @@
         k.q(rs.map(function (r) { return r.answer; }).join(', ')) + '.');
     });
     lines = lines.concat(other);
-    if (borrowed.length) lines.push(cueOf(t) === 'callsign' ? 'Real words, from the wrong voice: lock on at the call sign.' : 'Real words, from the wrong voice: stay with yours from its first word.');
+    if (borrowed.length) lines.push(cueOf(t) === 'callsign' ? 'Real words, from the wrong voice: lock on at the call sign.' : 'Real words, from the wrong voice: stay with the voice you follow from its first word.');
     if (result.correct) lines.push(k.cap(who) + ' said ' + k.q(result.slots.map(function (r) { return r.answer; }).join(', ')) + '.');
     return { text: lines.join(' '), words: null, auto: result.correct ? [] : [0, 1] };
   };
@@ -164,7 +166,7 @@
     { kind: 'practice', force: { dials: { tmr: 6, talkers: 0, similar: 1 }, answerAt: [3, 1] },
       text: 'Now a voice of the same sex talks over it.' },
     { kind: 'caption', minMs: 3500, then: 'tap',
-      text: 'From here the crowd adapts to you: louder, more alike, more voices, always near your edge. After each answer you can hear your voice alone, then the crowd again.' }
+      text: 'From here the crowd adapts to you: louder, more alike, more voices, always near your edge. After each answer you can hear the voice you follow alone, then the crowd again.' }
   ] };
 
   // Night out venues that use this exercise: read from the game's map (ES.game.venues), else this list.

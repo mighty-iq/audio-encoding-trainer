@@ -19,8 +19,18 @@ import ex_a_common as C  # noqa: E402
 LIMIT_S = 120
 
 
-def click(page, sel):
-    page.locator(sel).first.click()
+def click(page, sel, timeout=2500):
+    """Tap once; the target may vanish as the step moves on (the runner remembers an early Continue), so a missing
+    target is not an error: the loop looks at the screen again."""
+    try:
+        page.locator(sel).first.click(timeout=timeout)
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def step_count(page):
+    return page.evaluate("() => (document.querySelector('.tut-count') || {}).textContent || ''")
 
 
 def play_tutorial(page, ex, rep, miss=False):
@@ -42,10 +52,11 @@ def play_tutorial(page, ex, rep, miss=False):
             if 'cap:' + count not in shots:
                 shots.add('cap:' + count)
                 C.shot(page, '%s-tutorial-%s' % (ex, count.replace(' ', '').lower()))
-            if s['cont']:
-                click(page, '.tut-card [data-continue]')
+            if s['cont'] and click(page, '.tut-card [data-continue]'):
                 seen.append(('caption', count))
-                time.sleep(0.15)
+                t1 = time.time()   # an early tap waits for the caption's minimum time: wait for the step to change
+                while time.time() - t1 < 8 and step_count(page) == count and C.state(page)['step'] == 'caption':
+                    time.sleep(0.1)
                 continue
         elif s['trial'] == 'example' and s['next']:
             if 'ex:' + count not in shots:

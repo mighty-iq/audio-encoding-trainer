@@ -109,3 +109,27 @@ Next: rerun ex_a_tutorial.py --miss once the shell fix lands; then final report.
   New `--head` flag tests exA's working copy against everyone else's last commit (the shell's uncommitted
   session.js — persist() undefined — broke a working-tree run). Head mode, fixtures: tutorial 76/76, layout 91/91;
   real starter pack: tutorial 68/68, layout --quick 35/35.
+
+## 2026-11-27 00:24 UTC — fix round 2 (FRESH-A, RV-play-a11y, RV-stimuli)
+- FRESH-A tutorials fixed: tutorialTrial remembers each exercise's last 5 tutorial items and redraws (≤ 16 rng forks),
+  so the example, each practice step and each "Try again" get their own item (Crowd steps 3/4 and Far 3/4 repeated).
+- Repair fixed: the weak-clue step forces the context level the build has (little context; the real sentences come as
+  strong/little pairs) and its caption says so, matching the feedback line. P17 fixed: marked sentences keep the
+  data's capitals and full stop (generator text or fixtures get a capital and a full stop too).
+- P11 fixed: Crowd says "the voice you follow" in Help, replays ("… alone"), tutorial, feedback and the card; the dial
+  label itself is the engine's (requested in requests.md with the ST-08 labels).
+- FRESH-A p-072: the worked example's line names the red dot in readable text ("Molly (red) said “rice, three”.") and
+  drops the "others said" sentence the key labels already show; a larger field minimum in tutorials requested from
+  the shell.
+- ST-08 fixed: the accent family is worded as what it is: "A voice from a French model reading English, in babble at
+  +6 dB" (recorded talkers: "A talker whose first language is …"); Help row "Voices from other-language models",
+  ranges "easiest, quiet → hardest, −3 dB" (tiers = how hard a speech recogniser found them); Home/map copy, tutorial
+  step and the card reworded; no "accent strength" or "speaker" wording. C12 check: with the final stimuli the
+  other-language voices exist and the family shows (families() includes accent; the tutorial ends on one of them).
+- A1 (640×360): fits() now also fails on scrolling boxes inside the app and keys/Next/feedback outside the window
+  (it had missed A1); with the shell's ff62544 all four exercises fit at 640×360 light and dark (`--landscape`).
+- Tests: tests/unit/exa-views.test.mjs (7 tests: distinct tutorial items, P11, P17, weak clue, ST-08/C12, Far room,
+  number foils). Simulated player taps an early Continue once and waits (12f2120 made Continue always enabled).
+  Results: unit 7/7; head mode fixtures tutorial --miss 76/76, layout 91/91, landscape 43/43; real data tutorial
+  68/68, layout --quick 35/35; `tools/with-browser.sh python3 tests/e2e/run_all.py --only=ex_a` 3/3 suites
+  (note: `--only=exA` matches no file name and runs nothing).

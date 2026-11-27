@@ -20,7 +20,7 @@ OUT = ROOT / 'tests' / 'out' / 'exa'
 EXA = ['js/ex/crowd.js', 'js/ex/far.js', 'js/ex/repair.js', 'js/ex/strange.js', 'js/ex/strategies.js']
 FIXTURES = ['tests/fixtures/data-fixture.js', 'tests/fixtures/audio-fixture.js']
 EXERCISES = ['crowd', 'far', 'strange', 'repair']
-SIZES = {'phone-s': (360, 640), 'phone': (390, 844), 'desktop': (1366, 768)}
+SIZES = {'phone-s': (360, 640), 'phone': (390, 844), 'desktop': (1366, 768), 'landscape': (640, 360)}
 
 ALIAS = r"""<script>
 /* exA test page only: every data-fixture clip gets a synthetic fixture sound (tests/fixtures/audio-fixture.js). */
@@ -118,7 +118,7 @@ def launch(p):
 def new_page(browser, size='phone-s', scheme='light'):
     w, h = SIZES[size]
     ctx = browser.new_context(viewport={'width': w, 'height': h}, color_scheme=scheme, device_scale_factor=1,
-                              has_touch=size != 'desktop', is_mobile=size != 'desktop')
+                              has_touch=size != 'desktop', is_mobile=size != 'desktop')   # landscape = a sideways phone
     page = ctx.new_page()
     errs = _ERRORS.setdefault(id(page), [])
     page.on('pageerror', lambda e: errs.append(str(e)))
@@ -177,11 +177,21 @@ def answer(page, picks):
 
 
 def fits(page):
-    """True when the page needs no scrolling (vertical or horizontal)."""
+    """True when nothing needs scrolling: not the page, not a scrolling box inside the app (RV-play-a11y A1: the trial
+    body scrolled internally), and every key, Next button and feedback line lies inside the window."""
     return page.evaluate("""() => {
-      var d = document.documentElement, s = document.scrollingElement || d;
-      return { ok: s.scrollHeight <= innerHeight + 1 && s.scrollWidth <= innerWidth + 1, h: s.scrollHeight, vh: innerHeight,
-               w: s.scrollWidth, vw: innerWidth };
+      var d = document.documentElement, s = document.scrollingElement || d, inner = [], out = [];
+      Array.prototype.forEach.call(document.querySelectorAll('#app *'), function (n) {
+        var cs = getComputedStyle(n);
+        if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight + 1) inner.push((n.className || n.tagName) + ' +' + (n.scrollHeight - n.clientHeight));
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('.answer .key, [data-next], .fb-head, .fb-text, .fb-words, .replay'), function (n) {
+        if (n.offsetParent === null) return;
+        var r = n.getBoundingClientRect();
+        if (r.top < -1 || r.bottom > innerHeight + 1 || r.left < -1 || r.right > innerWidth + 1) out.push((n.className || n.tagName).split(' ')[0] + '@' + Math.round(r.top) + '..' + Math.round(r.bottom));
+      });
+      return { ok: s.scrollHeight <= innerHeight + 1 && s.scrollWidth <= innerWidth + 1 && !inner.length && !out.length,
+               h: s.scrollHeight, vh: innerHeight, w: s.scrollWidth, vw: innerWidth, inner: inner.slice(0, 3), outside: out.slice(0, 4) };
     }""")
 
 

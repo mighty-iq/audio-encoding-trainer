@@ -37,6 +37,7 @@
     return U().fmtNum(v, 1) + (d.unit ? ' ' + d.unit : '');
   }
   function nb(s) { return String(s).replace(/ /g, '\u00a0'); }   // keep "−15 dB" or "3 other voices" on one line
+  function nb2(r) { return String(r).split(' → ').map(nb).join(' → '); }
   function range(d) { return nb(fmt(d, easyEnd(d))) + ' → ' + nb(fmt(d, hardEnd(d))); }
   /** The player's current edge on a dial in real units, once the learner has seen enough trials (else null). */
   function edge(ex, id) {
@@ -72,9 +73,9 @@
       el.appendChild(u.el('h3', { class: 'help-h' }, h.dialsTitle || 'What gets harder as you improve'));
       var dl = u.el('dl', { class: 'help-dials' });
       defs.forEach(function (d) {
-        var e = edge(mod.id, d.id);
-        dl.appendChild(u.el('dt', null, [u.el('span', null, d.label), d.requires === 'headphones' ? u.el('span', { class: 'help-tag' }, ' · headphones') : null]));
-        dl.appendChild(u.el('dd', null, [notes[d.id] ? notes[d.id] + ' ' : '', u.el('span', { class: 'mono help-range' }, range(d)),
+        var e = edge(mod.id, d.id), n = notes[d.id], o = n && typeof n === 'object' ? n : { text: n };
+        dl.appendChild(u.el('dt', null, [u.el('span', null, o.label || d.label), d.requires === 'headphones' ? u.el('span', { class: 'help-tag' }, ' · headphones') : null]));
+        dl.appendChild(u.el('dd', null, [o.text ? o.text + ' ' : '', u.el('span', { class: 'mono help-range' }, o.range ? nb2(o.range) : range(d)),
           e ? u.el('span', { class: 'help-edge' }, [' · your edge now: ', u.el('span', { class: 'mono' }, e)]) : null]));
       });
       el.appendChild(dl);
@@ -200,21 +201,37 @@
     return voices;
   }
 
-  /* ---- tutorial trials: the generator with every dial forced (easy end unless the step says), else a SHIM ---- */
+  /* ---- tutorial trials: the generator with every dial forced (easy end unless the step says), else a SHIM ----
+     Each exercise remembers the items of its last 5 tutorial trials (one run plus one) and draws again (up to 16
+     forks of the rng) rather than reuse one, so the example, every practice step and every "Try again" get their own
+     item; with tiny pools a repeat stays possible after 16 draws. */
+  var RECENT = {};
+  function itemKey(t) {
+    var m = (t && t.meta) || {};
+    return String(m.text || (m.items || []).join(' ')).toLowerCase().replace(/[^a-z0-9 ]+/g, '').replace(/\s+/g, ' ').trim();
+  }
   function tutorialTrial(mod, step, i, rng) {
     var force = (step && step.force) || {}, dials = {};
     dialsOf(mod.id).forEach(function (d) { if (!d.requires && !d.family) dials[d.id] = easyEnd(d); });
     Object.keys(force.dials || {}).forEach(function (k) { dials[k] = force.dials[k]; });
-    var setting = { dials: dials, focus: force.focus || null, anchor: true, warmup: true };
     var items = ES.engine && ES.engine.items && ES.engine.items[mod.id], t = null;
     if (!rng && ES.core && ES.core.rng) rng = ES.core.rng('tutorial:' + mod.id + ':' + i);
-    if (items && typeof items.make === 'function') {
-      try { t = items.make(rng, setting, { tutorial: true, force: force.items, mode: 'tutorial', breadth: 0 }); }
-      catch (e) { report(mod.id + ' tutorial', e); }
+    var used = RECENT[mod.id] = RECENT[mod.id] || [], key = '';
+    for (var n = 0; n < 16; n++) {
+      var r = !n ? rng : rng && typeof rng.fork === 'function' ? rng.fork('again' + n) : ES.core.rng(mod.id + ':' + i + ':again' + n);
+      var c = null, setting = { dials: clone(dials), focus: force.focus || null, anchor: true, warmup: true };
+      if (items && typeof items.make === 'function') {
+        try { c = items.make(r, setting, { tutorial: true, force: force.items, mode: 'tutorial', breadth: 0 }); }
+        catch (e) { report(mod.id + ' tutorial', e); break; }
+      }
+      if (!c && typeof mod.shim === 'function') c = mod.shim(r, setting);   // SHIM until the generator lands
+      if (!c) break;
+      t = c; key = itemKey(c);
+      if (!key || used.indexOf(key) < 0) break;
     }
-    if (!t && typeof mod.shim === 'function') t = mod.shim(rng, setting);   // SHIM until the generator lands
     if (!t) return null;
-    if (!t.setting) t.setting = setting;
+    if (key) { used.push(key); if (used.length > 5) used.shift(); }
+    if (!t.setting) t.setting = { dials: dials, focus: force.focus || null, anchor: true, warmup: true };
     if (t.seed == null) t.seed = rng && rng.seed;
     if (!t.ex) t.ex = mod.id;
     if (force.answerAt) placeAnswers(t, force.answerAt);
@@ -222,7 +239,7 @@
   }
 
   hide('_kit', { clone: clone, clamp: clamp, round: round, report: report, q: q, cap: cap,
-    venuesOf: venuesOf, dialsOf: dialsOf, dialOf: dialOf, easyEnd: easyEnd, hardEnd: hardEnd, fmt: fmt, range: range, edge: edge, value: value,
+    venuesOf: venuesOf, nb2: nb2, dialsOf: dialsOf, dialOf: dialOf, easyEnd: easyEnd, hardEnd: hardEnd, fmt: fmt, range: range, edge: edge, value: value,
     helpBody: helpBody, openHelp: openHelp, slotsOf: slotsOf, answerIndex: answerIndex, placeAnswers: placeAnswers,
     missLine: missLine, findReplay: findReplay, audioAlone: audioAlone, audioNear: audioNear, audioClean: audioClean,
     ROOM_M: ROOM_M, roomBox: roomBox, clusterSamePlace: clusterSamePlace, tutorialTrial: tutorialTrial });
@@ -242,7 +259,7 @@
       tryIt: 'Next set: listen only for the call sign at first, then follow that one voice and let the others go.' },
     { id: 'crowd.borrowed', ex: 'crowd', dial: 'similar', title: 'Wrong voice, not wrong ears',
       text: 'Many crowd mistakes are borrowed words: a real word from the wrong talker. In a classic study, reported in a review, most errors against one same-sex voice were that voice’s words. When feedback says a word came from another voice, the slip was in which voice you followed.',
-      tryIt: 'Next set: after a miss, play your voice alone, then the mix, and listen for the moment the two voices cross.' },
+      tryIt: 'Next set: after a miss, play the voice you follow alone, then the mix, and listen for the moment the two voices cross.' },
     { id: 'crowd.space', ex: 'crowd', dial: 'space', requires: 'headphones', title: 'Listen toward the red dot',
       text: 'With headphones, where a voice stands is one of the strongest cues. In lab studies, knowing where the voice would be was worth 10 to 40 points over knowing only its call sign, and even 10 to 15 degrees between voices released much of the confusion.',
       tryIt: 'Next set: glance at the red dot before every sound and keep your listening on that side.' },
@@ -261,9 +278,9 @@
     { id: 'strange.few', ex: 'strange', title: 'Give a new voice three tries',
       text: 'Getting used to a new kind of voice is fast and front-loaded: in one study half of the gain over 30 sentences came within the first three. The first few of a new kind are warm-ups and do not move your level.',
       tryIt: 'Next set: when a new kind of voice appears, stay relaxed through the first three and notice when it clicks.' },
-    { id: 'strange.noise', ex: 'strange', dial: 'accent', needs: 'accent', title: 'Accents show up in noise',
-      text: 'In quiet most accents are easy; in noise the differences open up. In one study English listeners in noise scored about 80 % with their own accent and 46 to 58 % with others, so accent trials run in babble.',
-      tryIt: 'Next set: on accent trials, notice which sounds this voice changes; the same change tends to come back in new words.' },
+    { id: 'strange.noise', ex: 'strange', dial: 'accent', needs: 'accent', title: 'Unfamiliar voices show up in noise',
+      text: 'In quiet most accents are easy; in noise the differences open up. In one study English listeners in noise scored about 80 % with their own accent and 46 to 58 % with others. That is why the voices from other-language models play in babble here.',
+      tryIt: 'Next set: give each new voice from another-language model a few phrases before you judge it; listeners adjust to a new accent within about a dozen sentences.' },
     { id: 'repair.wait', ex: 'repair', dial: 'context', needs: 'sentences', title: 'Wait for the end of the sentence',
       text: 'The words after a gap can repair it. In one study context helped even more when it came after the unclear word than before it. Hold the whole sentence, then choose.',
       tryIt: 'Next set: do not decide at the gap; run the end of the sentence back in your head first.' },

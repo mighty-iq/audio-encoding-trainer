@@ -64,13 +64,25 @@
   /** "she poured the milk into a [cup]": the generator's version when it gives one, else built from meta.text. */
   function marked(t) {
     var f = t.feedback && t.feedback.text, m = t.meta || {};
-    if (f && f.indexOf('[') >= 0) return String(f);
-    if (!m.text) return null;
-    var w = String(m.text).split(/\s+/), key = lostWord(t), at = -1;
-    if (typeof m.key === 'number') at = m.key;
-    else if (key) for (var i = w.length - 1; i >= 0; i--) if (w[i].toLowerCase().replace(/[^a-z0-9']/g, '') === key.toLowerCase()) { at = i; break; }
-    if (at >= 0 && at < w.length) w[at] = w[at].replace(/^([^A-Za-z0-9']*)(.*?)([^A-Za-z0-9']*)$/, '$1[$2]$3');
-    return w.join(' ');
+    if (m.text) {   // the sentence as written in the data (capitals, full stop), the lost word in brackets
+      var w = String(m.text).split(/\s+/), key = lostWord(t), at = -1, best = 1e9;
+      var clean = function (x) { return x.toLowerCase().replace(/[^a-z0-9']/g, ''); };
+      if (key) w.forEach(function (x, i) {
+        if (clean(x) !== key.toLowerCase()) return;
+        var dd = typeof m.key === 'number' ? Math.abs(i - m.key) : w.length - i;
+        if (dd < best) { best = dd; at = i; }
+      });
+      else if (typeof m.key === 'number') at = m.key;
+      if (at >= 0 && at < w.length) { w[at] = w[at].replace(/^([^A-Za-z0-9']*)(.*?)([^A-Za-z0-9']*)$/, '$1[$2]$3'); return sentence(w.join(' ')); }
+    }
+    if (f && f.indexOf('[') >= 0) return sentence(f);   // the generator's version
+    return m.text ? sentence(m.text) : null;
+  }
+  /** A capital first letter and closing punctuation, like the words shown in the other exercises (P17). */
+  function sentence(s) {
+    s = String(s).trim();
+    s = s.charAt(0).toUpperCase() + s.slice(1);
+    return /[.!?]["”’)\]]*$/.test(s) && !/\]$/.test(s) ? s : s + '.';
   }
   /** Whether the rest of the utterance carries a clue (a real sentence with some context, not a call-sign phrase). */
   function hasContext(t) {
@@ -128,6 +140,18 @@
     var k = K(), d = k && k.dialOf('repair', id);
     return d && d.levels && d.levels[i] != null ? String(d.levels[i]) : fallback;
   }
+  /** The third practice with little context, at the context level the build really has (its sentences come with
+      strong or little context, sometimes some): the caption and the feedback line then name the same level. */
+  function weakClueStep() {
+    var A = ES.engine && ES.engine.items && ES.engine.items.adapt, has = {};
+    try { A.repairItems().forEach(function (it) { if (A.voicesWith([it]).length) has[it.pred] = 1; }); } catch (e) { has.lo = 1; }
+    if (has.lo) return { kind: 'practice', force: { dials: { gap: 1, context: 2, gate: 0, fill: 0 }, answerAt: [0] },
+      text: 'Now the sentence gives little away: listen for the word itself, and wait for the end before you choose.' };
+    if (has.mid) return { kind: 'practice', force: { dials: { gap: 1, context: 1, gate: 0, fill: 0 }, answerAt: [0] },
+      text: 'The clue is weaker now. Wait for the end of the sentence before you choose.' };
+    return { kind: 'practice', force: { dials: { gap: 3, context: 0, gate: 0, fill: 0 }, answerAt: [0] },
+      text: 'Now ' + lv('gap', 3, '75 %') + ' of the word is lost.' };
+  }
   function steps() {
     if (!sentences()) return phraseSteps();
     return [
@@ -140,8 +164,7 @@
         text: 'Your turn. Listen to the whole sentence first.' },
       { kind: 'practice', force: { dials: { gap: 2, context: 0, gate: 0, fill: 0 }, answerAt: [3] },
         text: 'More of the word is lost now: ' + lv('gap', 2, '60 %') + '.' },
-      { kind: 'practice', force: { dials: { gap: 3, context: 1, gate: 0, fill: 0 }, answerAt: [0] },
-        text: 'The clue is weaker now. Wait for the end of the sentence before you choose.' },
+      weakClueStep(),
       { kind: 'caption', minMs: 3500, then: 'tap',
         text: 'From here the gaps grow, the clues thin out and whole sentences break up as you improve. After each answer you can hear the sentence whole, then broken again with its words.' }
     ];

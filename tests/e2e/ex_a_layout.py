@@ -4,7 +4,7 @@ and dark, with the tutorial marked done. For each: the answer state and the feed
 feedback: the miss lines, the words and the automatic replays) need no scrolling; a right answer is accepted;
 the Help sheet opens (the shell's, and exA's own openHelp() with every dial's real range); a Strange voices
 text-first trial shows its words before the sound. Screenshots for review go to tests/out/exa/layout-*.png.
-Run:  tools/with-browser.sh python3 tests/e2e/ex_a_layout.py [crowd ...] [--quick] [--real] [--head]
+Run:  tools/with-browser.sh python3 tests/e2e/ex_a_layout.py [crowd ...] [--quick] [--landscape] [--real] [--head]
 MIT licence."""
 import pathlib
 import sys
@@ -72,8 +72,11 @@ def run_one(b, url, ex, size, scheme, rep, full):
         page.evaluate("(ex) => ES.ex[ex].openHelp()", ex)
         page.wait_for_selector('.sheet-help .help-dials', timeout=5000)
         ranges = page.evaluate("""(ex) => {
-          var shown = (ES.ex[ex].helpData().dials) || {};   // rows the build cannot play are hidden (C12, C36)
-          var want = ES.engine.dials[ex].filter(function (d) { return shown[d.id] !== false; }).map(function (d) { return ES.ex._kit.range(d); });
+          var shown = (ES.ex[ex].helpData().dials) || {}, K = ES.ex._kit;   // rows the build cannot play are hidden (C12, C36)
+          var want = ES.engine.dials[ex].filter(function (d) { return shown[d.id] !== false; }).map(function (d) {
+            var n = shown[d.id];   // a row may word its range itself (the other-language voices: ST-08)
+            return n && typeof n === 'object' && n.range ? K.nb2(n.range) : K.range(d);
+          });
           var got = Array.prototype.map.call(document.querySelectorAll('.sheet-help .help-range'), function (n) { return n.textContent; });
           return { want: want, got: got };
         }""", ex)
@@ -197,6 +200,8 @@ def main():
     combos = [('phone-s', 'light', True), ('phone-s', 'dark', False), ('phone', 'light', False), ('desktop', 'dark', True)]
     if quick:
         combos = combos[:1]
+    if '--landscape' in sys.argv:   # a sideways phone (RV-play-a11y A1): answer and miss feedback must fit
+        combos = [('landscape', 'dark', False), ('landscape', 'light', False)]
     with sync_playwright() as p:
         b = C.launch(p)
         for ex in exs:

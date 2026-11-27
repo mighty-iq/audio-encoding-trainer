@@ -13,9 +13,28 @@
   ES.ex = ES.ex || {};
   function K() { return ES.ex._kit; }
 
-  var FAM = { accent: 'Accent', fast: 'Fast talker', whisper: 'Whisper', phone: 'Phone line', muffled: 'Through a wall', vocoded: 'Robot voice' };
+  // The accent family is voices from speech models built for other languages reading English phonemes, ordered by how
+  // hard a speech recogniser found them (docs/dev/reviews/RV-stimuli.md ST-08): never "a French speaker" or "strong accent".
+  var FAM = { accent: 'Other-language model', fast: 'Fast talker', whisper: 'Whisper', phone: 'Phone line', muffled: 'Through a wall', vocoded: 'Robot voice' };
+  var KIND = { accent: 'a voice from another-language model reading English', fast: 'a fast talker', whisper: 'a whisper',
+    phone: 'a bad phone line', muffled: 'a voice through a wall', vocoded: 'a robot voice' };
+  var TIER = { 1: 'easiest', 2: 'middle', 3: 'hardest' };
 
-  var KIND = { accent: 'an accent', fast: 'a fast talker', whisper: 'a whisper', phone: 'a bad phone line', muffled: 'a voice through a wall', vocoded: 'a robot voice' };
+  /** "French" from "English with a French accent (synthetic)"; null when the voice names no language. */
+  function langOfVoice(vo) {
+    var m = /with an? ([A-Z][a-z]+(?: [A-Z][a-z]+)?) accent/.exec(String((vo && vo.accent) || ''));
+    return m ? m[1] : null;
+  }
+  function article(w) { return /^[AEIOU]/.test(w) ? 'an ' + w : 'a ' + w; }
+  /** Languages of the other-language voices this build can play (for Help), most common first. */
+  function accentLangs() {
+    var A = ES.engine && ES.engine.items && ES.engine.items.adapt, V = (ES.data && ES.data.voices) || {}, n = {};
+    try {
+      var vs = A && typeof A.voicesWith === 'function' ? A.voicesWith(A.susItems()) : Object.keys(V);
+      vs.forEach(function (v) { var l = V[v] && !(A && A.isNative(V[v])) ? langOfVoice(V[v]) : null; if (l) n[l] = (n[l] || 0) + 1; });
+    } catch (e) { /* none */ }
+    return Object.keys(n).sort(function (a, b) { return n[b] - n[a] || (a < b ? -1 : 1); });
+  }
 
   /** Whether this build has accented voices with Strange material (the engine swaps the accent family for the next
       one when it has none: js/engine/items/strange.js), judged the way the engine does (adapt.isNative). */
@@ -53,7 +72,7 @@
           '. Tap the words you heard. Then the words appear and you hear the same voice again.',
         dialsTitle: 'The kinds of voice and how each gets harder',
         dials: {
-          accent: fams.indexOf('accent') >= 0 ? 'Accented voices from mild to strong, first in quiet, then in babble that gets louder.' : false,
+          accent: fams.indexOf('accent') >= 0 ? accentHelp() : false,
           fast: 'Speech sped up without changing its pitch.',
           whisper: 'A whispered voice, first in quiet, then in rising noise.',
           phone: 'A phone line that gets thinner and noisier.',
@@ -65,13 +84,22 @@
     }
   };
 
-  // Home and map copy name only the kinds of voice this build can play (no accents without accented voices).
+  /** Help row for the accent family: what the voices are, how the ladder runs, the range in those words. */
+  function accentHelp() {
+    var k = K(), d = k && k.dialOf('strange', 'accent'), L = accentLangs(), v0 = d && d.values[0], vN = d && d.values[d.values.length - 1];
+    var langs = L.length > 4 ? L.slice(0, 4).join(', ') + ' and more' : L.join(', ');
+    function lvl(v) { return v ? TIER[v.tier] + ', ' + (v.snr == null ? 'quiet' : ES.core.util.fmtDb(v.snr)) : ''; }
+    return { label: 'Voices from other-language models',
+      text: 'Speech models built for other languages' + (langs ? ' (' + langs + ')' : '') + ' reading English. First the voices a speech recogniser found easiest, in quiet; then harder ones, in louder babble.',
+      range: v0 && vN ? lvl(v0) + ' → ' + lvl(vN) : null };
+  }
+  // Home and map copy name only the kinds of voice this build can play (no other-language voices without them).
   Object.defineProperty(M, 'short', { enumerable: true, get: function () {
-    return hasAccents() ? 'Accents, fast, whispered, phone and robot-like speech.' : 'Fast, whispered, phone, muffled and robot-like speech.';
+    return hasAccents() ? 'Other-language model voices, fast, whispered, phone and robot-like speech.' : 'Fast, whispered, phone, muffled and robot-like speech.';
   } });
   Object.defineProperty(M.card, 'trains', { enumerable: true, get: function () {
-    return (hasAccents() ? 'Accents, fast, whispered, phone-quality and robot-like speech.' : 'Fast, whispered, phone-quality, muffled and robot-like speech.') +
-      ' The words pop up after each try so your ear retunes.';
+    return (hasAccents() ? 'Voices from other-language models reading English, fast, whispered, phone-quality and robot-like speech.'
+      : 'Fast, whispered, phone-quality, muffled and robot-like speech.') + ' The words pop up after each try so your ear retunes.';
   } });
   M.families = families;
 
@@ -81,13 +109,24 @@
     for (var f in FAM) if (d[f] != null) return f;
     return null;
   }
-  /** "Fast talker (1.9×)", "Mild accent, +10 dB", "Phone line (thin line)". */
+  /** "A voice from a French model reading English, in babble at +6 dB" (a recorded talker: "A talker whose first
+      language is French …"). */
+  function accentText(t) {
+    var m = t.meta || {}, V = (ES.data && ES.data.voices) || {}, vo = V[(m.voices || [])[0]] || { accent: m.accent };
+    var lang = langOfVoice(vo), d = K().dialOf('strange', 'accent'), s = (t.setting && t.setting.dials) || {};
+    var v = d && s.accent != null ? d.values[Math.max(0, Math.min(d.values.length - 1, Math.round(s.accent)))] : null;
+    var base = m.synthetic === false ? (lang ? 'A talker whose first language is ' + lang : 'An unfamiliar talker')
+      : 'A voice from ' + (lang ? article(lang) : 'another-language') + ' model reading English';
+    return base + (v ? (v.snr == null ? ', in quiet' : ', in babble at ' + ES.core.util.fmtDb(v.snr)) : '');
+  }
+  /** "Fast talker (1.9×)", "A voice from a French model reading English, in quiet", "Phone line, thin line". */
   function kindText(t) {
     var k = K(), f = family(t);
     if (!f) return 'Unusual voice';
+    if (f === 'accent') return accentText(t);
     var dl = k.dialOf('strange', f), s = (t.setting && t.setting.dials) || {}, lab = dl && s[f] != null ? k.fmt(dl, s[f]) : '';
     if (!lab) return FAM[f];
-    if (f === 'accent' || f === 'whisper') return k.cap(lab);
+    if (f === 'whisper') return k.cap(lab);
     if (f === 'phone') return lab === 'clear line' ? 'Clear phone line' : 'Phone line, ' + lab;
     return FAM[f] + ' (' + lab + ')';
   }
@@ -133,11 +172,12 @@
     var k = K(), d = k && k.dialOf('strange', id);
     return d && d.levels && d.levels[i] != null ? String(d.levels[i]) : fallback;
   }
-  /** The third practice uses the gentlest new kind this build can play: a mild accent when it has accented voices,
-      else a voice through a wall (so the caption never promises a sound the build cannot make). */
+  /** The third practice uses the gentlest new kind this build can play: another-language model voice when it has them,
+      else a voice through a wall (so the caption never promises a sound the build cannot make). The accent family's
+      easiest level is the voices a speech recogniser found easiest, in quiet. */
   function lastStep() {
     var acc = families().indexOf('accent') >= 0;
-    return acc ? { kind: 'practice', force: { dials: { accent: 0 }, answerAt: [3, 0] }, text: 'Last one: a mild accent.' }
+    return acc ? { kind: 'practice', force: { dials: { accent: 0 }, answerAt: [3, 0] }, text: 'Last one: a voice from another-language model reading English.' }
       : { kind: 'practice', force: { dials: { muffled: 0 }, answerAt: [3, 0] }, text: 'Last one: a voice through a wall, with everything above ' + lv('muffled', 0, '3 kHz') + ' gone.' };
   }
   function steps() {
