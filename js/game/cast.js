@@ -22,7 +22,7 @@
       var vo = V[id];
       if (!vo || !vo.cast || !vo.cast.name || vo.set === 'probe') return;
       out.push({ id: id, name: String(vo.cast.name), venue: vo.cast.venue || null, blurb: vo.cast.blurb || '', sex: vo.sex || '',
-        accent: String(vo.accent || '').replace(/\s*\(synthetic\)\s*/i, '').trim(), synthetic: !!SYNTH[vo.src], f0: typeof vo.f0 === 'number' ? vo.f0 : null,
+        accent: String(vo.label || vo.accent || '').replace(/\s*\(synthetic\)\s*/i, '').trim(), synthetic: !!SYNTH[vo.src], f0: typeof vo.f0 === 'number' ? vo.f0 : null,
         src: vo.src || '' });
     });
     out.sort(function (a, b) { return venueOrder(a.venue) - venueOrder(b.venue) || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0); });
