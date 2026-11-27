@@ -98,10 +98,12 @@ export const tests = {
     const rose = R.afterSet({ ex: 'crowd', fresh: { daysAway: 3, before: 0, after: 1.2 } })[0];
     assert.equal(rose.text, 'Your level held after 3 days away, and even rose.');
     [held, rust, rose].forEach((x) => assert.ok(!/\d\s*(dB|points)|index/.test(x.text), 'C10: no index number in ' + x.text));
-    const on = R.afterSet({ ex: 'crowd', overnight: { n: 3, prop: 0.833, expected: 0.72, focus: 'similar' } })[0];
-    assert.equal(on.text, 'Your last day’s hardest (voice similarity), retested with other voices where possible. 3 trials: too few to judge on their own; they count toward your levels.');
-    const on12 = R.afterSet({ ex: 'crowd', overnight: { n: 12, prop: 0.75, expected: 0.72, focus: 'similar' } })[0];
-    assert.ok(/75 % of words right over 12 trials \(the model expected about 72 %\)/.test(on12.text), 'P18: a percentage only from ten trials on');
+    const night = { ex: 'crowd', overnight: { n: 3, prop: 0.833, expected: 0.72, focus: 'similar' } };
+    const on = R.afterSet(night, { results: [{ correct: true }, { correct: false }, { correct: true }, { correct: false }] })[0];
+    assert.equal(on.title + ': ' + on.text, 'Overnight check: 2 of 3 right at the hardest level of your last training day (voice similarity). It counts toward your trend.');
+    const bare = R.afterSet(night)[0];
+    assert.equal(bare.text, '3 trials at the hardest level of your last training day (voice similarity). They count toward your trend.', 'no results: the count of trials only');
+    [on, bare].forEach((x) => assert.ok(!/%|too few|held|rose|better|worse/.test(x.text), 'FC-04: plain counts, no verdict, no percentage: ' + x.text));
     assert.ok(!/new to you|yesterday/i.test(on.text), 'C19 wording');
     [held, rust, on].forEach((x) => assert.ok(!/streak|missed|lost your|penalt/i.test(x.text)));
   },
@@ -140,6 +142,13 @@ export const tests = {
     assert.ok(rec2.venues.restaurant && rec2.venues.restaurant.open, 'a run of right answers opens the restaurant');
     assert.ok(Object.keys(rec2.badges).length >= 1, 'milestones reached: ' + Object.keys(rec2.badges).join());
     assert.ok(writes >= 1);
+  },
+  async 'settle: an overnight set reports its re-test trials as a plain count (FC-04)'(ES0, assert, env) {
+    const ES = await spawnGame(env);
+    const news = ES.game.record.settle({ set: { ex: 'crowd', n: 5, focus: 'tmr', overnight: { n: 3, prop: 0.5, expected: 0.72, focus: 'similar' } }, index: 0,
+      results: [{ correct: false }, { correct: true }, { correct: false }, { correct: true }, { correct: true }] }, { plan: {} });
+    assert.equal(news.returns.length, 1);
+    assert.equal(news.returns[0].text, '1 of 3 right at the hardest level of your last training day (voice similarity). It counts toward your trend.');
   },
   async 'settle: demo sets change nothing; weekly stops are recorded with their marks'(ES0, assert, env) {
     const ES = await spawnGame(env);

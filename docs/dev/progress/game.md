@@ -174,3 +174,12 @@ Notes for whoever resumes:
 - Runs: node tests/unit/run.mjs game- (39 passed; full suite 220/221, the one failure is
   engine-controller's 5 ms timing test under load); tools/with-browser.sh python3 tests/e2e/run_all.py --only=game
   (107/107); node tools/build-index.mjs --check (up to date).
+
+## 2026-11-27 02:15 UTC — FINAL-CHECK FC-04 (overnight check wording)
+- The overnight re-test is the set's first three trials, so the old "3 trials: too few to judge" showed every time.
+  Now a plain count with no verdict and no percentage: "Overnight check: 2 of 3 right at the hardest level of your
+  last training day (voice similarity). It counts toward your trend." (record.settle passes the set's answered
+  results; without them it says "3 trials at the hardest level … They count toward your trend."). Fresh ears keeps
+  its own text (held / rose / a little rust, from the engine's estimates over the whole set; no percentage).
+- Tests: game-growth "returns …" and "settle: an overnight set reports its re-test trials as a plain count (FC-04)";
+  unit game- 40/40; tools/with-browser.sh python3 tests/e2e/run_all.py --only=game 107/107.

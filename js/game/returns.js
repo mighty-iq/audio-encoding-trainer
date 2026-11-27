@@ -7,8 +7,9 @@
      within a game or two (Kumar et al. 2022 [full], R5 §5.4) — games, not listening, so it is stated as such (C25).
    - Overnight check: the first set of a calendar day re-tests the last day's hardest condition with voices kept out
      of that set where the pool allows (planner.overnight; transfer to new talkers appeared after sleep: Xie, Earle &
-     Myers 2018 [full], PLAN §7). The card shows only before the day's first session (M4); after the set we show how
-     many of those words went right (entry.overnight). Wording per RV-claims C19. */
+     Myers 2018 [full], PLAN §7). The card shows only before the day's first session (M4); after the set we give the
+     plain count of re-test trials that went right, without a verdict or a percentage (the engine re-tests the first
+     three trials of the set, entry.overnight.n; FINAL-CHECK FC-04). Wording per RV-claims C19. */
 (function (root) {
   'use strict';
   var ES = root.ES = root.ES || {};
@@ -45,8 +46,10 @@
     } catch (e) { return null; }
     return null;
   }
-  /** Lines for the screen after a fresh or overnight set: [{kind, title, text}] (empty for other sets). */
-  function afterSet(entry) {
+  /** Lines for the screen after a fresh or overnight set: [{kind, title, text}] (empty for other sets). opts.results:
+      the set's answered trials in order ({correct}), as the shell's set:done hook gives them. */
+  function afterSet(entry, opts) {
+    opts = opts || {};
     var out = [];
     if (!entry) return out;
     if (entry.fresh && typeof entry.fresh.before === 'number' && typeof entry.fresh.after === 'number') {
@@ -59,11 +62,13 @@
     if (entry.overnight && entry.overnight.n) {
       var on = entry.overnight, d = on.focus ? K().dialDef(entry.ex, on.focus) : null;
       var what = d ? d.label.charAt(0).toLowerCase() + d.label.slice(1) : 'the hardest condition';
-      // under ten trials a percentage is noise (RV-play P18): say so in words
-      var result = on.n < 10 ? on.n + ' trial' + (on.n === 1 ? '' : 's') + ': too few to judge on their own; they count toward your levels.'
-        : Math.round((on.prop || 0) * 100) + ' % of words right over ' + on.n + ' trials' + (on.expected ? ' (the model expected about ' + Math.round(on.expected * 100) + ' %).' : '.');
-      out.push({ kind: 'overnight', title: 'Overnight check',
-        text: 'Your last day’s hardest (' + what + '), retested with other voices where possible. ' + result });
+      // plain counts, no verdict and no percentage: a few trials judge nothing (RV-play P18, FC-04). The re-test
+      // trials are the set's first ones, so they are the first n answered results.
+      var rs = Array.isArray(opts.results) ? opts.results.slice(0, on.n) : null, at = ' at the hardest level of your last training day' + (d ? ' (' + what + ')' : '');
+      var text2 = rs && rs.length === on.n
+        ? rs.filter(function (r) { return r && r.correct; }).length + ' of ' + on.n + ' right' + at + '. It counts toward your trend.'
+        : on.n + ' trial' + (on.n === 1 ? '' : 's') + at + '. ' + (on.n === 1 ? 'It counts' : 'They count') + ' toward your trend.';
+      out.push({ kind: 'overnight', title: 'Overnight check', text: text2 });
     }
     return out;
   }

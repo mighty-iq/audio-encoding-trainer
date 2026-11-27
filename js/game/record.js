@@ -78,7 +78,7 @@
       // milestones
       M.check(r, { venues: V.state({ rec: r }) }).forEach(function (m) { r.badges[m.id] = now; news.milestones.push(m); });
     });
-    news.returns = G().returns.afterSet(entry);
+    news.returns = G().returns.afterSet(entry, { results: payload.results });
     news.lines = news.lines.slice(0, MAX_LINES);
     return news;
   }
