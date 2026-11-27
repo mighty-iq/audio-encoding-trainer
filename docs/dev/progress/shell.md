@@ -136,3 +136,12 @@ all failing before). Status per finding:
   Lab exports (ES.lab.exportUi.deliver), weekly card (ES.game.share.save). Test: tests/e2e/shell_download.py
   (fake window.claude Proxy: resolves; rejects with declined, rate_limited, host_unavailable, unavailable, no code;
   without it: anchor download, toast Copy, blocked Blob URLs).
+
+## 2026-11-27 — round 2 (lead's list after FRESH-A, FRESH-B, RV-play-a11y)
+- A1 fixed: sideways phones (≤ 480 px tall) use a narrow field column, four keys in a row (answer grids carry
+  data-n), no empty actions row while answering, and in feedback the picture gives its room to the words (text
+  left, marked keys and Next right). shell_layout now holds 640×360 and 740×360 to the no-scroll rule with all six
+  keyword exercises (answer and feedback states) and checks the trial body's own scrolling and Next's position.
+- A5 fixed: the ✓/✕ mark is a small badge on the key's corner, so it never covers the end of a long label.
+- P13 held back: a no-break space inside U.fmtDb/fmtM also lands in lab's CSV export and changes two lab tests;
+  proposed to the lead (lab strips U+00A0 in CSV, then the formatter changes in one line).

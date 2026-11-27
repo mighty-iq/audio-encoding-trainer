@@ -102,7 +102,10 @@ html.in-trial #banners { display: none; }
 .key.answer { border-color: var(--ok); border-style: dashed; color: var(--ink); }
 .key-n { position: absolute; top: 3px; left: 6px; font: 500 10px var(--mono); color: var(--ink-3); }
 @media (hover: none), (pointer: coarse) { .key-n { display: none; } }
-.key-mark { position: absolute; top: 3px; right: 4px; width: 18px; height: 18px; line-height: 0; }
+/* The ✓/✕ sits on the key's corner as a small badge, so it never covers the end of a long label (RV A5). */
+.key-mark { position: absolute; top: -8px; right: -6px; z-index: 1; display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; background: var(--bg); box-shadow: 0 0 0 1px var(--rule-2); line-height: 0; }
+.key-mark .glyph { width: 14px; height: 14px; }
 .key-mark:empty { display: none; }
 .key-note { display: block; margin-top: 2px; font-size: 11px; font-weight: 500; line-height: 1.2; color: var(--ink-3); }
 .glyph { width: 18px; height: 18px; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; flex: none; }

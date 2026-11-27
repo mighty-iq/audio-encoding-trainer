@@ -35,7 +35,7 @@
     slots.forEach(function (s, si) {
       var options = (s.options || []).map(norm);
       var labelId = U.uid('slot');
-      var grid = U.el('div', { class: 'answer-grid cols-' + cols(options.length), role: 'radiogroup', 'aria-labelledby': labelId });
+      var grid = U.el('div', { class: 'answer-grid cols-' + cols(options.length), 'data-n': String(options.length), role: 'radiogroup', 'aria-labelledby': labelId });
       var keys = options.map(function (o, oi) {
         var k = U.el('button', { type: 'button', class: 'key', role: 'radio', 'aria-checked': 'false', 'data-slot': si, 'data-opt': oi,
           tabindex: oi === 0 ? '0' : '-1' }, [

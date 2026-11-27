@@ -88,9 +88,26 @@
   .trial-answer { grid-area: answer; }
   .trial-actions { grid-area: actions; }
 }
+/* Sideways phones (RV-play-a11y A1): nothing scrolls. The field column narrows so four keys fit in one row; the
+   empty actions row takes no room while answering; in feedback the picture gives way to the words, which take the
+   left column beside the marked keys and Next. */
 @media (orientation: landscape) and (max-height: 480px) {
   .trial-bar { min-height: 48px; }
-  .key { min-height: 44px; font-size: var(--fs-2); }
+  .key { min-height: 44px; padding: 4px 6px; font-size: var(--fs-2); }
+  .key-note { font-size: 10px; }
+  .answer { gap: 6px; }
+  .answer-label { font-size: 12px; }
+  .answer-grid[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .trial-body { grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr); grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "field text" "field answer" "field ." "field actions"; row-gap: 6px; padding-bottom: 6px; }
+  .trial-text { min-height: 0; }
+  .trial-prompt { font-size: var(--fs-2); }
+  .trial-actions:empty { display: none; }
+  .trial-body[data-state="feedback"], .trial-body[data-state="example"] {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); grid-template-areas: "text answer" "text answer" "text ." "text actions"; }
+  .trial-body[data-state="feedback"] .trial-field, .trial-body[data-state="example"] .trial-field { display: none; }
+  .fb-text { font-size: var(--fs-1); }
+  .fb-words { font-size: var(--fs-2); }
 }
 @media (min-width: 900px) and (min-height: 640px) { .trial-body { padding-bottom: 24px; } .key { min-height: 56px; } }
 
