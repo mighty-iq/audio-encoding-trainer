@@ -85,7 +85,11 @@
     r.cast = r.cast || {};
     ids.forEach(function (id) {
       var b = buf[id], c = r.cast[id] || {};
-      r.cast[id] = { met: c.met || b.met || b.at, n: (c.n || 0) + b.n, id: (c.id || 0) + b.id, at: Math.max(c.at || 0, b.at || 0) };
+      var rec = { met: c.met || b.met || b.at, n: (c.n || 0) + b.n, id: (c.id || 0) + b.id, at: Math.max(c.at || 0, b.at || 0) };
+      // hearings it took to know the voice (exB, RV-claims C08: do newer voices become known after fewer hearings?)
+      rec.nKnown = c.nKnown || ((c.id || 0) < KNOWN_AT && rec.id >= KNOWN_AT ? rec.n : undefined);
+      if (rec.nKnown === undefined) delete rec.nKnown;
+      r.cast[id] = rec;
     });
     buf = {};
     return ids;

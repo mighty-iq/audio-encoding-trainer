@@ -45,7 +45,8 @@ def _shift(obj, delta, keys=('start', 'end', 'at', 'open', 'bestAt')):
 
 
 def longterm_records(now_ms=None):
-    """{learner, log, game, profile} records for harness.preset(), times shifted to end one day before now."""
+    """{learner, log, game, trials, profile} records for harness.preset(), times shifted to end one day before now.
+    The trial rows matter: earshots and milestones never go beyond a level the player was tested at."""
     src = (ROOT / 'tests' / 'fixtures' / 'game-longterm.js').read_text(encoding='utf8')
     body = json.loads(re.search(r'window\.GAME_LONGTERM = (\{.*\});', src, re.S).group(1))
     now_ms = now_ms or int(time.time() * 1000)
@@ -55,10 +56,11 @@ def longterm_records(now_ms=None):
     _shift(log, delta)
     _shift(game, delta)
     game['badges'] = {k: v + delta for k, v in game.get('badges', {}).items()}
+    trials = {'v': 1, 'rows': [[r[0] + delta] + r[1:] for r in body.get('trials', {}).get('rows', [])]}
     profile = {'v': 1, 'createdAt': body['t0'] + delta, 'nickname': '', 'welcomeSeen': now_ms - DAY,
                'settings': {'theme': 'system', 'mode': 'edge', 'sessionMin': 15, 'headphones': False, 'playtest': False, 'captions': False},
                'tutorials': {'crowd': True, 'far': True, 'strange': True, 'repair': True, 'echo': True, 'seek': True, 'voices': True}}
-    return {'learner': learner, 'log': log, 'game': game, 'profile': profile}
+    return {'learner': learner, 'log': log, 'game': game, 'trials': trials, 'profile': profile}
 
 
 def game_errors(tab):

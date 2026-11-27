@@ -31,7 +31,7 @@
       r.last = r.last || {};
       var ups = M.levelUps(ex, r.last[ck] || null, after);
       r.last[ck] = after;
-      ups.slice(0, 3).forEach(function (u) { news.lines.push({ kind: u.first ? 'first' : 'up', text: u.text }); });
+      ups.slice(0, 3).forEach(function (u) { news.lines.push({ kind: 'up', text: u.text }); });
       // venue earshots: history and bests for venues whose headline uses this exercise
       V.list().forEach(function (v) {
         if (v.head.ex !== ex) return;
@@ -71,7 +71,7 @@
       var c2 = G().cast.storedCounts(r);
       metNow.slice(0, 2).forEach(function (id) {
         var c = G().cast.card(id, r);
-        if (c) news.lines.push({ kind: 'cast', text: 'New voice: ' + c.name + ' (' + c.blurb.replace(/\.$/, '').toLowerCase() + ').' });
+        if (c) news.lines.push({ kind: 'cast', text: 'New voice: ' + c.name + ' (' + lowerFirst(c.blurb.replace(/\.$/, '')) + ').' });
       });
       if (c2.known > before.known) news.lines.push({ kind: 'cast', text: 'You now know ' + c2.known + ' voice' + (c2.known === 1 ? '' : 's') + ' of the cast.' });
       pendingMet = {};
@@ -83,6 +83,8 @@
     return news;
   }
 
+  // "Rings the bells on Sundays" → "rings the bells on Sundays": the blurb keeps its own capitals (RV-play P12).
+  function lowerFirst(t) { t = String(t || ''); return /^[A-Z][a-z]/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t; }
   var pendingMet = {};
   function onTrial(p) {
     if (!p || p.demo || !p.trial) return;
@@ -112,5 +114,5 @@
     ES.hooks.on('cast:met', function (p) { if (p && p.voice && G().cast.noteMet(p.voice)) pendingMet[p.voice] = 1; });
   }
 
-  ES.game.record = { settle: settle, onTrial: onTrial, onSet: onSet, newsFor: newsFor, _news: NEWS };
+  ES.game.record = { settle: settle, onTrial: onTrial, onSet: onSet, newsFor: newsFor, _news: NEWS, _lowerFirst: lowerFirst };
 })(typeof window !== 'undefined' ? window : globalThis);

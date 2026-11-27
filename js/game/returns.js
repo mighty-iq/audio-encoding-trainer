@@ -59,9 +59,11 @@
     if (entry.overnight && entry.overnight.n) {
       var on = entry.overnight, d = on.focus ? K().dialDef(entry.ex, on.focus) : null;
       var what = d ? d.label.charAt(0).toLowerCase() + d.label.slice(1) : 'the hardest condition';
+      // under ten trials a percentage is noise (RV-play P18): say so in words
+      var result = on.n < 10 ? on.n + ' trial' + (on.n === 1 ? '' : 's') + ': too few to judge on their own; they count toward your levels.'
+        : Math.round((on.prop || 0) * 100) + ' % of words right over ' + on.n + ' trials' + (on.expected ? ' (the model expected about ' + Math.round(on.expected * 100) + ' %).' : '.');
       out.push({ kind: 'overnight', title: 'Overnight check',
-        text: 'Your last day’s hardest (' + what + '), retested with other voices where possible: ' + Math.round((on.prop || 0) * 100) +
-          ' % of words right over ' + on.n + ' trials' + (on.expected ? ' (the model expected about ' + Math.round(on.expected * 100) + ' %).' : '.') });
+        text: 'Your last day’s hardest (' + what + '), retested with other voices where possible. ' + result });
     }
     return out;
   }

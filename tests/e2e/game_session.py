@@ -96,10 +96,24 @@ def venue_set(c, p):
     c.ok(all(d.get('talkers') == 0 and d.get('similar') == 0 for d in dials), 'café trials hold one other voice of the other sex', dials)
     end_set(p)
     p.screenshot(path=str(OUT / 'game' / 'session_venue_results_390.png'), full_page=True)
+    c.eq(p.locator('[data-game-news] a').count(), 0, 'no links in the news while the session runs (FRESH-B D3)')
+    # a venue page opened while the session runs says so and waits (FRESH-B D3)
+    p.evaluate("() => ES.core.router.go('venue', { id: 'cafe' })")
+    p.wait_for_selector('[data-session-running]', timeout=5000)
+    c.ok(p.locator('[data-play-venue="cafe"]').is_disabled(), 'while a session runs the venue page shows a notice and its Play waits')
+    p.screenshot(path=str(OUT / 'game' / 'venue_session_running_390.png'), full_page=True)
+    p.click('[data-resume-session]')
+    p.wait_for_function("() => ES.core.router.current().name === 'results'", timeout=10000)
+    c.ok(True, '"Back to the session" returns to the results screen')
     btn = p.locator('[data-next-set]')
     btn.click()
     p.wait_for_function("() => ES.core.router.current().name === 'venue'", timeout=10000)
     c.ok(True, 'a finished venue set returns to the venue screen')
+    c.eq(p.locator('[data-session-running]').count(), 0, 'after the session the venue page has no running-session notice')
+    p.evaluate("() => ES.core.router.back()")
+    p.wait_for_timeout(200)
+    if p.evaluate("() => ES.core.router.current().name") == 'venue':
+        c.warn('FRESH-B D1: Back after Finish still lands on the venue again (router fix is the shell\'s, requests.md)')
 
 
 def weekly_stop(c, p):

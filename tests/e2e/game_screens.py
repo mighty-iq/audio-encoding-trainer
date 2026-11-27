@@ -41,6 +41,9 @@ def fresh_suite(c, browser, base):
     vals = p.eval_on_selector_all('.gm-node.is-open .gm-val', 'els => els.map(e => e.textContent)')
     c.ok(all(v == '–' for v in vals), 'fresh: no earshot number on the map', vals)
     c.ok(p.locator('.g-vrow.is-open .g-vval').all_text_contents() == ['not measured yet'] * 3, 'fresh: open rows say not measured yet')
+    homes = p.eval_on_selector_all('[data-ex-home]', 'els => Object.fromEntries(els.map(e => [e.dataset.exHome, e.textContent]))')
+    c.eq(len(homes), 7, 'map says where each exercise lives (FRESH-B C1)')
+    c.ok('Lecture hall' in homes.get('seek', '') and 'Lecture hall (later)' not in homes.get('seek', ''), 'Seek is at the lecture hall, open from the start', homes.get('seek'))
     shot(p, 'map_fresh_390_light')
     open_screen(p, base, 'venue', {'id': 'cafe'})
     c.eq(p.locator('[data-earshot]').get_attribute('data-earshot'), '', 'fresh café: no earshot')
@@ -51,8 +54,9 @@ def fresh_suite(c, browser, base):
     c.ok(p.locator('[data-locked]').count() == 1, 'bar is locked on a fresh profile')
     c.ok(p.locator('[data-play-venue="bar"]').is_disabled(), 'locked venue cannot be played')
     open_screen(p, base, 'cast')
-    states = set(p.eval_on_selector_all('.g-card', 'els => els.map(e => e.dataset.state)'))
-    c.ok(states == {'unmet'} or not states, 'fresh cast: every card unmet', states)
+    c.eq(p.locator('.g-card').count(), 0, 'fresh cast: no wall of locked cards (P15)')
+    rest = p.locator('[data-cast-rest]')
+    c.ok(rest.count() == 0 or rest.inner_text().startswith('All '), 'fresh cast: one line for the voices still to meet', rest.inner_text() if rest.count() else '')
     c.ok(p.locator('.g-cast-count').count() == 0 or p.locator('.g-cast-count').inner_text().startswith('0 of'), 'fresh cast count')
     shot(p, 'cast_fresh_390_light')
     open_screen(p, base, 'weekly')
@@ -88,10 +92,15 @@ def longterm_suite(c, browser, base):
         c.ok(fits, 'long-term %s: map fits the width' % tag)
         overflow = p.evaluate("() => document.documentElement.scrollWidth - innerWidth")
         c.ok(overflow <= 1, 'long-term %s: no horizontal scroll on the map (%s px)' % (tag, overflow))
+        if vp[0] < 900:
+            small = p.evaluate("""() => [...document.querySelectorAll('.gm-hit, .g-vrow')].map(e => [e.getAttribute('class'), Math.round(e.getBoundingClientRect().height)]).filter(x => x[1] < 44)""")
+            c.ok(not small, 'long-term %s: map targets at least 44 px high (A3)' % tag, small[:4])
         shot(p, 'map_long_' + tag)
         open_screen(p, base, 'venue', {'id': 'cafe'})
         c.ok(p.locator('[data-earshot]').get_attribute('data-earshot').endswith('dB'), 'long-term %s: café venue earshot' % tag)
         c.ok(p.locator('.g-chart').count() >= 1, 'long-term %s: café history chart' % tag)
+        small = p.evaluate("""() => [...document.querySelectorAll('[data-play-venue], .g-also .btn, .g-link, [data-screen] .g-wrap a.g-link')].map(e => [e.textContent.trim().slice(0, 24), Math.round(e.getBoundingClientRect().height)]).filter(x => x[1] < 44)""")
+        c.ok(not small, 'long-term %s: venue buttons and links at least 44 px high (A3)' % tag, small[:4])
         shot(p, 'venue_cafe_long_' + tag)
         open_screen(p, base, 'progress')
         nch = p.locator('.g-chart').count()
@@ -115,13 +124,20 @@ def longterm_suite(c, browser, base):
               ids.forEach((id, i) => { r.cast[id] = { met: Date.now() - 864e5 * (8 - i), n: 5 + i, id: i < 3 ? 4 : i % 3, at: Date.now() - 3600e3 }; }); }); }""")
             open_screen(p, base, 'cast')
             states = p.eval_on_selector_all('.g-card', 'els => els.map(e => e.dataset.state)')
-            c.ok(states.count('known') >= 3 and states.count('met') >= 1 and states.count('unmet') >= 1, 'cast cards fill in', states[:10])
+            c.ok(states.count('known') >= 3 and states.count('met') >= 1 and 'unmet' not in states, 'cast: met voices as cards, known ones marked', states[:10])
+            total = p.evaluate('() => ES.game.cast.counts().total')
+            rest = p.locator('[data-cast-rest]')
+            c.ok(rest.count() == 1 and rest.get_attribute('data-cast-rest') == str(total - len(states)) and 'more voices to meet' in rest.inner_text(),
+                 'cast: the others as one line (P15)', rest.inner_text() if rest.count() else '')
             shot(p, 'cast_long_' + tag)
             # weekly with a finished card for this week
             wk = p.evaluate('() => ES.game.weekly.weekKey()')
             p.evaluate("""(wk) => ES.game.core.update(r => { ['110100', '111010', '111111', '100000'].forEach((m, k) => ES.game.weekly.recordStop(r, wk, k, m, Date.now() - 1000 * (5 - k))); })""", wk)
             open_screen(p, base, 'weekly')
             c.eq(p.locator('[data-score]').get_attribute('data-score'), '14/24', 'weekly card score')
+            c.ok('Everyone plays this same night until Monday.' in p.locator('[data-screen="weekly"]').inner_text(), 'weekly: who plays the same night, in plain words (P10)')
+            nick = p.locator('.g-nick input')
+            c.ok(nick.count() == 1 and nick.bounding_box()['height'] >= 44, 'weekly nickname field at least 44 px high (A3)')
             p.wait_for_function("() => { const i = document.querySelector('.g-shareimg'); return i && i.src.startsWith('data:image/png'); }", timeout=6000)
             c.ok(True, 'weekly card image drawn')
             txt = p.evaluate('(wk) => ES.game.weekly.shareText(ES.game.weekly.result(wk))', wk)
@@ -130,11 +146,16 @@ def longterm_suite(c, browser, base):
             # the news block between sets (rendered alone; the shell's results screen hosts it)
             p.evaluate("""() => { const n = { returns: [{ title: 'Fresh ears', text: 'Your level held after 4 days away.' }],
               opened: [{ id: 'bar', name: 'Bar', text: 'Bar is open: 2 other voices · same sex. Your earshot there: +1.5 dB.' }],
-              milestones: [{ name: 'Equal footing', text: 'You follow a voice as loud as each voice around it, about 7 times in 10.' }],
+              milestones: [{ name: 'Equal footing', text: 'You follow a voice as loud as each voice around it, about 7 times in 10.' },
+                { name: 'Two at once', text: 'You follow one voice while 2 other voices talk over it, about 7 times in 10.' },
+                { name: 'Across the table', text: 'You catch the words from 3 m away, about 7 times in 10.' },
+                { name: 'Same-sex voices', text: 'You follow a voice against same-sex voices, about 7 times in 10.' }],
               venueBest: [{ text: 'New best at the café: −5 dB (was −3.5 dB)' }], lines: [{ kind: 'up', text: 'Your voice vs the others: +2 dB → −1 dB' }],
               weekly: null }; const b = ES.game.ui.newsBlock(n); const host = document.querySelector('[data-screen]'); host.prepend(b); }""")
             p.locator('[data-game-news]').screenshot(path=str(SHOTS / ('news_block_' + tag + '.png')))
-            c.ok(p.locator('[data-game-news] li').count() == 5, 'news block lines')
+            lines = p.locator('[data-game-news] li').all_text_contents()
+            c.ok(len(lines) == 7 and sum(1 for x in lines if x.startswith('Milestone:')) == 2 and 'And 2 more milestones in Progress.' in lines,
+                 'news block: at most two milestones, then a count (P2)', lines)
             open_screen(p, base, 'home')
             c.eq(p.locator('[data-game-home]').count(), 1, 'home shows the game card (long-term)')
             shot(p, 'home_long_' + tag)

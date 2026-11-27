@@ -122,25 +122,49 @@
   }
 
   /** The news block for the screen after a set (null when there is nothing to say). */
+  function sessionRunning() { var S = ES.ui && ES.ui.session; return !!(S && typeof S.active === 'function' && S.active()); }
+  /** The news block for the screen after a set (null when there is nothing to say). At most two milestones show
+      ("and N more in Progress", RV-play P2). Inside a running session it carries no links: leaving for a venue
+      would strand the session (FRESH-B D3), so it says where to look afterwards instead. */
   function newsBlock(n) {
     if (!n) return null;
-    var items = [];
+    var items = [], live = sessionRunning(), ms = n.milestones || [];
     (n.returns || []).forEach(function (r) { items.push(['k-ret', r.title + ': ' + r.text]); });
-    (n.opened || []).forEach(function (o) { items.push(['k-open', o.text, { go: 'venue', params: { id: o.id }, label: 'See ' + o.name }]); });
-    (n.milestones || []).forEach(function (m) { items.push(['k-ms', 'Milestone: ' + m.name + '. ' + m.text]); });
+    (n.opened || []).forEach(function (o) {
+      items.push(['k-open', o.text + (live ? ' Find it on the map after this session.' : ''), live ? null : { go: 'venue', params: { id: o.id }, label: 'See ' + o.name }]);
+    });
+    ms.slice(0, 2).forEach(function (m) { items.push(['k-ms', 'Milestone: ' + m.name + '. ' + m.text]); });
+    if (ms.length > 2) items.push(['k-ms', 'And ' + (ms.length - 2) + ' more milestone' + (ms.length - 2 === 1 ? '' : 's') + ' in Progress.']);
     (n.venueBest || []).forEach(function (b) { items.push(['k-best', b.text]); });
     (n.lines || []).forEach(function (l) { items.push(['k-' + l.kind, l.text]); });
     if (n.weekly) {
-      items.push(['k-week', n.weekly.practice ? 'Weekly practice run: ' + n.weekly.marks.replace(/1/g, '✓').replace(/0/g, '✕') + ' (your card for the week stays as it was).'
-        : 'Weekly Night Out, stop ' + (n.weekly.stop + 1) + ' of 4: ' + n.weekly.marks.replace(/1/g, '✓').replace(/0/g, '✕') + (n.weekly.complete ? '. Your card is ready.' : '.'),
-      n.weekly.complete ? { go: 'weekly', params: { week: n.weekly.week }, label: 'See your card' } : null]);
+      var mk = n.weekly.marks.replace(/1/g, '✓').replace(/0/g, '✕');
+      items.push(['k-week', n.weekly.practice ? 'Weekly practice run: ' + mk + ' (your card for the week stays as it was).'
+        : 'Weekly Night Out, stop ' + (n.weekly.stop + 1) + ' of 4: ' + mk + (n.weekly.complete ? (live ? '. Your card is ready: it shows on the Weekly page when this session ends.' : '. Your card is ready.') : '.'),
+      n.weekly.complete && !live ? { go: 'weekly', params: { week: n.weekly.week }, label: 'See your card' } : null]);
     }
     if (!items.length) return null;
     return el('section', { class: 'card g-news', 'data-game-news': '' }, [el('h2', null, 'After this set'),
-      el('ul', null, items.slice(0, 8).map(function (it) {
+      el('ul', null, items.slice(0, 9).map(function (it) {
         return el('li', { class: it[0] }, el('span', null, [it[1], it[2] ? ' ' : null,
           it[2] ? el('a', { href: '#' + it[2].go, class: 'g-link', 'data-go': it[2].go, 'data-params': JSON.stringify(it[2].params) }, it[2].label) : null]));
       }))]);
+  }
+  /** Back to the running session, the way Home's Resume does it. */
+  function resumeSession() {
+    var S = ES.ui.session;
+    if (S && typeof S.resume === 'function') { S.resume(); return; }
+    var set = S && S.currentSet && S.currentSet();
+    if (set && set.finished) ES.core.router.go('results', { set: set.index });
+    else if (set) { ES.ui.inSet = true; ES.core.router.go('play', { set: set.index }); }
+  }
+  /** A clear notice (not a toast) when a page that starts sets opens while a session runs (FRESH-B D3). */
+  function sessionNotice(what) {
+    if (!sessionRunning()) return null;
+    return el('section', { class: 'card g-busy', role: 'status', 'data-session-running': '' }, [
+      el('h2', null, 'A session is running'),
+      el('p', null, 'Finish it or end it on its results screen first; then you can ' + what + ' here.'),
+      ES.ui.button('Back to the session', { kind: 'primary', attrs: { 'data-resume-session': '' }, onClick: resumeSession })]);
   }
 
   /** The home card: what the next session opens with (fresh ears, overnight check) and this week's challenge. */
@@ -181,6 +205,7 @@
     });
   }
 
-  G.ui = { levelChart: levelChart, marks: marks, pitchBar: pitchBar, newsBlock: newsBlock, homeCard: homeCard, startPlan: startPlan, dateText: dateText };
+  G.ui = { levelChart: levelChart, marks: marks, pitchBar: pitchBar, newsBlock: newsBlock, homeCard: homeCard, startPlan: startPlan, dateText: dateText,
+    sessionRunning: sessionRunning, sessionNotice: sessionNotice };
   G.homeCard = homeCard;
 })(window.ES, window);

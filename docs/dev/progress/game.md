@@ -124,3 +124,53 @@ Notes for whoever resumes:
   and the home card; js/game/ui.js keeps only the hook listener.
 - Every new or changed test was run against the pre-fix files (they fail) and the fixed ones (they pass).
 - Browser runs now go through `tools/with-browser.sh python3 tests/e2e/game_all.py --held` (one slot).
+
+## 2026-11-27 00:25 UTC — fix round 2 (docs/dev/reviews/FIX-ROUND-2.md; RV-play-a11y, FRESH-B)
+- P2 + FRESH-B C3 fixed: what the game claims is the careful side of the estimate. core.claim = the easier of
+  m − Z·SD (in the dial's harder direction) and the hardest level of that dial the player was tested at (trials ring
+  buffer, focus dial); null before any logged trial of that dial. Milestones need that claim to pass the level (n ≥ 6).
+  Venue earshots use the same Z on the solved level, every pinned dial's uncertainty combined in quadrature (each
+  dial moved one SD toward easy alone, the delta method; stacking all dials at once was far too strict), and stop at
+  the hardest level heard ("That is the hardest you have heard so far"). Z = 1.28, the one-sided 90 % bound: the
+  suggested 1 SD left Far at 12.6–14.4 % overclaimed. Results show at most two milestones, then "And N more
+  milestones in Progress."; level-up lines appear only for levels the player was tested at, no first-estimate lines.
+- Calibration (tests/unit/game-calibrate.mjs, 60 simulated learners × 42 days, Edge, the engine's planner and flow):
+  milestones above the learner's true threshold at award: Crowd 3.9 %, Far 9.4 %, Strange 2.5 %, Repair 4.6 %, Echo
+  4.0 %, Seek 7.0 %, Voices 6.4 % (all ≤ 10 %); learners with one after their first session with an exercise ≤ 3 %;
+  median milestones in a first Crowd session 3 (two show).
+- Venues recalibrated on the careful scale (the old marks gave a median improver no opening for two weeks; the
+  lecture hall, a start venue, was within reach for 28 % of improvers on day 1): pins lecture hall 0.6 s / 21 dB
+  (was 0.8 s / 15 dB), station 1.0 s / 15 dB (was 12 dB), cathedral 1.7 s / 21 dB (was 2.2 s / 18 dB); marks café
+  +4 dB → restaurant, restaurant +3 dB → bar, bar +3 dB → house party, house party +3 dB → club, club +1 dB → concert,
+  lecture hall 2 m → park, park 3 m → station, station 3 m → stadium, stadium 3 m → cathedral. Crowd pins keep their
+  dominance order (each venue at least as hard as the one before on every dial). New distribution: opened by day 41
+  for restaurant 90 %, park 80 %, bar 73 %, station 57 %, house party 57 %, club 38 %, stadium 35 %, concert 25 %,
+  cathedral 23 %; median day (improvers) restaurant 2, park 5, station 10, bar 14, house party 18, cathedral 23,
+  club 28, concert 34; improvers: median 8 of 12 open at day 41, median 3 openings after day 2 (95 % have at least
+  one); early improvers 10, stalled 5.
+- P3: levelText uses ES.ui.fmt.level as soon as the shell adds it (requests.md, value text only); level-ups read the
+  same stored mean as the facts line; milestones and venues read the careful side, so a milestone can sit below the
+  facts number but never above it.
+- P10: weekly "Everyone plays this same night until Monday." with a small "Night code …"; the home teaser says
+  "(not within reach yet)"; out-of-reach earshots read "not yet"; stop cards and rows use plain levels
+  (venues.plainLevel: "the others 3 dB louder", "a robot voice with 6 bands").
+- P12: cast news keeps a blurb's own capitals ("rings the bells on Sundays"). P15: Cast shows met voices as cards and
+  the rest as one line. P18: an overnight check under ten trials is said in words, no percentage.
+- A3: venue Play and "Also here" Play, .g-link (All the cast, Add a voice from your life, chart tables), the weekly
+  nickname field ≥ 44 px; map nodes have 116 × 48 hit areas (≥ 44 px at 360–390 px; the full-width line rows are the
+  equivalent targets).
+- FRESH-B C1: Seek at the lecture hall (open from the start); the map lists where each exercise lives.
+- FRESH-B D1/D3: results news carries no links while a session runs ("Find it on the map after this session.");
+  venue and weekly pages show "A session is running" with "Back to the session" (ES.ui.session.resume()) and a
+  disabled Play. Game screens push only on a tap; the router's de-duplication is the shell's (requests.md).
+- Found on the way: the engine's new accent level names made "You catch a a harder accented voice" → core.phrase
+  builds the noun phrase (test: no "a a"/"a the" in any milestone or plain level); trial rows are keyed by
+  (time, exercise) in the store, so the tests now log with a monotonic clock.
+- Tests: tests/unit/game-claims.test.mjs (new: claims, capped earshots, Seek at a start venue, P12, plain levels),
+  venue texts updated; browser checks for A3, P15, C1, P2 news, P10, the D3 notice and resume. The long-term
+  fixture carries the player's trial rows now (tests/fixtures/game-longterm.js, regenerated; 239 KB).
+- For the guide (lead): "the −3 dB under House party" is now "+3 dB"; the "> +12 dB" legend is now "not yet";
+  milestones need the 90 % careful side of the estimate and a level the player has heard; the marks above.
+- Runs: node tests/unit/run.mjs game- (39 passed; full suite 220/221, the one failure is
+  engine-controller's 5 ms timing test under load); tools/with-browser.sh python3 tests/e2e/run_all.py --only=game
+  (107/107); node tools/build-index.mjs --check (up to date).

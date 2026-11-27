@@ -54,7 +54,7 @@
       var tx = right ? p.x + 12 : p.x - 12, anchor = right ? 'start' : 'end';
       var g = svg('g', { class: 'gm-node ' + cls, tabindex: '0', role: 'link', 'aria-label': aria(s), 'data-venue': s.id });
       g.appendChild(svg('circle', { class: 'gm-focus', cx: p.x, cy: p.y, r: 12, fill: 'none', stroke: 'none' }));
-      g.appendChild(svg('rect', { class: 'gm-hit', x: right ? p.x - 16 : p.x - 96, y: p.y - 18, width: 112, height: 36 }));
+      g.appendChild(svg('rect', { class: 'gm-hit', x: right ? p.x - 18 : p.x - 98, y: p.y - 24, width: 116, height: 48 }));   // ≥ 44 px (RV-a11y A3)
       g.appendChild(svg('circle', { class: 'gm-dot', cx: p.x, cy: p.y, r: s.open ? 6.5 : 6 }));
       g.appendChild(svg('text', { class: 'gm-name', x: tx, y: p.y - 2, 'text-anchor': anchor }, s.name));
       var val = valueOf(s);
@@ -81,6 +81,21 @@
       })]);
   }
 
+  /** Where to find each exercise (FRESH-B C1): open venues first. Sessions bring in every exercise whatever is open. */
+  function exerciseHomes(st) {
+    var open = {}; st.forEach(function (s) { open[s.id] = s.open; });
+    var rows = ['crowd', 'far', 'strange', 'repair', 'echo', 'seek', 'voices'].map(function (ex) {
+      var vs = G.venues.forExercise(ex);
+      if (!vs.length) return null;
+      vs.sort(function (a, b) { return (open[b.id] ? 1 : 0) - (open[a.id] ? 1 : 0) || a.order - b.order; });
+      return el('li', { 'data-ex-home': ex }, [el('span', { class: 'g-vname' }, G.venues.exName(ex)),
+        el('span', { class: 'g-vdesc' }, vs.map(function (v) { return v.name + (open[v.id] ? '' : ' (later)'); }).join(' · '))]);
+    }).filter(Boolean);
+    return el('section', { class: 'g-line g-homes' }, [el('h2', null, 'Where to find each exercise'),
+      el('p', { class: 'g-note' }, 'Your sessions bring in every exercise whatever is open; a venue lets you pick one.'),
+      el('ul', { class: 'g-also' }, rows)]);
+  }
+
   function persistOpenings(st) {
     var fresh = st.filter(function (s) { return s.newly || (s.open && !s.openedAt && !s.venue.opens); });
     if (!fresh.length) return;
@@ -99,7 +114,7 @@
       el('p', { class: 'g-sub' }, measured ? 'Each number is the level where you get about 7 in 10 right at that venue. A venue opens when the one before it reaches its mark and it comes within your reach.'
         : 'Three venues are open from the start. Your earshot at each one appears after your first sets there: a level in decibels, metres or line quality, never a guess.'),
       el('div', { class: 'g-map-layout' }, [el('figure', { class: 'g-map-fig' }, drawMap(st)),
-        el('div', { class: 'g-lines' }, G.data.LINES.map(function (l) { return lineCard(l, st); }))]),
+        el('div', { class: 'g-lines' }, G.data.LINES.map(function (l) { return lineCard(l, st); }).concat([exerciseHomes(st)]))]),
       ES.ui.w.footer()
     ]));
     if (ES.core.playtest && ES.core.playtest.enabled()) setTimeout(function () { ES.core.playtest.sampleFrames('map', 1000); }, 400);

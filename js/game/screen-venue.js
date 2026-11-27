@@ -35,7 +35,8 @@
   function alsoList(v, open) {
     var rows = v.also.filter(G.venues.condAvailable);
     if (!rows.length) return null;
-    var S = ES.ui.session, can = function (ex) { return open && S && S.supports && S.supports.plan && (typeof S.runnable !== 'function' || S.runnable(ex)); };
+    var S = ES.ui.session, busy = G.ui.sessionRunning();
+    var can = function (ex) { return open && !busy && S && S.supports && S.supports.plan && (typeof S.runnable !== 'function' || S.runnable(ex)); };
     return [el('h2', { class: 'g-sec' }, 'Also here'), el('ul', { class: 'g-also' }, rows.map(function (c) {
       var e = G.venues.condEarshot(c), d = G.core.dialDef(c.ex, c.dial);
       var val = e.status === 'none' ? 'not measured yet' : e.text;
@@ -50,14 +51,14 @@
     if (!cs.length) return null;
     return [el('h2', { class: 'g-sec' }, 'Regulars'), el('ul', { class: 'g-regulars' }, cs.map(function (c) {
       return el('li', { class: c.state === 'unmet' ? 'is-unmet' : '' }, c.state === 'unmet' ? 'Someone you have not met yet' : c.name + ' · ' + c.blurb.replace(/\.$/, ''));
-    })), el('p', { class: 'g-note' }, [el('a', { href: '#cast', 'data-go': 'cast' }, 'All the cast')])];
+    })), el('p', { class: 'g-note' }, [el('a', { href: '#cast', 'data-go': 'cast', class: 'g-link' }, 'All the cast')])];
   }
   function playButton(s) {
     var mins = Math.round(((ES.engine.dialMeta || {})[s.venue.head.ex] || { setTrials: 20, secPerTrial: 9 }).setTrials *
       ((ES.engine.dialMeta || {})[s.venue.head.ex] || { secPerTrial: 9 }).secPerTrial / 60);
     var sup = G.venues.supports();
     var b = ES.ui.button(s.open ? 'Play a set here · about ' + Math.max(2, mins) + ' min' : 'Opens later', { kind: 'primary', wide: true, cls: 'g-play',
-      disabled: !s.open, attrs: { 'data-play-venue': s.id }, onClick: function () { G.ui.startPlan(G.venues.plan(s.id)); } });
+      disabled: !s.open || G.ui.sessionRunning(), attrs: { 'data-play-venue': s.id }, onClick: function () { G.ui.startPlan(G.venues.plan(s.id)); } });
     var note = s.open && !sup.start ? el('p', { class: 'g-note' }, 'Starting a set from here arrives with the next build. Your normal sessions train this venue’s conditions meanwhile.') : null;
     return [b, note];
   }
@@ -69,6 +70,7 @@
     root.appendChild(el('div', { class: 'wrap narrow g-wrap g-venue', 'data-venue': v.id }, [
       ES.ui.w.header({ back: true, title: 'Venue' }),
       el('p', { class: 'eyebrow mono' }, line.name + (n > 1 ? ' · venue ' + (v.step + 1) + ' of ' + n : '')),
+      G.ui.sessionNotice('play a set'),
       el('h1', { class: 'h-big' }, v.name),
       el('p', { class: 'lead' }, v.flavour),
       el('p', { class: 'g-cond' }, G.venues.exName(v.head.ex) + ' · ' + G.venues.describe(v.head)),

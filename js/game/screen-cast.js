@@ -52,14 +52,18 @@
   }
 
   function mount(root) {
-    var cards = G.cast.cards(), n = G.cast.counts(), body;
+    var cards = G.cast.cards(), n = G.cast.counts(), body, met = cards.filter(function (c) { return c.state !== 'unmet'; });
+    var rest = cards.length - met.length;
     if (!cards.length) {
       body = el('div', { class: 'g-empty' }, [el('p', null, 'The cast arrives with the voice packs of the audio build.'), el('p', { class: 'g-note' }, 'Nothing to show yet, on purpose.')]);
     } else {
-      body = el('ul', { class: 'g-cast-grid' }, cards.map(function (c) {
+      // met voices as cards; the others as one line, never a wall of locked cards (RV-play P15)
+      body = [met.length ? el('ul', { class: 'g-cast-grid' }, met.map(function (c) {
         var v = G.data.venue(c.venue);
         return card(c, v ? G.venues.venueName(v) : 'town', v ? v.name : 'Around town');
-      }));
+      })) : null,
+      rest ? el('p', { class: 'g-cast-rest', 'data-cast-rest': String(rest) }, (met.length ? rest + ' more voice' + (rest === 1 ? '' : 's') : 'All ' + rest + ' voices are still') +
+        (met.length ? ' to meet, in training and at the venues.' : ' to meet, in training and at the venues. Each one gets a card when you first hear it.')) : null];
     }
     root.appendChild(el('div', { class: 'wrap g-wrap g-cast' }, [
       ES.ui.w.header({ back: true, title: 'Cast' }),
@@ -68,7 +72,7 @@
       el('p', { class: 'g-sub' }, 'A card fills in when you meet its voice, and turns known when you can pick it out by ear. Voices grow familiar within the first hour of listening to them.'),
       cards.length ? el('p', { class: 'g-cast-count' }, n.met + ' of ' + n.total + ' met · ' + n.known + ' known') : null,
       body,
-      ES.ui.screens['voices-own'] ? el('p', { class: 'g-note', style: 'margin-top:16px' }, [el('a', { href: '#voices-own', 'data-go': 'voices-own' }, 'Add a voice from your life'),
+      ES.ui.screens['voices-own'] ? el('p', { class: 'g-note', style: 'margin-top:16px' }, [el('a', { href: '#voices-own', 'data-go': 'voices-own', class: 'g-link' }, 'Add a voice from your life'),
         ' \u00b7 recordings stay on this device and are never exported.']) : null,
       ES.ui.w.footer()
     ]));

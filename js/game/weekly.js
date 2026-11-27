@@ -77,6 +77,7 @@
       var t = gen.make(ES.core.rng(seedOf(wk) + ':' + k + ':' + i), setting, ctx);
       t.setting = t.setting || {};
       t.setting.noUpdate = true;                     // generators copy only dials/focus/anchor/warmup
+      t.setting.learn = false;                       // the engine's learner skips learn:false trials (M8)
       var v = t.meta && t.meta.voices && t.meta.voices[0];
       if (v) { ctx.recentVoices = [v].concat(ctx.recentVoices).slice(0, 3); }
       if (t.meta && t.meta.room) ctx.lastRoom = t.meta.room;
@@ -108,7 +109,7 @@
       if (m) for (var i = 0; i < m.length; i++) if (m[i] === '1') { r++; far = i; }
       if (m) { right += r; n += m.length; }
       return { k: s.k, ex: s.ex, venue: s.venue, name: s.name, exName: s.exName, dial: s.dial, marks: m, right: r, n: m ? m.length : 0,
-        furthest: far >= 0 ? K().levelText(s.ex, s.dial, s.ramp[far]) : null, rung: far };
+        furthest: far >= 0 ? K().levelText(s.ex, s.dial, s.ramp[far]) : null, hardest: far >= 0 ? ES.game.venues.plainLevel(s.ex, s.dial, s.ramp[far]) : null, rung: far };
     });
     return { week: wk, label: weekLabel(wk), identity: en.ver || identity(), stops: stops, right: right, n: n,
       complete: stops.every(function (s) { return s.marks; }), at: en.at || 0, practice: en.practice || [] };

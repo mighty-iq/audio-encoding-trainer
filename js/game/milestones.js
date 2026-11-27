@@ -1,6 +1,7 @@
 /* ES.game.milestones — growth in real units (pure; loads in Node). Milestones mark abilities, never time spent: a
-   dial's threshold estimate (the level where the player gets about 7 in 10 right, from at least MIN_N updates of
-   that dial) reaching a level, knowing cast voices, opening a whole line of venues. Every text is generated from
+   dial's claim (core.claim: the careful side of the threshold estimate, m − 1.28 SD in the dial's harder direction,
+   from at least MIN_N updates, and never beyond the hardest level of that dial the player has been tested at)
+   reaching a level, knowing cast voices, opening a whole line of venues (fix round 2, RV-play P2, FRESH-B C3). Every text is generated from
    the engine's dial definitions, so numbers match the code. Milestones are informational: the app shows the ones
    reached and only the next one per dial, never a wall of locked badges (R5 §5.2, §5.5).
    Level-up lines: dials that moved at least one display step harder during a set ("Distance: 4 m → 6 m").
@@ -74,10 +75,10 @@
     'crowd.space': function (v) { return v === 'same place' ? 'You follow a voice with the others in the same place' : 'You follow a voice with the others only ' + v + ' away'; },
     'far.rt60': function (v) { return 'You catch the words through ' + v + ' of echo'; },
     'far.noise': function (v, at) { return 'You catch the words with ' + ES.game.venues.speechVsNoise(at); },
-    'strange.accent': function (v, at, d) { var x = d.values[at] || {}; return 'You catch a ' + String(v).split(',')[0] + (x.snr === null || x.snr === undefined ? ' in quiet' : ' with ' + babble(x.snr)); },
+    'strange.accent': function (v, at, d) { var x = d.values[at] || {}; return 'You catch ' + K().phrase(v) + (x.snr === null || x.snr === undefined ? ' in quiet' : ' with ' + babble(x.snr)); },
     'strange.fast': function (v) { return 'You catch speech played ' + v + ' as fast'; },
     'strange.whisper': function (v, at, d) { var x = d.values[at]; return 'You catch a whisper' + (x === null || x === undefined ? ' in quiet' : ' with ' + babble(x)); },
-    'strange.phone': function (v) { return 'You catch the words over a ' + v; },
+    'strange.phone': function (v) { return 'You catch the words over ' + K().phrase(v); },
     'strange.muffled': function (v) { return 'You catch speech muffled down to ' + v; },
     'strange.vocoded': function (v) { return 'You catch robot-voiced speech with only ' + v; },
     'repair.gap': function (v) { return 'You repair a word when ' + v + ' of it is lost'; },
@@ -130,15 +131,15 @@
     var f = SAY[ex + '.' + d.id];
     return (f ? f(val, at, d) : exName(ex) + ' · ' + d.label + ': ' + val) + ', about 7 times in 10.';
   }
-  /** Is the dial's estimate at least as hard as `at` (from enough of the player's own trials)? Both Crowd contexts
-      (with and without headphones) count. */
+  /** Is the dial's claim at least as hard as `at`: the careful side of the estimate passes it, from enough of the
+      player's own trials, and the player has been tested at that level or harder? Both Crowd contexts count. */
   function reached(ex, dial, at) {
     var d = K().dialDef(ex, dial);
     if (!d) return false;
     var cks = [K().ctxKey(ex, false), K().ctxKey(ex, true)].filter(function (c, i, a) { return a.indexOf(c) === i; });
     return cks.some(function (ck) {
-      var e = K().est(ex, d, ck);
-      return e && !e.prior && e.n >= MIN_N && d.dir * (e.m - at) >= -1e-9;
+      var c = K().claim(ex, d, ck);
+      return !!c && c.n >= MIN_N && d.dir * (c.value - at) >= -1e-9;
     });
   }
   /** Milestones reached now that the record does not hold yet: [{id, name, text, kind}]. */
@@ -191,10 +192,10 @@
     all().forEach(function (m) {
       var key = m.ex + '.' + m.dial;
       if (seen[key] || have[m.id] || reached(m.ex, m.dial, m.at)) return;
-      var d = K().dialDef(m.ex, m.dial), e = K().est(m.ex, d);
-      if (!e || e.prior || e.n < MIN_N) return;
+      var d = K().dialDef(m.ex, m.dial), c = K().claim(m.ex, d);
+      if (!c || c.n < MIN_N) return;
       seen[key] = 1;
-      out.push({ id: m.id, ex: m.ex, dial: m.dial, name: m.name, value: m.value, now: K().levelText(m.ex, d, e.m), text: m.text });
+      out.push({ id: m.id, ex: m.ex, dial: m.dial, name: m.name, value: m.value, now: K().levelText(m.ex, d, c.value), text: m.text });
     });
     return out;
   }
@@ -211,13 +212,16 @@
     });
     return out;
   }
-  /** Dials that moved at least one display step harder: [{dial, from, to, text, first}]. */
+  /** Dials that moved at least one display step harder: [{dial, from, to, text}]. Same estimate as the results facts
+      (the posterior mean); a line appears only when the new level is one the player has been tested at (no claim
+      beyond what was heard), and first estimates are left to the facts line (RV-play P3, FRESH-B C3). */
   function levelUps(ex, before, after) {
     var out = [];
     Object.keys(after || {}).forEach(function (id) {
       var d = K().dialDef(ex, id), a = after[id], b = before && before[id];
-      if (!d || !a || a.n < 3) return;
-      if (!b) { out.push({ dial: id, from: null, to: a.m, first: true, text: d.label + ': ' + K().levelText(ex, d, a.m) + ' (first estimate)' }); return; }
+      if (!d || !a || a.n < 3 || !b) return;
+      var t = K().testedMax(ex, id), shown = d.kind === 'ord' ? Math.floor(a.m + 1e-9) : Math.round(a.m * 2) / 2;
+      if (t === null || d.dir * (shown - t) > 1e-9) return;
       var moved = d.kind === 'ord' ? d.dir * (Math.floor(a.m + 1e-9) - Math.floor(b.m + 1e-9)) >= 1
         : d.dir * (Math.round(a.m * 2) / 2 - Math.round(b.m * 2) / 2) >= 1 - 1e-9;
       if (moved) out.push({ dial: id, from: b.m, to: a.m, first: false, text: d.label + ': ' + K().levelText(ex, d, b.m) + ' → ' + K().levelText(ex, d, a.m) });

@@ -74,11 +74,11 @@ export const tests = {
   },
   'descriptions and rules quote the dial definitions'(ES, assert) {
     const V = ES.game.venues, D = ES.game.data;
-    assert.equal(V.describe(D.venue('lecture').head), '0.8 s of echo · speech 15 dB above the noise');
+    assert.equal(V.describe(D.venue('lecture').head), '0.6 s of echo · speech 21 dB above the noise');
     assert.equal(V.describe(D.venue('cafe').head, { headphones: false }), '1 other voice · of the other sex');
     assert.equal(V.describe(D.venue('cafe').head, { headphones: true }), '1 other voice · of the other sex · 90° apart');
-    assert.ok(/at the café reaches 0 dB or better/.test(V.ruleText('restaurant')), V.ruleText('restaurant'));
-    assert.ok(/at the lecture hall reaches 3 m or better/.test(V.ruleText('park')), V.ruleText('park'));
+    assert.ok(/at the café reaches \+4 dB or better and the restaurant itself is within reach/.test(V.ruleText('restaurant')), V.ruleText('restaurant'));
+    assert.ok(/at the lecture hall reaches 2 m or better/.test(V.ruleText('park')), V.ruleText('park'));
     assert.equal(V.ruleText('cafe'), 'Open from the start.');
   },
   'a venue plan pins the venue’s dials and targets its headline dial'(ES, assert) {

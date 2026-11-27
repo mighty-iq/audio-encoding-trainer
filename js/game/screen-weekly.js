@@ -12,14 +12,16 @@
   function routeList(res) {
     return el('ol', { class: 'g-route', 'aria-label': 'This week’s stops' }, res.stops.map(function (s, i) {
       return el('li', { class: 'g-stop', 'data-stop': i }, [el('div', { class: 'g-stop-n' }, 'Stop ' + (i + 1)), el('div', { class: 'g-stop-name' }, s.name),
-        el('div', { class: 'g-stop-ex' }, s.exName + (s.furthest ? ' · to ' + s.furthest : '')), s.marks ? G.ui.marks(s.marks) : null]);
+        el('div', { class: 'g-stop-ex' }, s.exName), s.marks ? G.ui.marks(s.marks) : null,
+        s.hardest ? el('div', { class: 'g-stop-ex' }, 'Hardest right: ' + s.hardest) : null]);
     }));
   }
   function playArea(wk, res, avail) {
     var played = res.stops.filter(function (s) { return s.marks; }).length, done = res.complete;
     if (!avail.ok) return el('div', { class: 'g-empty' }, [el('p', null, 'This week’s night out needs the voice packs of the audio build.'), el('p', { class: 'g-note' }, 'It appears here as soon as they are installed.')]);
     var label = done ? 'Play again (practice)' : played ? 'Continue: ' + (4 - played) + ' stop' + (4 - played === 1 ? '' : 's') + ' left' : 'Play this week’s night out';
-    var b = ES.ui.button(label, { kind: done ? 'secondary' : 'primary', wide: true, attrs: { 'data-weekly-play': '' }, onClick: function () { G.ui.startPlan(G.weekly.plan(wk)); } });
+    var b = ES.ui.button(label, { kind: done ? 'secondary' : 'primary', wide: true, disabled: G.ui.sessionRunning(), attrs: { 'data-weekly-play': '' },
+      onClick: function () { G.ui.startPlan(G.weekly.plan(wk)); } });
     var tuts = (ES.core.store.peek('profile') || {}).tutorials || {}, need = ['crowd', 'far', 'strange', 'repair'].filter(function (x) { return ES.ex[x] && ES.ex[x].tutorial && !tuts[x]; });
     var sup = ES.ui.session && ES.ui.session.supports && ES.ui.session.supports.plan;
     return el('div', null, [el('div', { class: 'g-actions' }, [b]),
@@ -85,10 +87,11 @@
     root.appendChild(el('div', { class: 'wrap narrow g-wrap g-weekly', 'data-week': wk }, [
       ES.ui.w.header({ back: true, title: 'Weekly' }),
       el('p', { class: 'eyebrow mono' }, 'Weekly Night Out · ' + wk),
+      G.ui.sessionNotice('play the night out'),
       el('h1', { class: 'h-mid' }, G.weekly.weekLabel(wk)),
       el('p', { class: 'g-sub' }, 'Four stops, six trials each, from easy to hard. Everyone on this version plays the same night this week, so you can compare runs with friends.'),
       routeList(res),
-      el('p', { class: 'g-note' }, 'Same night for: ' + G.weekly.identity() + '. A new night starts each Monday.'),
+      el('p', { class: 'g-note' }, ['Everyone plays this same night until Monday. ', el('span', { class: 'g-mono g-code' }, 'Night code ' + G.weekly.identity())]),
       playArea(wk, res, avail),
       played ? cardArea(wk, res) : null,
       history(wk),
