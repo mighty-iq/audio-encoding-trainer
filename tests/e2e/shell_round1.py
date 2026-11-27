@@ -18,11 +18,11 @@ def real_data():
     return (ROOT / 'data' / 'manifest.js').exists() and bool(list((ROOT / 'audio').glob('pack-*.js')))
 
 
-def page(h, real=False, size=(390, 844), config=None, profile=None, context=None, init=''):
+def page(h, real=False, size=(390, 844), config=None, profile=None, context=None, init='', url=None):
     tab = new_tab(h.browser, viewport=size, real=real, config=config, context=context,
                   init=None if context else preset({'profile': profile or PROFILE}) + init)
     pg = tab.page
-    pg.goto(file_url(), timeout=90000)
+    pg.goto(url or file_url(), timeout=90000)
     wait_ready(pg, 60000)
     close_sheets(pg)
     return tab, pg
@@ -293,8 +293,11 @@ def m5(h, c):
     ctx = h.browser.new_context(viewport={'width': 390, 'height': 844})
     ctx.add_init_script('window.ES_CONFIG = Object.assign(window.ES_CONFIG || {}, {"demo": true});')
     ctx.add_init_script(preset({'profile': PROFILE}))
-    ta, a = page(h, context=ctx)
-    tb, b = page(h, context=ctx)
+    # Two tabs share storage reliably only on an http origin: on file:// the test browser sometimes gives the second
+    # page a storage area of its own (no storage events at all), which says nothing about the app.
+    url = (getattr(h, 'base', None) + '/index.html') if getattr(h, 'base', None) else None
+    ta, a = page(h, context=ctx, url=url)
+    tb, b = page(h, context=ctx, url=url)
     a.bring_to_front()
     a.click('[data-start]')
     play_one(a, True)

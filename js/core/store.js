@@ -224,6 +224,8 @@
   function hold() { held++; }
   function release() { if (held > 0) held--; if (held === 0) return flushAll(); return false; }
 
+  var lastWipe = '';
+  function wiped(stamp) { if (stamp === lastWipe) return true; lastWipe = stamp; return false; }   // one reset per wipe
   function onStorage(ev) {
     if (!ls || !ev) return;
     try { if (ev.storageArea && ev.storageArea !== ls) return; } catch (e) { /* ignore */ }
@@ -231,7 +233,9 @@
     if (k === null || k === undefined) { if (!S.readOnly) resetAll('remote'); return; }
     if (k.indexOf(PREFIX) !== 0) { var m = /^earshot\.v(\d+)\./.exec(k); if (m && +m[1] > 1) goNewer(); return; }
     var key = k.slice(PREFIX.length);
-    if (key === '$wipe') { if (ev.newValue && !S.readOnly) { resetAll('wipe'); S.corrupt = []; emitStatus(); } return; }
+    // Delete everything in another tab: it sets and at once removes `$wipe`; either event is the signal (under load a
+    // browser may hand over only the removal, which still carries the old value).
+    if (key === '$wipe') { if ((ev.newValue || ev.oldValue) && !S.readOnly && !wiped(ev.newValue || ev.oldValue)) { resetAll('wipe'); S.corrupt = []; emitStatus(); } return; }
     if (!SC.SCHEMAS[key] || S.readOnly) return;
     var raw = ev.newValue;
     if (raw === baseRaw[key]) return;

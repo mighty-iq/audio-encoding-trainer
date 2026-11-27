@@ -174,3 +174,8 @@ all failing before). Status per finding:
 - P4: Path mode shows "<stage>" and "Path step k of m · value" in the bar, and a Path card on Results with the
   moves (on, or a step back with no penalty), and at the last step "the path is complete" with Switch to Edge.
 - Tests: tests/e2e/shell_round2.py (42 checks), the router unit test and the layout suite.
+- Test-browser finding: on file:// URLs headless Chromium sometimes gives a page a storage area of its own (no
+  storage events from the other tab; a reload that starts empty). That is behind the flaky two-tab M5 case and
+  the dropped writes across reloads. The two-tab M5 case now runs on the suite's http origin (0 of 8 failed,
+  against about 1 in 6 on file://). The store also takes either `$wipe` event, with the old value as the signal
+  when only the removal arrives. The tab copy of the running session stays as the guard for reloads.
