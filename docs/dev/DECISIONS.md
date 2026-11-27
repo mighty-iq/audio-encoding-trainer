@@ -48,3 +48,4 @@
 - 2026-11-27 01:14 UTC — Version 1.0.0 for the release candidate (ns.js; the guide follows).
 - 2026-11-27 01:20 UTC — The release single file is committed at the repository root as earshot.html (built from the release commit, playtest off), so players can open or save it from Pages or GitHub without a manual Release upload; it is not precached by the service worker.
 - 2026-11-27 01:44 UTC — The full welcome now opens with one line on what Earshot is (playbook: the first screen says what the app is); the Chimera text follows unchanged.
+- 2026-11-27 11:56 UTC — Release 1.0.0: `build` fast-forwarded into `main` with the owner's go-ahead (the owner skipped the release checklist and asked to finish; fixes later if needed). Release candidate 2 (91b22c3) plus docs.
