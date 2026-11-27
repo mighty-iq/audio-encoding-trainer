@@ -2,7 +2,7 @@
 
 Release candidate: version 1.0.0 on `build` (commit recorded in STATE.md at release) · checked 2026-11-27 UTC by the
 lead, with spot checks by an independent final checker (docs/dev/reviews/FINAL-CHECK.md).
-Evidence legend: e2e = `tools/with-browser.sh python3 tests/e2e/run_all.py --all` on the candidate; unit =
+Evidence legend (FINAL-CHECK spot-checked 17 rows; rows on Edge accuracy and Lab sensitivity corrected to the recorded runs): e2e = `tools/with-browser.sh python3 tests/e2e/run_all.py --all` on the candidate; unit =
 `node tests/unit/run.mjs` (221/221); sims = `node tests/sim/run.mjs` (4 modes × 200 learners; solvers 0 failures on
 10,000 trials per generator; shortcut responders within chance + 0.06 in every bin).
 
@@ -27,11 +27,11 @@ Evidence legend: e2e = `tools/with-browser.sh python3 tests/e2e/run_all.py --all
 | Data on the device; versioned saves; export and import work | store envelope + schema guard; e2e shell_storage, shell_download, lab export/import round trip | pass |
 | No streaks; nothing punishes a missed day | no streak mechanic in js/ (voices-own.js "streak" is a 2-down staircase counter); RV-play: fresh-ears and overnight notes gentle | pass |
 | Timed stimuli clean (nothing decorative runs during a stimulus) | RV-play: nothing on screen changed in 12 trials with real sound; reduced motion respected | pass |
-| Default mode holds difficulty at the edge on every dimension | sims Edge accuracy 0.72 (p5 0.66, p95 0.79) on several dials | pass |
+| Default mode holds difficulty at the edge on every dimension | `node tests/sim/run.mjs` on the candidate, Edge × 200 learners: edge trials 0.75 right (p5–p95 0.71–0.78; planned 0.73), all trials 0.78 (anchors included), dials chosen per bottleneck | pass |
 | Plateau detection with a stated change and reason | js/engine/plateau.js; sims false alarms 3.8–7.5 %; RV-play plateau cards with reason | pass |
 | Transfer portfolio, each exercise tagged with its bet, ≥ 1 new bet | ES.ex[*].bet / betNew (Seek, Voices new); README table; guide chapter 1 | pass |
 | Several progression modes on one record; app says when each is right | Edge, Path, Variety, Focus, Free; Settings copy; Path stage/step, Focus target shown (round 2) | pass |
-| Probes near/mid/far, baselines, alternate forms, poolable export; gains visible within weeks | js/lab (7 checks), five-block baseline, export JSON/CSV/pooled; lab sims: 1.5 dB gain clear by check-in 4 for 73 %, likely or clear 88 % | pass |
+| Probes near/mid/far, baselines, alternate forms, poolable export; gains visible within weeks | js/lab (7 checks), five-block baseline, export JSON/CSV/pooled; lab simulation n = 500 (docs/dev/progress/lab.md): a true 1.5 dB Matrix gain reads clear by the 4th weekly check-in for 79 % (76–80 % across gain shapes), likely or clear 91 %; a zero gain reads clear for 2 % | pass |
 | Two-minute start tested on a fresh agent | FRESH-A/FRESH-B: Crowd ~1:15–1:45, Far ~1:35–1:45, Repair ~1:20, Strange 1:27 (phone), Echo 1:36–2:09 (as the first exercise incl. its tutorial) | pass (Echo at the limit) |
 | Playtest mode in test builds, off by default at release | ES.TEST_BUILD only with --test; Settings toggle off by default; earshot.html has no testBuild flag | pass |
 | Privacy: commits noreply + UTC, no session links, pre-push check, nothing about the owner | tools/privacy_check.py on every push; shingle check of committed docs vs the brief (no quotes); grep for device and place facts: none | pass |
