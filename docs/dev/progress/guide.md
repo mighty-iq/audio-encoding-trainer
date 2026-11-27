@@ -115,7 +115,28 @@ clean, no nearly empty page, FACTS 111/111. All 35 pages looked at after the las
 - Still to come from the lead: shell (Path stage and step, answer counts, Exercises list from Home, failures move on)
   and stimuli (final counts, Story options); counts of voices are not stated in the guide until then.
 
-### Numbers in the guide and the code behind them (`python3 tools/build-pdf.py --facts`, 2026-11-27 00:43 UTC)
+## 2026-11-27 01:05 UTC — round 2b: shell round 2 (fe51b23, ff62544, 12f2120, aa6dfa2, b2f617f) (status: complete; resumable)
+Every statement checked in code (progress/shell.md round-2 section as the map). Rebuilt without the URL flags:
+35 pages, 2,079 KiB, all checks pass (links, fonts, metadata, privacy, sparse pages, FACTS 130/130); pages looked at.
+- New figures (tools/shots.py `--only exercises,results`): Figure 2 Exercises (the list with Play a set and How it
+  works) in ch 2; Figure 13 Results after a set in ch 6 (a short Crowd set answered by script R R P R W R: "9 of 12
+  answers right", "4 of 6 trials fully right, 1 partly right", the half-shaded mark). Later figures renumbered 3–12.
+  Home re-shot: unchanged in its first screen (the index with Exercises sits below it; the caption says so). Trial
+  figures already showed the round-2 bar (whole dial value) and corner marks, so they were not re-shot.
+- Ch 2: Home › Exercises (all eight, Play a set in the current mode with the tutorial first, How it works); a
+  practice sound that cannot be prepared gets two tries, then the tutorial moves on; sideways phones fit without
+  scrolling; screen readers get a heading per trial and announcements (when to answer, right or wrong, feedback).
+- Ch 3: a set passed over with its reason (sounds, interruptions, ended before the first answer) while the session
+  goes on; only sessions with an answered trial are logged and counted. Table 3: Path shows stage and step in the
+  bar, each move on Results, no penalty for a step back, the path complete with Edge offered; Focus shows its target
+  with Choose and trains like Edge without one (Home says so); Free includes Seek.
+- Ch 6: the results headline counts answers in multi-answer sets, trials on the line below, a half-shaded mark for a
+  partly right trial; never more than one invitation card on a results screen.
+- Ch 7: backups, exports and the weekly card save through one path (a normal download, or a viewer's own download
+  prompt; Copy if nothing arrives). "Deleting everything" folded into section 1 to keep the chapter on one page.
+- Voice and clip counts stay out until the stimuli round's final numbers arrive.
+
+### Numbers in the guide and the code behind them (`python3 tools/build-pdf.py --facts`, 2026-11-27 01:05 UTC)
 | Statement | Where |
 |---|---|
 | edge trials aim at about 72 % right | `js/engine/dials.js:121` |
@@ -228,4 +249,23 @@ clean, no nearly empty page, FACTS 111/111. All 35 pages looked at after the las
 | PWA: install, offline, whole-version updates between sets; in-app browsers notice; never in the single file | `js/core/pwa.js:5-9` |
 | PWA: in-app browsers Facebook, Instagram, TikTok, Snapchat, LINE, X, Discord; dismissal kept per device | `js/core/pwa.js:30-36` |
 | PWA: looks for a new version at most every 30 min | `js/core/pwa.js:22` |
+| Home lists Exercises first: all eight, play a set or see how it works | `js/ui/screens/home.js:7` |
+| Exercises: Play a set in your mode, its tutorial first the first time; How it works | `js/ui/screens/exercises.js:68` |
+| Exercises: eight rows, Missions opens its own screen | `js/ui/screens/exercises.js:8` |
+| Free: every runnable exercise (Seek included) | `js/ui/screens/settings-free.js:22` |
+| Path: stage and step in the bar | `js/ui/screens/play.js:81-83` |
+| Path: a step back has no penalty; last step: the path is complete, Switch to Edge | `js/ui/screens/results.js:66-73` |
+| Results: multi-answer sets count answers; trials fully and partly right on the line below | `js/ui/screens/results.js:84-92` |
+| Results: a partly right trial gets a half-shaded mark | `css/screens.css:125` |
+| a set passed over with its reason (sounds, interruptions, ended before the first answer); the session goes on | `js/ui/screens/results.js:32-34` |
+| only sessions with an answered trial are logged | `js/ui/session.js:235` |
+| tutorial: a step whose sound cannot be prepared gets two tries | `js/ui/tutorial.js:179` |
+| one invitation card per screen | `js/core/chimera.js:84-85` |
+| Focus: Settings shows its target with Choose; without one it trains like Edge; Home says so | `js/ui/screens/settings.js:72-75` |
+| Home: Focus has no target yet | `js/ui/screens/home.js:36` |
+| downloads: one helper for backups, Lab exports and the weekly card; viewer prompt or a normal download; Copy | `js/core/download.js:1-105` |
+| screen reader: a heading per trial; announces when to answer, the verdict and the feedback | `js/ui/trialview.js:88` |
+| screen reader: an sr-only h1 per trial | `js/ui/screens/play.js:45` |
+| sideways phones: trials and feedback fit without scrolling (640x360, 740x360) | `docs/dev/progress/shell.md:143` |
+| sideways phones: Echo, Voices and Seek at 640x360 (Seek keeps its reveal beside the feedback) | `docs/dev/progress/exB.md:110-111` |
 | Matrix words share no word or verb lemma with the British English matrix test | `LICENSES-ASSETS.md:56` |

@@ -168,7 +168,7 @@
     <p class="lead">Earshot runs in any modern browser, on a phone or a computer, online or off. A first-time player is training within two minutes. Three settings are worth one more minute each.</p>
   </header>
   <div class="col">
-  <figure class="side phone"><img src="figures/home.png" alt="The home screen: Ready when you are, a Start session button, this week’s ring with four sessions, and cards from the Lab and the game"><figcaption><span class="label">Figure 1 · Home</span>Tonight’s session, this week’s ring, and cards from the Lab and the game. A simulated player.</figcaption></figure>
+  <figure class="side phone"><img src="figures/home.png" alt="The home screen: Ready when you are, a Start session button, this week’s ring with four sessions, and cards from the Lab and the game"><figcaption><span class="label">Figure 1 · Home</span>Tonight’s session, this week’s ring, and cards from the Lab and the game; further down, the rest of the app, Exercises first. A simulated player.</figcaption></figure>
 
   <h2>1. Open it</h2>
   <p>Earshot is a single web page. Open <span data-url="pages">the web version (the project's GitHub Pages site)</span>, or download the file <code>earshot.html</code> and open it from your device's files. Neither needs an account. The downloaded file works without a connection from the start; the web version loads from its site and now and then checks it for a new version. Neither sends anything about you: your record stays in the browser you use, on that device.</p>
@@ -176,8 +176,10 @@
   <p>The first time you open it, a short welcome tells you that Earshot was built by the Chimera community on Discord and invites you to join us at <a class="ext" href="https://discord.gg/chmr">discord.gg/chmr</a>; later launches show a one-tap version.</p>
 
   <h2>2. The first two minutes</h2>
-  <p>Tap <b>Start session</b>. Each exercise opens with a short tutorial the first time you meet it: one line at a time that always says what to do next, a worked example with the right answer marked and every wrong option labelled with the kind of mistake it represents, then a few practice trials with feedback. A wrong practice answer gets a fresh try on a new trial. Practice never counts toward your levels, and a Skip button is always there. The tutorial ends with the Discord link, and then the set begins.</p>
-  <p>The <b>?</b> button on every trial opens the exercise's Help: the goal, every dial with its real range, tips, and the bet the exercise makes. Pause is always one tap away, and ending a set early costs nothing.</p>
+  <figure class="side phone"><img src="figures/exercises.png" alt="The Exercises screen: Crowd, Far and Strange voices, each with one line on what it trains, the bet it makes, a Play a set button and How it works"><figcaption><span class="label">Figure 2 · Exercises</span>All eight by name, with the bet each one makes. A simulated player.</figcaption></figure>
+  <p>Tap <b>Start session</b>. Each exercise opens with a short tutorial the first time you meet it: one line at a time that always says what to do next, a worked example with the right answer marked and every wrong option labelled with the kind of mistake it represents, then a few practice trials with feedback. A wrong practice answer gets a fresh try on a new trial, and a practice sound that cannot be prepared gets two tries before the tutorial moves on. Practice never counts toward your levels, and a Skip button is always there. The tutorial ends with the Discord link, and then the set begins.</p>
+  <p>To try one exercise on its own, open <b>Home › Exercises</b>. It lists all eight with a line on what each trains and the bet it makes: <b>Play a set</b> runs one set of it in your current mode, with its tutorial first if you have not played it yet, and <b>How it works</b> opens its Help.</p>
+  <p>The <b>?</b> button on every trial opens the exercise's Help: the goal, every dial with its real range, tips, and the bet the exercise makes. Pause is always one tap away, and ending a set early costs nothing. Trials fit a phone held sideways without scrolling, and with a screen reader each trial has its own heading and the app announces when to answer, whether you were right, and the feedback.</p>
 
   <h2>3. Phone speaker or headphones</h2>
   <p>Everything in Earshot works on a phone speaker except the dials that place voices around you in space: Crowd's spatial separation and Seek's head-turn view. Those need headphones, because each ear must get its own signal.</p>
@@ -218,7 +220,7 @@
       </tbody>
     </table>
   </aside>
-  <p>A session lasts about 15 minutes; Settings offers 10, 15, 20 or 30. It is made of sets of about three minutes, each from a different exercise, so a 15-minute session holds five sets. The plan draws each set's exercise with weights that lean toward loud places (Crowd 20, Repair 12 and Seek 8 out of 100), then distance (Far 22), unusual voices (Strange voices 18), memory (Echo 12) and voice learning (Voices 8). An exercise does not come back until the others have had their turn, and never twice in a row. In your first sessions, up to three exercises you have not played yet open each session, so in Edge, Path and Variety you meet all seven by your third session. A session counts once you have answered at least one trial in it.</p>
+  <p>A session lasts about 15 minutes; Settings offers 10, 15, 20 or 30. It is made of sets of about three minutes, each from a different exercise, so a 15-minute session holds five sets. The plan draws each set's exercise with weights that lean toward loud places (Crowd 20, Repair 12 and Seek 8 out of 100), then distance (Far 22), unusual voices (Strange voices 18), memory (Echo 12) and voice learning (Voices 8). An exercise does not come back until the others have had their turn, and never twice in a row. In your first sessions, up to three exercises you have not played yet open each session, so in Edge, Path and Variety you meet all seven by your third session. A set whose sounds cannot be prepared on your device, that is interrupted too often, or that you end before the first answer is passed over with the reason on screen, and the session goes on. Only sessions with at least one answered trial are logged and counted.</p>
   <p>After some Strange voices, Far and Repair sets comes a <b>listen-only interlude</b> of about 25 seconds: examples of the condition you just trained, with their words on screen and nothing to answer, at most two per session. In lab studies, practice combined with periods of listen-only exposure learned as much as longer practice (<a class="cite" href="#r-wright2010">Wright et al. 2010</a>, with tones, and <a class="cite" href="#r-wright2015">2015</a>, with speech; both known to us from their abstracts). There is never a repeat-aloud step: saying a sound right after hearing it blocked its learning in one study, while a delay of a few seconds restored it (<a class="cite" href="#r-baeseberk2022">Baese-Berk &amp; Samuel 2022</a>).</p>
 
   <h2 id="train-edge">2. At the edge, on every dial</h2>
@@ -242,10 +244,10 @@
     <thead><tr><th style="width: 12%">Mode</th><th style="width: 52%">What it does</th><th>When it is the right one</th></tr></thead>
     <tbody>
       <tr><td><b>Edge</b></td><td>Tracks your edge on every dial and pushes one at a time to it, the rest just below. No setup.</td><td>Almost everyone; it is the default.</td></tr>
-      <tr><td><b>Path</b></td><td>Venues in order: one condition at a time, then mixed. A step is passed after 5 trials in a row fully right, or 80 % over the last 15 (in a maths tutor, five in a row predicted later success better than three: <a class="cite" href="#r-kelly2015">Kelly et al. 2015</a>); after 15 trials under 50 % the path steps back one, with no penalty.</td><td>Beginners, anyone who likes clear goals, and anyone who finds mixing confusing.</td></tr>
+      <tr><td><b>Path</b></td><td>Venues in order: one condition at a time, then mixed. A step is passed after 5 trials in a row fully right, or 80 % over the last 15 (in a maths tutor, five in a row predicted later success better than three: <a class="cite" href="#r-kelly2015">Kelly et al. 2015</a>); after 15 trials under 50 % the path steps back one, with no penalty. The bar shows the stage and step, Results shows each move, and at the last step Results says the path is complete and offers Edge.</td><td>Beginners, anyone who likes clear goals, and anyone who finds mixing confusing.</td></tr>
       <tr><td><b>Variety</b></td><td>A new talker, room or voice type on every trial, at the same targets; the focus dial is picked at random.</td><td>After a plateau, or when you already do well and want breadth.</td></tr>
-      <tr><td><b>Focus</b></td><td>About 60 % of sets go to the exercise behind your weakest Lab check-in, or the situation you pick, and about 60 % of its trials push that dial.</td><td>When one situation bothers you most.</td></tr>
-      <tr><td><b>Free</b></td><td>Pick one exercise and set its dials yourself; a coach line shows your current edge on each.</td><td>When you want to explore.</td></tr>
+      <tr><td><b>Focus</b></td><td>About 60 % of sets go to the exercise behind your weakest Lab check-in, or the situation you pick, and about 60 % of its trials push that dial. Settings shows what Focus aims at, with Choose to change it; until it has a target, Focus trains like Edge and Home says so.</td><td>When one situation bothers you most.</td></tr>
+      <tr><td><b>Free</b></td><td>Pick any of the seven exercises, Seek included, and set its dials yourself; a coach line shows your current edge on each.</td><td>When you want to explore.</td></tr>
     </tbody>
   </table>
 
@@ -306,7 +308,7 @@
       </g>
       <g stroke="#686E77" stroke-width="1" marker-end="url(#ah)"><line x1="92" y1="45" x2="106" y2="45"/><line x1="199" y1="45" x2="213" y2="45"/><line x1="306" y1="45" x2="320" y2="45"/><line x1="413" y1="45" x2="427" y2="45"/></g>
     </svg>
-    <figcaption><span class="label">Figure 2 · The shape of a trial</span>Results come between sets, never during them: a set shows only progress dots.</figcaption>
+    <figcaption><span class="label">Figure 3 · The shape of a trial</span>Results come between sets, never during them: a set shows only progress dots.</figcaption>
   </figure>
   <table class="wide compact" id="tab-situations">
     <caption>Table 4 · Which exercise trains which situation</caption>
@@ -330,7 +332,7 @@
     <div class="exhead"><span class="kicker red">Exercise 1 · loud places</span><h2>Crowd</h2><span class="bettag"><span class="tag">bet: attention and cues</span></span>
       <p class="trains">Follow one voice while others talk over it. The crowd gets louder, more alike and closer together as you improve.</p></div>
     <div class="col">
-    <figure class="side phone"><img src="figures/crowd-feedback.png" alt="A Crowd trial after a wrong answer: the voice to follow in red ahead of you, two blue voices beside it, and feedback saying the picked words came from another voice"><figcaption><span class="label">Figure 3 · Crowd, feedback</span>Two other voices, each as loud as the voice to follow. The picked words came from another voice and the feedback says so; the buttons at the bottom replay the voice alone, then the crowd again.</figcaption></figure>
+    <figure class="side phone"><img src="figures/crowd-feedback.png" alt="A Crowd trial after a wrong answer: the voice to follow in red ahead of you, two blue voices beside it, and feedback saying the picked words came from another voice"><figcaption><span class="label">Figure 4 · Crowd, feedback</span>Two other voices, each as loud as the voice to follow. The picked words came from another voice and the feedback says so; the buttons at the bottom replay the voice alone, then the crowd again.</figcaption></figure>
     <h3>What you do</h3>
     <p>One voice says a call sign, then a word and a number. Other voices say words and numbers too, over a background of chatter. Follow the call-sign voice and tap its word and its number. As your variety widens, the cue that tells you whom to follow changes (a call sign, a short preview of the voice, or its place around you) and the voices start at slightly different moments.</p>
     <p>When you pick a word another voice said, the feedback says so: in crowds that is the most common mistake, a slip in which voice you followed rather than in your ears. Then you can hear the voice alone, and the crowd again.</p>
@@ -361,7 +363,7 @@
     <div class="exhead"><span class="kicker red">Exercise 2 · distance and echo</span><h2>Far</h2><span class="bettag"><span class="tag">bet: many rooms</span></span>
       <p class="trains">Catch words across echoing rooms, halls and stations. Distance and echo grow with you; rooms change so the skill is general.</p></div>
     <div class="col">
-    <figure class="side phone"><img src="figures/far.png" alt="A Far trial: a talker 11 metres ahead of you inside a room drawn as a dashed outline, with range rings"><figcaption><span class="label">Figure 4 · Far</span>A talker 11 m ahead with 1.7 s of echo. The dashed outline is the room; the rings mark the distance.</figcaption></figure>
+    <figure class="side phone"><img src="figures/far.png" alt="A Far trial: a talker 11 metres ahead of you inside a room drawn as a dashed outline, with range rings"><figcaption><span class="label">Figure 5 · Far</span>A talker 11 m ahead with 1.7 s of echo. The dashed outline is the room; the rings mark the distance.</figcaption></figure>
     <h3>What you do</h3>
     <p>Someone in a room says two phrases. The first is there so you can hear the room; then tap what you heard in the second, two words or a word and a number. Rooms come in four sizes, from a small room 5 m long to a hall 38 m long, each with its own background (a hum, a café, a station, a crowd), and the talker always fits inside the room.</p>
     <p>The feedback tells you how far away the talker was and in what kind of room, and lets you hear the talker up close, then from the distance again.</p>
@@ -392,7 +394,7 @@
     <div class="exhead"><span class="kicker red">Exercise 3 · unusual talkers</span><h2>Strange voices</h2><span class="bettag"><span class="tag">bet: variety</span></span>
       <p class="trains">Voices from other-language models reading English, fast talkers, whispers, phone lines, muffled and robot-like voices. Each kind starts easy and gets harder as you adapt.</p></div>
     <div class="col">
-    <figure class="side phone"><img src="figures/strange.png" alt="A Strange voices trial: a synthetic voice ahead of you, the prompt naming the kind of voice and its level (a phone line, thin line), and options for two words"><figcaption><span class="label">Figure 5 · Strange voices</span>One kind of unusual voice per trial, named in the prompt with its level. Synthetic voices are labelled as synthetic.</figcaption></figure>
+    <figure class="side phone"><img src="figures/strange.png" alt="A Strange voices trial: a synthetic voice ahead of you, the prompt naming the kind of voice and its level (a phone line, thin line), and options for two words"><figcaption><span class="label">Figure 6 · Strange voices</span>One kind of unusual voice per trial, named in the prompt with its level. Synthetic voices are labelled as synthetic.</figcaption></figure>
     <h3>What you do</h3>
     <p>Each phrase comes from an unusual voice: an other-language model reading English, a fast talker, a whisper, a phone line, a voice through a wall, or a robot voice. Tap the words you heard. The phrases are unpredictable, so that context cannot replace listening (they trained listeners as well as meaningful ones: <a class="cite" href="#r-loebach2010">Loebach, Pisoni &amp; Svirsky 2010</a>).</p>
     <table class="dials compact">
@@ -422,7 +424,7 @@
     <div class="exhead"><span class="kicker red">Exercise 4 · loud places</span><h2>Repair</h2><span class="bettag"><span class="tag">bet: a strategy</span></span>
       <p class="trains">Words vanish under bursts of noise. Rebuild them from what came before and after.</p></div>
     <div class="col">
-    <figure class="side phone"><img src="figures/repair.png" alt="A Repair trial: one voice ahead of you; one of its words is lost; four options for the lost word"><figcaption><span class="label">Figure 6 · Repair</span>One word of the sentence is lost under a burst; four candidates to choose from.</figcaption></figure>
+    <figure class="side phone"><img src="figures/repair.png" alt="A Repair trial: one voice ahead of you; one of its words is lost; four options for the lost word"><figcaption><span class="label">Figure 7 · Repair</span>One word of the sentence is lost under a burst; four candidates to choose from.</figcaption></figure>
     <h3>What you do</h3>
     <p>One word in each sentence is lost under a burst of noise or a gap, and at harder levels the rest of the sentence is broken up too, as if heard through a busy room's dips. Hold the whole sentence in mind, then tap the word that was there. The lost word can come early or late, so the help comes before or after it.</p>
     <p>After each answer you hear the whole sentence, then the broken one again with its words on screen.</p>
@@ -453,7 +455,7 @@
     <div class="exhead"><span class="kicker red">Exercise 5 · remembering</span><h2>Echo</h2><span class="bettag"><span class="tag">bet: bridging</span></span>
       <p class="trains">Hear a message once in a busy place (names, numbers, plans) and answer after a pause.</p></div>
     <div class="col">
-    <figure class="side phone"><img src="figures/echo.png" alt="An Echo trial: two questions about the message, each with four options"><figcaption><span class="label">Figure 7 · Echo</span>The questions arrive after the message, in varying order; answer from memory.</figcaption></figure>
+    <figure class="side phone"><img src="figures/echo.png" alt="An Echo trial: two questions about the message, each with four options"><figcaption><span class="label">Figure 8 · Echo</span>The questions arrive after the message, in varying order; answer from memory.</figcaption></figure>
     <h3>What you do</h3>
     <p>A voice gives you a message in a busy place, once: who is calling, where to meet, at what time, what to bring. After a short pause, two or three questions ask for its details. Answer from memory.</p>
     <p>A wrong pick that was in the message but answers another question is labelled as such: you heard it and filed it in the wrong place. A miss replays the message in the same noise with its words on screen.</p>
@@ -484,7 +486,7 @@
     <div class="exhead"><span class="kicker red">Exercise 6 · loud places</span><h2>Seek</h2><span class="bettag"><span class="tag new">new bet: movement</span></span>
       <p class="trains">Drag your dot through a noisy room to find a faint voice; it gets clearer as you close in. Later: turn the listener on screen to hear better.</p></div>
     <div class="col">
-    <figure class="side phone"><img src="figures/seek.png" alt="Seek after a search: the dotted path walked from the bottom of a 20-metre field toward the voice, the stop marked with a cross inside the ring that counts as found; below, Found and Named both ticked"><figcaption><span class="label">Figure 8 · Seek, after a search</span>The dotted line is the path walked by a simulated finger; the cross is where it let go, 1.1 m from the voice. Found and Named are marked apart.</figcaption></figure>
+    <figure class="side phone"><img src="figures/seek.png" alt="Seek after a search: the dotted path walked from the bottom of a 20-metre field toward the voice, the stop marked with a cross inside the ring that counts as found; below, Found and Named both ticked"><figcaption><span class="label">Figure 9 · Seek, after a search</span>The dotted line is the path walked by a simulated finger; the cross is where it let go, 1.1 m from the voice. Found and Named are marked apart.</figcaption></figure>
     <h3>What you do</h3>
     <p>A voice keeps calling one word somewhere in a noisy room about 20 m across. Press on your dot and drag: the voice gets louder as you get closer. Stop with the voice inside the ring around your dot, then tap the word it was calling. A scene counts when both are right, and the feedback marks Found and Named apart. With decoys, other voices call other words; a short preview tells you whose voice to find. Afterwards the scene shows your path, where you stopped and where the voice was.</p>
     <p>With headphones and wider variety, a head-turn view joins: a knob turns the listener, and feedback says how much of the search you spent with the voice 15 to 70 degrees to one side. The first Seek ever starts with a practice scene that does not count.</p>
@@ -515,7 +517,7 @@
     <div class="exhead"><span class="kicker red">Exercise 7 · familiar voices</span><h2>Voices</h2><span class="bettag"><span class="tag new">new bet: familiarity</span></span>
       <p class="trains">Get to know a cast of voices, then pick your friend out of a crowd.</p></div>
     <div class="col">
-    <figure class="side phone"><img src="figures/voices.png" alt="A Voices trial introducing a new cast member, Hana: listen for about 7 seconds, then tap her name"><figcaption><span class="label">Figure 9 · Voices, meeting the cast</span>Meeting a new member of the cast: each has a name and a role at one of the night’s venues.</figcaption></figure>
+    <figure class="side phone"><img src="figures/voices.png" alt="A Voices trial introducing a new cast member, Hana: listen for about 7 seconds, then tap her name"><figcaption><span class="label">Figure 10 · Voices, meeting the cast</span>Meeting a new member of the cast: each has a name and a role at one of the night’s venues.</figcaption></figure>
     <h3>What you do</h3>
     <p>Meet a cast of voices, each with a name: a new voice introduces itself and says one more line (the screen says how many seconds to listen), then you tap its name. Then hear a voice and tap who is talking, first in quiet, later in noise. As variety widens, you also find a voice you know in a crowd and tap what it said. A wrong pick plays the right voice and then the one you chose, side by side.</p>
     <p><b>Voices from your life.</b> You can add recordings of people you know: record up to 20 seconds where your browser allows the microphone, or import a voice note. Each needs a name and a consent tick. They are stored on this device only, never in backups or exports (chapter 7), and you practise picking them out of a crowd.</p>
@@ -618,7 +620,7 @@
     <li><b>Below your baseline:</b> a decline at least as large as the smallest detectable change, with the likely range wholly below zero.</li>
   </ul>
   <div class="figrow wide">
-    <figure class="crop" style="flex: 0 0 72mm"><img src="figures/lab-trend.png" alt="The Matrix trend card, tagged close to training: A clear gain, +1.6 dB, likely range +0.6 dB to +2.5 dB, with a chart of runs over four weeks and a rising trend line above the baseline"><figcaption><span class="label">Figure 10 · A Matrix trend card</span>A simulated player whose true threshold improved 0.4 dB a week, with 0.55 dB of noise per run. The hollow dot is the practice run; the line and band are the trend and its likely range.</figcaption></figure>
+    <figure class="crop" style="flex: 0 0 72mm"><img src="figures/lab-trend.png" alt="The Matrix trend card, tagged close to training: A clear gain, +1.6 dB, likely range +0.6 dB to +2.5 dB, with a chart of runs over four weeks and a rising trend line above the baseline"><figcaption><span class="label">Figure 11 · A Matrix trend card</span>A simulated player whose true threshold improved 0.4 dB a week, with 0.55 dB of noise per run. The hollow dot is the practice run; the line and band are the trend and its likely range.</figcaption></figure>
     <div class="panel" style="flex: 1 1 0; margin: 0">
       <h4>How to read the card</h4>
       <ul class="dash small">
@@ -655,7 +657,7 @@
   <h2 id="game-map">1. The night out</h2>
   <p>The map holds twelve venues on three lines that leave from you: <b>Many voices</b> (café, restaurant, bar, house party, club, concert), <b>Far and echoey</b> (lecture hall, park, station, stadium, cathedral) and the <b>Phone line</b>. Each venue is a family of listening conditions, and each shows <b>your earshot</b> there: the level at which you get about 7 in 10 right with the venue's other dials set as they are there, in dB, metres or line quality. It is read on the careful side, a level the model is 90 % sure you reach, and never beyond the hardest level of that dial you have actually heard.</p>
   <div class="figrow wide">
-    <figure class="crop" style="flex: 0 0 72mm"><img src="figures/map.png" alt="The Night out map: lines of venues fanning out from you, Many voices to the right from café to concert, Far and echoey to the left from lecture hall to cathedral, and the phone line below; each open venue shows a number such as −3 dB or 22 m, or not yet; the next venue, Club, shows its mark"><figcaption><span class="label">Figure 11 · The night out</span>A simulated player with 10 of 12 venues open. Each number is that player's earshot at the venue; the ring is the next venue, dotted venues come later.</figcaption></figure>
+    <figure class="crop" style="flex: 0 0 72mm"><img src="figures/map.png" alt="The Night out map: lines of venues fanning out from you, Many voices to the right from café to concert, Far and echoey to the left from lecture hall to cathedral, and the phone line below; each open venue shows a number such as −3 dB or 22 m, or not yet; the next venue, Club, shows its mark"><figcaption><span class="label">Figure 12 · The night out</span>A simulated player with 10 of 12 venues open. Each number is that player's earshot at the venue; the ring is the next venue, dotted venues come later.</figcaption></figure>
     <div class="panel" style="flex: 1 1 0; margin: 0">
       <h4>Reading the map</h4>
       <ul class="dash small">
@@ -673,7 +675,8 @@
   <p>Earshot's training voices are a cast of named characters, each with a role at one of the venues. A cast card fills in when you meet its voice, and it turns "known" once you have picked that voice out by ear three times in Voices. Synthetic voices are labelled as synthetic.</p>
 
   <h2 id="game-growth">3. Growth in real units</h2>
-  <p>Results come between sets, never during them, and in units that mean something. After a set, a dial that moved at least one step harder, to a level you were tested at, gets a line with its old and new level (Distance, from 4 m to 6 m), and personal bests are kept per dial, in dB or metres. Milestones mark abilities, never time spent: "Equal footing" when you follow a voice as loud as the others (0 dB), "Through the crowd" at −6 dB. Each needs at least six trials of that dial, and like the map it reads the careful side of the estimate, at a level you were actually tested at. A set's results show at most two milestones; any others wait in Progress. You see the milestones you have reached and only the next one for each dial, never a wall of locked badges, and a personal best or a milestone is a natural moment for an invitation to the Discord community.</p>
+  <figure class="side phone"><img src="figures/results.png" alt="The Results screen after a Crowd set: 9 of 12 answers right; 4 of 6 trials fully right, 1 partly right; a row of six marks with one half-shaded; the levels line; news of two new cast voices; Finish session"><figcaption><span class="label">Figure 13 · Results after a set</span>Two answers a trial, so the headline counts answers and the line below counts trials; the half-shaded mark is the partly right trial. A simulated player, answers given by script.</figcaption></figure>
+  <p>Results come between sets, never during them, and in units that mean something. The headline counts what you got right: where each trial asks for two or more answers, it counts answers, the line below counts trials, and a partly right trial gets a half-shaded mark in the row. After a set, a dial that moved at least one step harder, to a level you were tested at, gets a line with its old and new level (Distance, from 4 m to 6 m), and personal bests are kept per dial, in dB or metres. Milestones mark abilities, never time spent: "Equal footing" when you follow a voice as loud as the others (0 dB), "Through the crowd" at −6 dB. Each needs at least six trials of that dial, and like the map it reads the careful side of the estimate, at a level you were actually tested at. A set's results show at most two milestones; any others wait in Progress. You see the milestones you have reached and only the next one for each dial, never a wall of locked badges, and a personal best or a milestone is a natural moment for an invitation to the Discord community, never more than one card on a results screen.</p>
 
   <h2 id="game-weekly">4. The weekly night out</h2>
   <p>Each calendar week has one seeded challenge that everyone on the same version of Earshot plays identically: four stops (Crowd, Far, Strange voices and Repair) in a seeded order, each at a seeded venue, with six trials per stop on a fixed ladder from easy to hard. The first complete run of the week makes your card, spoiler-free: a tick or a cross per trial and the furthest level per stop, always with the link to <a class="ext" href="https://discord.gg/chmr">discord.gg/chmr</a>. Later runs that week are practice. Weekly trials never change your training levels.</p>
@@ -698,10 +701,10 @@
   </header>
   <div class="col">
   <h2>1. On your device</h2>
-  <p>Your learner record, training log, Lab runs, diary and game progress are saved in your browser's storage on the device you use. Earshot needs no connection once it is open, and every sound is rendered on the device. If the browser blocks storage (some private windows and previews do), the app says so plainly and suggests a backup before you close it. Saves carry a version number, so progress survives updates.</p>
+  <p>Your learner record, training log, Lab runs, diary and game progress are saved in your browser's storage on the device you use. Earshot needs no connection once it is open, and every sound is rendered on the device. If the browser blocks storage (some private windows and previews do), the app says so plainly and suggests a backup before you close it. Saves carry a version number, so progress survives updates. <b>Settings › Data › Delete everything</b> removes your record from this browser after a confirmation; export a backup first if you might want it back.</p>
 
   <h2>2. Backups and moving devices</h2>
-  <p><b>Settings › Data</b> (or <b>Lab › Export</b>) makes a backup file of your whole record. Import on another device merges it in, older backup versions are upgraded, and nothing on the receiving device is deleted. A damaged file is refused whole, so a half-broken backup can never overwrite good data. Backups carry no name except a nickname you typed yourself, and no device details. Two spreadsheet exports (CSV) list your check-in runs and your training sessions.</p>
+  <p><b>Settings › Data</b> (or <b>Lab › Export</b>) makes a backup file of your whole record. Import on another device merges it in, older backup versions are upgraded, and nothing on the receiving device is deleted. A damaged file is refused whole, so a half-broken backup can never overwrite good data. Backups carry no name except a nickname you typed yourself, and no device details. Two spreadsheet exports (CSV) list your check-in runs and your training sessions. Backups, exports and the weekly card save as an ordinary download, or through the download prompt of a viewer that cannot download from its page; if nothing arrives, <b>Copy</b> puts the text on your clipboard.</p>
 
   <h2>3. The community export</h2>
   <p>To help test the bets, the Lab can write a pool file meant for sharing. It holds a random pooling id, days and weeks counted from your own start instead of dates, no record ids, and no absolute times except the date of the export, in UTC. It includes your nickname, and device, language or time-zone details, only if you tick them. Trial-level answers are included so that pooled files can calibrate how hard each item is. You decide whether and where to share it; the app never uploads anything.</p>
@@ -709,8 +712,6 @@
   <h2>4. Voices from your life</h2>
   <p>Recordings of people you know are stored only in this browser's database on this device, as trimmed 16 kHz mono audio, without the original file's name or metadata. Each needs a name and a consent tick. They are never included in backups or exports, so they do not move to another device either. You can delete any of them at any time.</p>
 
-  <h2>5. Deleting everything</h2>
-  <p><b>Settings › Data › Delete everything</b> removes your record from this browser, after a confirmation. Export a backup first if you might want it back.</p>
   </div>
 </section>
 

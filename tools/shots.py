@@ -10,9 +10,10 @@
    simulated player: the long-term learner, log and game records of tests/fixtures/game-longterm.js (a simulated
    learner, no real player data; times shifted so its last session ended a day ago) and a Lab history drawn by
    lab_history() below from a stated model (seeded; no real runs).
-3. Shoots: the home screen, a Crowd trial (the feedback after picking another voice's words), a Far
-   trial (the room picture), the Night out map, the Lab trend card, and one answer screen each for Strange voices,
-   Repair, Echo, Seek and Voices. Trials start through the shell's own session API with pinned dials (the venue-set
+3. Shoots: the home screen, the Exercises list, a Crowd trial (the feedback after picking another voice's words), a
+   Far trial (the room picture), the Night out map, the Lab trend card, one answer screen each for Strange voices,
+   Repair, Echo, Seek and Voices, and the Results screen after a short Crowd set answered in a fixed pattern (right,
+   partly right, wrong) by the script. Trials start through the shell's own session API with pinned dials (the venue-set
    mechanism), so the condition in each picture is known; figures.json records what each picture shows (exercise,
    dials, level text) so captions can be checked against it.
 The browser holds one of the two machine-wide slots (run under tools/with-browser.sh). MIT licence."""
@@ -165,6 +166,45 @@ def shoot_trial(browser, recs, info, name, ex, pin, feedback=None):
     return errs
 
 
+def answer_partly(page):
+    """Right in the first slot, wrong in the others (a partly right trial)."""
+    slots = page.evaluate("""() => { const t = ES.ui.trialView.current.trial;
+      return t.question.slots.map(s => ({ answer: String(s.answer), options: s.options.map(o => String(o && typeof o === 'object' ? (o.id ?? o.value) : o)) })); }""")
+    for si, s in enumerate(slots):
+        idx = s['options'].index(s['answer']) if si == 0 else next(i for i, o in enumerate(s['options']) if o != s['answer'])
+        page.locator(f'.answer-slot[data-slot="{si}"] .key[data-opt="{idx}"]').click()
+
+
+def shoot_results(browser, recs, info, pattern='RRPRWR'):
+    """A short Crowd set (two answers per trial: a word and a number) answered by the script in a fixed pattern
+    (R right, P partly right, W wrong); the picture is the top of the Results screen."""
+    tab = new_page(browser, recs)
+    p = tab.page
+    start(p, 'crowd', {'talkers': 1, 'similar': 1, 'tmr': 6}, trials=len(pattern))
+    for k in pattern:
+        H.wait_state(p, ['answer'], 45000)
+        before = p.evaluate("() => document.querySelector('.trial').getAttribute('data-index')")
+        if k == 'P':
+            answer_partly(p)
+        else:
+            H.answer_current(p, k == 'R')
+        H.wait_state(p, ['feedback'], 10000)
+        p.wait_for_timeout(400)
+        p.wait_for_function("""(b) => { const t = document.querySelector('.trial');
+          if (document.querySelector('[data-headline]') || (t && t.getAttribute('data-index') !== b)) return true;
+          const n = document.querySelector('[data-next]:not([disabled])'); if (n) n.click(); return false; }""", arg=before, timeout=20000, polling=500)
+    p.wait_for_selector('[data-headline]', timeout=20000)
+    p.wait_for_timeout(800)
+    H.close_sheets(p)
+    settle(p)
+    text = p.evaluate("() => (document.querySelector('.results') || {}).innerText.slice(0, 500)")
+    clip = box(p, ['.wrap.results'], pad=6)
+    save(p, 'results', clip=clip, meta={'screen': 'results', 'pattern': pattern, 'text': text}, info=info)
+    errs = tab.errors[:]
+    p.context.close()
+    return errs
+
+
 def shoot_seek(browser, recs, info):
     """A Seek search walked by a simulated finger: grab your dot, wander toward the voice in two legs, let go near
     it, name its word; the picture is the reveal (your path, where you stopped, the voice and its found ring)."""
@@ -223,6 +263,16 @@ def main():
             save(tab.page, 'home', meta={'screen': 'home'}, info=info)
             errors += tab.errors
             tab.page.context.close()
+        if want('exercises'):
+            tab = new_page(b, recs)
+            p = tab.page
+            p.evaluate("() => ES.core.router.go('exercises', {})")
+            p.wait_for_selector('[data-ex-row]')
+            settle(p)
+            rows = p.evaluate("() => [...document.querySelectorAll('[data-ex-row]')].map(e => e.getAttribute('data-ex-row'))")
+            save(p, 'exercises', meta={'screen': 'exercises', 'rows': rows}, info=info)
+            errors += tab.errors
+            p.context.close()
         if want('map'):
             tab = new_page(b, recs)
             p = tab.page
@@ -265,6 +315,8 @@ def main():
             errors += shoot_trial(b, recs, info, 'voices', 'voices', None)
         if want('seek'):
             errors += shoot_seek(b, recs, info)
+        if want('results'):
+            errors += shoot_results(b, recs, info)
         b.close()
     FIG.mkdir(parents=True, exist_ok=True)
     info_path.write_text(json.dumps(info, indent=1, sort_keys=True, ensure_ascii=False) + '\n')

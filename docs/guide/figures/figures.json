@@ -45,6 +45,25 @@
    844
   ]
  },
+ "exercises": {
+  "clip": null,
+  "file": "figures/exercises.png",
+  "rows": [
+   "crowd",
+   "far",
+   "strange",
+   "repair",
+   "echo",
+   "seek",
+   "voices",
+   "missions"
+  ],
+  "screen": "exercises",
+  "viewport": [
+   390,
+   844
+  ]
+ },
  "far": {
   "clip": null,
   "file": "figures/far.png",
@@ -138,6 +157,22 @@
    "prompt": "One word is lost. Hold the whole sentence, then tap the word that was there.",
    "title": "One voice ahead of you; one of its words is lost"
   },
+  "viewport": [
+   390,
+   844
+  ]
+ },
+ "results": {
+  "clip": {
+   "height": 518.484375,
+   "width": 390,
+   "x": 0,
+   "y": 0
+  },
+  "file": "figures/results.png",
+  "pattern": "RRPRWR",
+  "screen": "results",
+  "text": "SET 1 OF 1 · CROWD\n\n9 of 12 answers right\n\n4 of 6 trials fully right, 1 partly right.\n\nActive 0:25 · The voice you follow vs the others: −6 dB · Other voices: 3 other voices (top) · Voice similarity: same sex\n\nAfter this set\nNew voice: Lotte (delivers the coffee beans to every cafe in town).\nNew voice: Mei (sells insurance on the phone, sorry).\nFinish session",
   "viewport": [
    390,
    844
