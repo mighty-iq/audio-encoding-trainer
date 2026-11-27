@@ -3,8 +3,14 @@
 # Enable once per clone:  git config core.hooksPath tools/githooks
 # Git passes the remote's name and URL as arguments and the refs to push on stdin.
 top="$(git rev-parse --show-toplevel)"
+refs="$(cat)"
 # The script block in index.html and the licence texts must match the files on disk (a pack once went unlisted).
 node "$top/tools/build-index.mjs" --check >&2 || { echo "pre-push: index.html is stale; run node tools/build-index.mjs and commit" >&2; exit 1; }
-node "$top/tools/build-sw.mjs" --check --rev HEAD >&2 || { echo "pre-push: sw.js is stale for HEAD; run node tools/build-sw.mjs --rev HEAD and commit sw.js" >&2; exit 1; }
 node "$top/tools/build-licences.mjs" --check >&2 || { echo "pre-push: licence texts are stale; run node tools/build-licences.mjs and commit" >&2; exit 1; }
-exec python3 "$top/tools/privacy_check.py" --hook "$1" "$2"
+# sw.js must describe exactly the files Pages serves: required for pushes to main, a note for other branches.
+if printf '%s\n' "$refs" | awk '{print $3}' | grep -qx 'refs/heads/main'; then
+  node "$top/tools/build-sw.mjs" --check --rev HEAD >&2 || { echo "pre-push: sw.js is stale for HEAD; run node tools/build-sw.mjs --rev HEAD and commit sw.js" >&2; exit 1; }
+else
+  node "$top/tools/build-sw.mjs" --check --rev HEAD >/dev/null 2>&1 || echo "pre-push: note: sw.js is stale for HEAD (required only when pushing main)" >&2
+fi
+printf '%s\n' "$refs" | python3 "$top/tools/privacy_check.py" --hook "$1" "$2"
