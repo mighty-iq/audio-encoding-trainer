@@ -17,7 +17,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 OUT = ROOT / 'tests' / 'out' / 'exb'
 MINE = ['js/ex/echo.js', 'js/ex/missions.js', 'js/ex/seek-scene.js', 'js/ex/seek.js', 'js/ex/voices.js', 'js/ex/voices-own.js']
 FIXTURES = ['tests/fixtures/data-fixture.js', 'tests/fixtures/audio-fixture.js']
-SIZES = {'phone-s': (360, 640), 'phone': (390, 844), 'desktop': (1366, 768)}
+SIZES = {'phone-s': (360, 640), 'phone': (390, 844), 'desktop': (1366, 768), 'landscape': (640, 360)}
 
 ALIAS = r"""<script>
 /* exB test page only: every data-fixture clip gets a synthetic fixture sound (tests/fixtures/audio-fixture.js). */
@@ -51,7 +51,8 @@ HOOK = r"""<script>
         if (!last || last.id !== out.id) rec.push({ id: out.id, ex: id, task: out.meta && out.meta.task, prompt: out.question.prompt,
           answers: out.question.slots.map(function (s) { return String(s.answer); }),
           options: out.question.slots.map(function (s) { return s.options.map(String); }),
-          foils: out.question.slots.map(function (s) { return s.foils || {}; }), dials: out.setting && out.setting.dials,
+          foils: out.question.slots.map(function (s) { return s.foils || {}; }), dials: out.setting && out.setting.dials, text: out.meta && out.meta.text,
+          route: ((ES.core.router && ES.core.router.current && ES.core.router.current()) || {}).name,
           delayMs: out.question.delayMs || 0 });
       }
       return out;
@@ -254,8 +255,14 @@ def fits(page):
           if (ov > 1 && oh > 1) bad.push(a.q + ' overlaps ' + b.q + ' by ' + Math.round(ov) + ' px');
         });
       });
-      var f = document.querySelector('.trial-body .trial-field');
-      if (f && f.getBoundingClientRect().height > 1 && f.getBoundingClientRect().height < 56) bad.push('field squeezed to ' + Math.round(f.getBoundingClientRect().height) + ' px');
+      var f = document.querySelector('.trial-body .trial-field'), fh = f ? f.getBoundingClientRect().height : 0;
+      if (f && fh > 1 && fh < 56) bad.push('field squeezed to ' + Math.round(fh) + ' px');
+      if (f && fh <= 1 && getComputedStyle(f).display !== 'none') bad.push('field collapsed to 0 px');
+      // an empty band across the screen (RV-play-a11y A7): a full-width part much taller than what it holds (a column
+      // of a sideways two-column layout may be taller than its words by design)
+      parts.forEach(function (a) { if (a.q === '.trial-field' || a.r.width < 0.7 * innerWidth) return; var el = document.querySelector('.trial-body ' + a.q), kids = el.children, lo = a.r.top;
+        for (var k = 0; k < kids.length; k++) { var kr = kids[k].getBoundingClientRect(); if (kr.height > 0) lo = Math.max(lo, kr.bottom); }
+        if (kids.length && a.r.bottom - lo > 48) bad.push(a.q + ' has an empty band of ' + Math.round(a.r.bottom - lo) + ' px'); });
       var noScroll = s.scrollHeight <= innerHeight + 1 && s.scrollWidth <= innerWidth + 1;
       return { ok: noScroll && !bad.length, h: s.scrollHeight, vh: innerHeight, w: s.scrollWidth, vw: innerWidth, bad: bad };
     }""")

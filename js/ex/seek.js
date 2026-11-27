@@ -21,7 +21,7 @@
   var M = {
     id: 'seek', name: 'Seek',
     short: 'Find a faint voice in a noisy room by ear, then name its word.',
-    card: { trains: 'Move your finger through a noisy room to find a faint voice; it gets clearer as you close in. Later: turn the listener on screen to hear better.',
+    card: { trains: 'Drag through a noisy room to find a faint voice; it gets clearer as you close in. Later: turn the listener on screen to hear better.',
       bet: 'sound-guided movement and head-turn practice' },
     bet: 'Sound-guided movement: closing in on a voice by ear, and turning so one ear faces it. Both are under-tested; Seek is our test.',
     betNew: true, view: 'custom', feedback: 'standard',
@@ -34,7 +34,7 @@
     helpData: function () {
       var d = K() && K().dialOf('seek', 'size'), v = d && d.values;
       return {
-        goal: 'A voice keeps calling one word somewhere in a noisy room. Put your finger on your dot (marked “you”) and drag. The voice gets louder as you get closer. Let go where it is loudest, then tap the word it was calling.',
+        goal: 'A voice keeps calling one word somewhere in a noisy room. Press on your dot (marked “you”) and drag. The voice gets louder as you get closer. Stop with the voice inside the ring around your dot, then tap the word it was calling. A scene counts when both are right.',
         dials: {
           snr: 'How loud the voice is against the noise when you stand 1 m from it. From farther away it is quieter: about 6 dB less each time the distance doubles.',
           decoys: 'Other voices calling other words. A preview tells you which voice to find.',
@@ -79,7 +79,11 @@
       spec.ex = 'seek';
       try { if (api.level) api.level(sess.levelText(spec)); if (api.progress) api.progress(); } catch (e) { /* the bar is optional */ }
       view.cur = SC().run(host, spec, { score: function (t, r) { return E().flow.answer(sc, t, r).result; },
-        onResult: function (res, resp) { if (typeof api.record === 'function') api.record(spec, res, resp); else sess.record(spec, res, resp, { learned: true }); } });
+        onResult: function (res, resp) {
+          var k = setKey(set.index), t = tally[k] = tally[k] || { n: 0, found: 0, named: 0, both: 0 }, sl = res.slots || [];
+          t.n++; if (sl[0] && sl[0].correct) t.found++; if (sl[1] && sl[1].correct) t.named++; if (res.correct) t.both++;
+          if (typeof api.record === 'function') api.record(spec, res, resp); else sess.record(spec, res, resp, { learned: true });
+        } });
       view.cur.done.then(function (out) { if (out && !out.aborted) next(); });
     }
     function practice(attempt) {
@@ -103,6 +107,15 @@
       abort: function () { view.dead = true; if (view.cur) view.cur.abort(); },
       state: function () { return view.dead ? 'done' : view.cur ? view.cur.state() : 'loading'; }, peek: function () { return view.cur ? view.cur.peek() : null; } };
   };
+  /* FRESH-B C2: the summary says how the set's scenes split, next to its "N of M right" (both parts right). */
+  var tally = {};
+  function setKey(index) { var S = ES.ui.session && ES.ui.session.state ? ES.ui.session.state() : null; return (S ? S.id : 's') + ':' + index; }
+  if (ES.hooks && typeof ES.hooks.on === 'function') ES.hooks.on('results:news', function (p) {
+    var t = p && p.exId === 'seek' && !p.done ? tally[setKey(p.index)] : null;
+    if (!t || !t.n || !p.el) return;
+    p.el.appendChild(ES.core.util.el('p', { class: 'hint', 'data-seek-tally': '' }, 'A scene counts when both are right. Found the spot in ' + t.found + ' of ' + t.n +
+      ' · named the word in ' + t.named + ' of ' + t.n + ' · both in ' + t.both + '.'));
+  });
   M.run = function (host, spec, cfg) { return SC().run(host, spec, cfg); };   // one scene outside a set (tests, previews)
 
   /* ---- help, tutorial (captions; the practice scene follows in the view), strategy cards, venues ---- */
@@ -110,8 +123,9 @@
   M.openHelp = function (opts) { addCards(); return K().openHelp(M, opts); };
   M.tutorial = { steps: [
     { kind: 'caption', minMs: 3000, then: 'tap', text: 'Somewhere in a noisy room a voice keeps calling one word. You cannot see it: find it by ear.' },
-    { kind: 'caption', minMs: 3000, then: 'tap', text: 'Put your finger on your dot (marked “you”) and drag. The voice gets louder as you get closer. Let go where it is loudest. On a keyboard: arrow keys walk, Enter answers.' },
-    { kind: 'caption', minMs: 3000, then: 'tap', text: 'Then tap the word it was calling. First comes one practice scene with a big, easy target.' }
+    { kind: 'caption', minMs: 3000, then: 'tap', text: 'Press on your dot (marked “you”) and drag. The voice gets louder as you get closer. On a keyboard: arrow keys walk, Enter answers.' },
+    { kind: 'caption', minMs: 3000, then: 'tap', text: 'Stop with the voice inside the ring around your dot, then tap the word it was calling. A scene counts when both are right.' },
+    { kind: 'caption', minMs: 3000, then: 'tap', text: 'First comes a practice scene with a big ring. It starts over until you find the voice (three tries at most).' }
   ] };
   // Sources: R3 §10 (free field −6 dB per doubling of distance; the scene uses exactly 1/distance), §3 (Grange &
   // Culling 2016: after instruction everyone turned, ~3 dB; ~30° keeps lips visible, Grange 2018 §11).
@@ -123,7 +137,7 @@
       text: 'With decoys every voice in the room calls a word. The one you want is the voice from the preview: lock on to its pitch and pace before you move, and pass the others by.',
       tryIt: 'Next set: during the preview, name one thing about the voice: high or low, quick or slow.' },
     { id: 'seek.ear', ex: 'seek', dial: 'size', requires: 'headphones', title: 'Point one ear at the voice',
-      text: 'Facing a talker squarely is not the best way to hear them in noise. In lab studies a head turn of about 30°, so one ear points toward the talker, helped: after instruction everyone turned and their self-set thresholds improved by about 3 dB, and the turn still kept the face in view.',
+      text: 'Facing a talker squarely is not the best way to hear them in noise. In lab studies a head turn of about 30°, so one ear points toward the talker, helped: after instruction everyone turned and could follow the talker with the noise about 3 dB louder, and the turn still kept the face in view.',
       tryIt: 'Next set: with the knob, turn until the voice sits a little to one side, then let go.' }
   ];
   function addCards() {

@@ -16,7 +16,7 @@
   function K() { return ES.ex._kit; }
   function U() { return ES.core.util; }
   function E() { return ES.engine; }
-  var M_PER_UNIT = 10, MIN_D = 1, HEAD = 8, F = 90, GRAB_PX = 52, MIN_MOVE = 0.08, STEP = 0.04, KNOB = 26;
+  var M_PER_UNIT = 10, MIN_D = 1, HEAD = 8, F = 90, GRAB_PX = 52, MIN_MOVE = 0.08, STEP = 0.06, KNOB = 26;
   function fmtM(m) { return U() && U().fmtM ? U().fmtM(m) : Math.round(m * 10) / 10 + ' m'; }
   function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
   function sv(x, y) { return { x: Math.round(x * F * 10) / 10, y: Math.round(-y * F * 10) / 10 }; }
@@ -35,14 +35,19 @@
       '.sk-grid { stroke: var(--rule); stroke-width: 1; vector-effect: non-scaling-stroke; }',
       '.sk-scale { stroke: var(--ink-3); stroke-width: 1.4; vector-effect: non-scaling-stroke; } .sk-small { font: 500 7px var(--mono); fill: var(--ink-3); }',
       '.sk-start { fill: none; stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }',
-      '.sk-dot { fill: var(--ink); } .sk-ring { fill: none; stroke: var(--ink); stroke-width: 1.2; opacity: .55; vector-effect: non-scaling-stroke; }',
+      '.sk-dot { fill: var(--ink); } .sk-ring { fill: var(--ink); fill-opacity: .07; stroke: var(--ink); stroke-width: 1.4; stroke-opacity: .7; vector-effect: non-scaling-stroke; }',
       '.sk-nose { stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }',
       '.sk-knob { fill: var(--surface); stroke: var(--ink); stroke-width: 1.6; vector-effect: non-scaling-stroke; }',
       '.sk-path { fill: none; stroke: var(--ink-3); stroke-width: 1.3; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }',
       '.sk-stop { stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; vector-effect: non-scaling-stroke; }',
       '.sk-t { fill: var(--red); } .sk-tring { fill: none; stroke: var(--red); stroke-width: 1.2; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }',
       '.sk-d { fill: var(--blue); } .sk-lab { font: 700 8px var(--font); text-anchor: middle; } .sk-lab.is-t { fill: var(--red); } .sk-lab.is-d { fill: var(--blue); font-weight: 600; }',
-      '.sk-body[data-state="search"] .trial-answer:empty, .sk-body[data-state="preview"] .trial-answer:empty { display: none; }'].join('\n');
+      '.sk-head { gap: 10px; } .sk-part { display: inline-flex; align-items: center; gap: 4px; } .sk-part.is-right { color: var(--ok); } .sk-part.is-wrong { color: var(--ink); } .sk-sep { color: var(--ink-3); }',
+      '.sk-body[data-state="search"] .trial-answer:empty, .sk-body[data-state="preview"] .trial-answer:empty { display: none; }',
+      // sideways phones (RV-play-a11y A1): a wider room to drag in, and the reveal stays beside the feedback
+      '@media (orientation: landscape) and (max-height: 480px) { .trial-body.sk-body, .trial-body.sk-body[data-state="feedback"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);',
+      '  grid-template-areas: "field text" "field answer" "field ." "field actions"; } .trial-body.sk-body[data-state="feedback"] { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }',
+      '  .trial-body.sk-body[data-state="feedback"] .trial-field { display: flex; } }'].join('\n');
     doc.head.appendChild(st);
   }
 
@@ -169,9 +174,11 @@
     }
     function search(note) {
       phase('search', note || 'Grab your dot (or press an arrow key) to start listening.');
-      prompt.textContent = cfg.practice ? 'Practice: put your finger on your dot (marked “you”) and drag. The voice gets louder as you get closer. Let go where it is loudest.'
+      // FRESH-B C2, FRESH-A: the rule in every scene (stop with the voice inside your ring), device-neutral wording
+      var ring = ' (within ' + fmtM(found * 1.15 * M_PER_UNIT) + ')';
+      prompt.textContent = cfg.practice ? 'Practice: press on your dot (marked “you”) and drag. The voice gets louder as you get closer. Stop with the voice inside your ring' + ring + ', then tap its word.'
         : (decoys() ? (previewClip(spec) ? 'Find the voice from the preview. ' : 'Find the voice that keeps calling one word; other voices call other words. ') : 'Find the voice calling one word. ') +
-          'Drag yourself toward it and let go where it is loudest.' + (turn ? ' The knob on your ring turns your head.' : '');
+          'Drag toward it and stop with the voice inside your ring' + ring + '.' + (turn ? ' The knob on your ring turns your head.' : '');
       u.clear(actions);
       if (decoys() && previewClip(spec)) actions.appendChild(ES.ui.button('Hear the voice to find', { kind: 'secondary', cls: 'sk-again', onClick: function () { if (!st.scene && st.phase === 'search') preview(); } }));
       if (ES.core.util.focus) ES.core.util.focus(svg);
@@ -316,7 +323,7 @@
       fv.you.setAttribute('visibility', 'hidden');            // the cross marks where you stopped
       var loc = res.slots[0] || {}, w = res.slots[1] || {}, lines = [];
       var dM = Math.round(Math.hypot(st.release.x - ans.x, st.release.y - ans.y) * M_PER_UNIT * 10) / 10;
-      lines.push(loc.correct ? (dM < 0.5 ? 'Found: you stopped right at the voice.' : 'Found: you stopped ' + fmtM(dM) + ' from the voice.') : 'The voice was ' + fmtM(dM) + ' from where you stopped' + nearDecoy() + '.');
+      lines.push(loc.correct ? (dM < 0.5 ? 'Found: you stopped right at the voice.' : 'Found: you stopped ' + fmtM(dM) + ' from the voice.') : 'The voice was ' + fmtM(dM) + ' from where you stopped' + nearDecoy() + '; within ' + fmtM(found * 1.15 * M_PER_UNIT) + ' counts as found.');
       if (w.correct) lines.push('It was calling “' + w.answer + '”.');
       else if (w.foil === 'masker') lines.push('“' + w.picked + '” was a decoy’s word; the voice you were after called “' + w.answer + '”.');
       else if (w.foil === 'neighbour') lines.push('“' + w.picked + '” sounds like “' + w.answer + '”, the word it was calling.');
@@ -324,8 +331,14 @@
       if (turn) lines.push(turnLine());
       u.clear(fb);
       var ok = !!res.correct;
-      fb.appendChild(u.el('p', { class: 'fb-head ' + (ok ? 'is-right' : 'is-wrong') }, [ES.ui.glyph(ok ? 'right' : 'wrong'),
-        u.el('strong', null, ok ? 'Found and named' : res.prop > 0 ? (loc.correct ? 'Found it' : 'Named it') : 'Not quite')]));
+      if (!ok) lines.push('A scene counts when both are right.');
+      // FRESH-B C2: one mark per part, the same rule the set's summary counts by (a scene is right when both are)
+      function part(label, good) {
+        return u.el('span', { class: 'sk-part ' + (good ? 'is-right' : 'is-wrong') }, [u.el('strong', null, label), ES.ui.glyph(good ? 'right' : 'wrong'),
+          u.el('span', { class: 'sr-only' }, good ? ': yes' : ': no')]);
+      }
+      fb.appendChild(u.el('p', { class: 'fb-head sk-head ' + (ok ? 'is-right' : 'is-wrong'), 'data-found': loc.correct ? '1' : '0', 'data-named': w.correct ? '1' : '0' },
+        [part('Found', !!loc.correct), u.el('span', { class: 'sk-sep', 'aria-hidden': 'true' }, '·'), part('Named', !!w.correct)]));
       fb.appendChild(u.el('p', { class: 'fb-text' }, lines.join(' ')));
       u.clear(actions);
       var bedDb = -((+(live.target || {}).db || 0) - (+((live.bed || {}).db) || 0));

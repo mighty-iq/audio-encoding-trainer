@@ -22,7 +22,7 @@
   var MISSIONS = [
     { id: 'turn30', title: 'Turn about 30°', sit: 'loud', helped: 'turned',
       what: 'In a noisy place, do not face your talker squarely. Turn your head about 30° so one ear points toward them, and keep your eyes on their face.',
-      why: 'In lab studies a turn of about 30° improved understanding in noise: after instruction everyone turned and their self-set thresholds improved by about 3 dB, and in a virtual restaurant the turn was worth 1 to 3 dB. Only about half of people turn on their own.' },
+      why: 'In lab studies a turn of about 30° improved understanding in noise: after instruction everyone turned and could follow the talker with the noise about 3 dB louder, and in a virtual restaurant the turn was worth 1 to 3 dB. Only about half of people turn on their own.' },
     { id: 'noiseback', title: 'Put the noise behind you', sit: 'loud', helped: 'away',
       what: 'When you choose where to sit or stand, put the loudest noise (speakers, the kitchen, the bar) behind you or to one side, with your talker in front.',
       why: 'In the studies behind the 30° turn, the turn helped most when the noise came from behind. Choosing your spot sets that up before anyone speaks.' },
@@ -229,7 +229,7 @@
         return el('section', { class: 'card ms-home', 'data-mission-card': '' }, [el('p', { class: 'eyebrow mono' }, 'Mission this week'),
           el('h2', { class: 'h-small' }, c.mission.title),
           el('p', { class: 'hint' }, done ? 'Checked in: ' + summary(c.rec) + '.' : 'Try it once this week, then check in (20 seconds).'),
-          el('a', { href: '#missions', 'data-go': 'missions', class: 'ms-home-link' }, done ? 'See the mission' : 'Open the mission')]);
+          ES.ui.button(done ? 'See the mission' : 'Open the mission', { kind: 'secondary', go: 'missions', attrs: { 'data-mission-open': '' } })]);   // a full 44 px target (RV-play A3)
       } catch (e) { return null; }
     },
     /** In a set (if a plan ever schedules Missions): the card and its check-in, then the set ends. */

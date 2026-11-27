@@ -82,17 +82,31 @@
   function rngOf(t, label) { return ES.core && ES.core.rng ? ES.core.rng('voices:' + (t.seed || t.id) + ':' + label) : null; }
 
   /* ---- presentation hooks ---- */
+  function isCallSign(c) { var m = clipMeta(c); return !!(m && m.tags && m.tags.indexOf('callsign') >= 0); }
+  /** Clips that introduce a voice: its intro, then natural sentences, then other phrases and words; never a call-sign
+      phrase, which names someone else (RV-stimuli ST-12). Two at most, so an introduction lasts about 4–8 s. */
+  function meetClips(v, first, rng) {
+    var x = X(), out = [];
+    function add(c) { if (c && out.length < 2 && out.indexOf(c) < 0 && !isCallSign(c)) out.push(c); }
+    if (x && v) (x.kindsOf(v, 'intro') || []).forEach(add);
+    add(first);
+    if (x && v) ['sentence', 'phrase', 'word'].forEach(function (k) { var ids = (x.kindsOf(v, k) || []).slice(); (rng ? rng.shuffle(ids) : ids).forEach(add); });
+    return out;
+  }
   function prepMeet(t) {
     var v = targetOf(t), name = nameOf(v), blurb = blurbOf(v), parts = (t.audio && t.audio.parts) || [];
-    t.question.prompt = 'Meet ' + name + (blurb ? ': ' + blurb.charAt(0).toLowerCase() + blurb.slice(1) : '.') + ' Listen, then tap the name.';
-    // up to three clips of the new voice, one after another (more of the voice, same single trial)
-    var first = parts[0] && parts[0].clip, have = first ? [first] : [], r = rngOf(t, 'meet');
-    for (var i = 0; i < 2 && v; i++) { var c = clipBy(v, first, have, r); if (c) have.push(c); }
-    if (have.length > 1) {
+    var first = parts[0] && parts[0].clip, have = meetClips(v, first, rngOf(t, 'meet'));
+    if (!have.length && first) have = [first];   // nothing else by this voice in the build: keep the engine's clip
+    if (have.length) {
       var at = 0.3;
       t.audio.parts = have.map(function (c) { var p = { clip: c, at: Math.round(at * 1000) / 1000, db: 0, role: 'target' }; at += durOf(c) + 0.45; return p; });
       t.audio.dur = Math.round((at + 0.3) * 100) / 100;
     }
+    // FRESH-A: say how long the introduction lasts (nothing moves while it plays); FRESH-B C7: one key, the name
+    t.question.prompt = 'Meet ' + name + (blurb ? ': ' + blurb.charAt(0).toLowerCase() + blurb.slice(1) : '.') +
+      ' Listen for about ' + Math.max(2, Math.round(t.audio.dur || 0)) + ' s, then tap the name.';
+    var sl = t.question.slots[0];
+    if (sl) { sl.options = [sl.answer]; sl.foils = {}; sl.label = ''; }
     t.picture = { voices: [{ id: 'v0', role: 'target', az: 0, dist: 1.2, label: name }], maxDist: 2, labels: false, title: 'A new voice: ' + name };
     t.feedback = t.feedback || {};
     t.feedback.replays = [{ label: name + ' again', audio: t.audio }];
@@ -212,13 +226,14 @@
   function steps() {
     return [
       { kind: 'caption', minMs: 3000, then: 'tap',
-        text: 'Meet a cast of voices, each with a name. Then you hear a voice and tap who is talking.' },
-      { kind: 'practice', force: { task: 'meet', dials: { snr: 30 }, answerAt: [2] }, next: 'Next voice',
-        text: 'Your first voice introduces itself. Listen to how it sounds, then tap the name.' },
-      { kind: 'practice', force: { task: 'meet', dials: { snr: 30 }, answerAt: [0] },
-        text: 'A second voice. Notice how it differs from the first.' },
+        text: 'Meet a cast of voices, each with a name. Every new voice introduces itself before you are asked to name it; then you hear a voice and tap who is talking.' },
+      // FRESH-B: how to learn a voice comes before the first test (pitch, pace, voice quality)
+      { kind: 'practice', force: { task: 'meet', dials: { snr: 30 } }, next: 'Next voice',
+        text: 'Your first voice introduces itself. Listen for its pitch (high or low), its pace and its voice quality, then tap the name.' },
+      { kind: 'practice', force: { task: 'meet', dials: { snr: 30 } },
+        text: 'A second voice. Notice how it differs from the first in pitch, pace and voice quality. After the name you can hear it again.' },
       { kind: 'practice', force: { task: 'who', dials: { cast: 0, similar: 0, snr: 30, length: 0 }, answerAt: [1] },
-        text: 'Now one of them talks. Who is it?' },
+        text: 'Now one of them talks. Who is it? Go by pitch, pace and voice quality.' },
       { kind: 'caption', minMs: 3500, then: 'tap',
         text: 'From here the cast grows, the voices get more alike, the clips shorter and the room noisier, always near your edge. Later you find a voice you know in a crowd. Help shows how to add voices from your own life.' }
     ];

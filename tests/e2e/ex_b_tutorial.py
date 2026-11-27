@@ -135,6 +135,10 @@ def run_one(browser, url, ex, rep, miss=False):
     t0 = time.time()
     dt = tutorial(page, ex, rep, miss=miss)
     rep.check(ex + ': tutorial reaches its end card', dt is not None, dt)
+    if ex == 'echo':   # fix round 2: the example and each practice step play different messages
+        texts = page.evaluate("""() => { var seen = {}; return (window.__exbTrials || []).filter(function (t) {
+          if (t.ex !== 'echo' || t.route !== 'tutorial' || seen[t.id]) return false; seen[t.id] = 1; return true; }).map(function (t) { return t.text; }); }""")
+        rep.check('echo: every tutorial step plays a new message', len(texts) >= 3 and len(set(texts)) == len(texts), texts)
     if ex == 'seek':
         page.wait_for_function("() => (ES.core.router.current() || {}).name === 'play'", timeout=10000)
         pk = seek_scene(page, ex, rep, 'practice', wrong=miss)
@@ -143,6 +147,8 @@ def run_one(browser, url, ex, rep, miss=False):
             click(page, '[data-next]')
             pk = seek_scene(page, ex, rep, 'practice again')
         rep.check('seek: the practice scene is found and named', page.locator('.fb-head.is-right').count() == 1)
+        head = page.evaluate("() => { var h = document.querySelector('.sk-head'); return h ? [h.getAttribute('data-found'), h.getAttribute('data-named'), h.innerText] : null; }")
+        rep.check('seek: feedback marks Found and Named separately', bool(head) and head[:2] == ['1', '1'] and 'Found' in head[2] and 'Named' in head[2], head)
         C.shot(page, 'seek-practice-feedback')
         dt = time.time() - t0
         click(page, '[data-next]')
@@ -181,6 +187,9 @@ def run_one(browser, url, ex, rep, miss=False):
             click(page, '[data-next]')
         time.sleep(0.15)
     rep.check(ex + ': the set ends on Results', C.route(page) == 'results', C.route(page))
+    if ex == 'seek':   # fix round 2: the summary counts found and named the same way as the feedback
+        tally = page.evaluate("() => (document.querySelector('[data-seek-tally]') || {}).textContent || ''")
+        rep.check('seek: Results count found, named and both', ('of %d' % n) in tally and 'both in %d' % n in tally, tally)
     C.shot(page, '%s-results' % ex)
     entry = page.evaluate("() => { var S = ES.ui.session.state(); return S && S.log.sets.length ? S.log.sets[S.log.sets.length - 1] : null; }")
     rep.check(ex + ': the set is logged with its trials', bool(entry) and entry.get('ex') == ex and entry.get('n', 0) >= n, entry and {k: entry.get(k) for k in ('ex', 'n', 'correct')})

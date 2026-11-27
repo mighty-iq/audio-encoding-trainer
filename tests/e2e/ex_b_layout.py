@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """exB browser test: how Echo, Voices, Seek, Missions and the voices-from-your-life screen look and fit, at
-360×640 (light and dark), 390×844 and 1366×768 (dark). Trials are mounted the way Play mounts them (a .trial with
+360×640 (light and dark), 640×360 landscape (dark; light too without --quick), 390×844 and 1366×768. Trials are mounted the way Play mounts them (a .trial with
 its bar and host) from generator trials with fixed settings, so every variant is covered: Echo with two and three
 questions (listening, the hold, answering, a miss with the message's words), Voices meet / who / find (a miss shows
 the pitch comparison), Seek with decoys and the head-turn view (preview, search, word, reveal). Help sheets: the
@@ -81,6 +81,9 @@ def keyword(rep, page, tag, ex, dials, ctx, seed, miss):
     time.sleep(0.4)
     check_fit(rep, page, name + ' (feedback)')
     fb = page.evaluate("() => (document.querySelector('.trial-feedback') || {}).innerText || ''")
+    if ex == 'voices' and info.get('task') == 'meet':
+        n = page.evaluate("() => document.querySelectorAll('.trial-answer .key').length")
+        rep.check(name + ': a meeting offers only the new name', n == 1, n)
     if ex == 'echo':
         rep.check(name + ': feedback shows the message words', page.locator('.fb-words').count() == 1, fb[:120])
     if ex == 'voices' and miss and info.get('task') == 'who':
@@ -98,6 +101,8 @@ def seek(rep, page, tag, dials, ctx, seed):
         C.shot(page, 'layout-%s-seek-preview' % tag)
     s = wait_state(page, ['search'], 15)
     rep.check(name + ': search', s == 'search', s)
+    pr = page.evaluate("() => (document.querySelector('.trial-prompt') || {}).textContent || ''")
+    rep.check(name + ': the prompt says how close counts', 'inside your ring (within ' in pr and page.locator('.sk-ring').count() == 1, pr)
     check_fit(rep, page, name + ' (search)')
     C.shot(page, 'layout-%s-seek-search' % tag)
     C.seek_walk(page, steps=14, pause=0.02, hold_s=0.2)
@@ -111,6 +116,7 @@ def seek(rep, page, tag, dials, ctx, seed):
     if info['turn']:
         rep.check(name + ': feedback reports the head turn', 'ear' in fb, fb[:200])
     rep.check(name + ': reveal shows the voice and every decoy', page.locator('.sk-t').count() == 1 and page.locator('.sk-d').count() == info['decoys'])
+    rep.check(name + ': feedback marks Found and Named separately', page.locator('.sk-head .sk-part').count() == 2, fb[:80])
     C.shot(page, 'layout-%s-seek-feedback' % tag)
     page.evaluate("() => window.__lay.v.abort()")
 
@@ -161,6 +167,8 @@ def missions(rep, page, tag):
     page.evaluate("() => ES.core.router.go('home', {}, { reset: true })")
     page.wait_for_selector('.home', timeout=5000)
     rep.check(tag + ' Home shows the mission card', page.locator('[data-mission-card]').count() == 1)
+    bb = page.locator('[data-mission-open]').first.bounding_box()
+    rep.check(tag + ' Home: the mission button is at least 44 px tall', bool(bb) and bb['height'] >= 44 and bb['width'] >= 44, bb)
     page.evaluate("() => ES.core.router.go('voices-own', {}, { reset: true })")
     page.wait_for_selector('.own-add', timeout=5000)
     C.shot(page, 'layout-%s-own' % tag)
@@ -170,7 +178,7 @@ def main():
     quick = '--quick' in sys.argv
     rep = C.Report('ex_b_layout' + ('_quick' if quick else ''))
     url = C.build_page('layout.html')
-    combos = [('phone-s', 'light'), ('phone-s', 'dark')] + ([] if quick else [('phone', 'light'), ('phone', 'dark'), ('desktop', 'dark'), ('desktop', 'light')])
+    combos = [('phone-s', 'light'), ('phone-s', 'dark'), ('landscape', 'dark')] + ([] if quick else [('phone', 'light'), ('phone', 'dark'), ('desktop', 'dark'), ('desktop', 'light'), ('landscape', 'light')])
     with sync_playwright() as p:
         b = C.launch(p)
         for size, scheme in combos:

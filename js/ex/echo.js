@@ -44,17 +44,21 @@
   /** The delay before the questions, in s (the shell's trial view holds the answer panel back for question.delayMs). */
   function holdOf(t) { var ms = t && t.question && +t.question.delayMs; return ms > 0 ? Math.round(ms / 100) / 10 : 0; }
 
-  /* On short screens three questions, the verdict and the message's words need the field's height: for three-question
-     trials (and in the tutorial, whose caption takes room) the keys keep the 44 px touch minimum and the picture
-     (static, illustrative here) steps aside: in feedback for three questions, throughout in the tutorial. */
+  /* On short screens three questions, the verdict and the message's words need the field's height: three-question
+     trials (and the tutorial, whose caption takes room) use the 44 px touch minimum for keys, and the picture (static,
+     illustrative here) steps aside in the feedback of three-question trials. The tutorial keeps it (RV-play A7). */
   function css() {
     var doc = root.document;
     if (!doc || !doc.head || doc.getElementById('es-echo-css')) return;
     var st = doc.createElement('style');
     st.id = 'es-echo-css';
     var E = '.trial-body:has(.f-voice[data-id="echo-msg"])', T = E + ':has(.answer[data-slots="3"])', TU = '.tut ' + E;
-    st.textContent = '@media (max-height: 720px) { ' + T + '[data-state="feedback"] .trial-field, ' + TU + ' .trial-field { display: none; } ' +
-      T + ' .answer, ' + TU + ' .answer { gap: 6px; } ' + T + ' .key, ' + TU + ' .key { min-height: 44px; padding-top: 4px; padding-bottom: 4px; } }';
+    // short portrait screens: in feedback the picture gives way to the message's words; the words sit right above the
+    // marked keys, so the free room is at the top and no empty band opens between parts (RV-play-a11y A7)
+    var FB = T + '[data-state="feedback"], ' + TU + '[data-state="feedback"]';
+    st.textContent = '@media (max-height: 720px) and (orientation: portrait) { ' + FB.split(', ').map(function (q) { return q + ' .trial-field'; }).join(', ') + ' { display: none; } ' +
+      FB.split(', ').map(function (q) { return q + ' .trial-text'; }).join(', ') + ' { align-self: end; } } ' +
+      '@media (max-height: 720px) { ' + T + ' .answer, ' + TU + ' .answer { gap: 6px; } ' + T + ' .key, ' + TU + ' .key { min-height: 44px; padding-top: 4px; padding-bottom: 4px; } }';
     doc.head.appendChild(st);
   }
 
@@ -126,8 +130,17 @@
   M.openHelp = function (opts) { addCards(); return K().openHelp(M, opts); };
   /** Tutorial trials ask at most two questions: the format is the lesson, and two questions with the caption above
       them fit a 360 × 640 screen even with the example's notes under every key. */
+  var tut = { byStep: {} };
   M.tutorialTrial = function (step, i, rng) {
-    var t = K().tutorialTrial(M, step, i, rng);
+    var key = String(rng && rng.seed || ''), firstPractice = steps().map(function (s, k) { return s.kind === 'practice' ? k : 99; }).sort(function (a, b) { return a - b; })[0];
+    if (key.indexOf(':again:') < 0 && i === firstPractice) tut.byStep = {};   // a new run: the runner builds practice trials first, then the example
+    var used = Object.keys(tut.byStep).filter(function (s) { return +s !== i; }).map(function (s) { return tut.byStep[s]; }), t = null;
+    if (tut.byStep[i] && key.indexOf(':again:') >= 0) used.push(tut.byStep[i]);   // Try again brings a new message too
+    for (var n = 0; n < 12; n++) {
+      t = K().tutorialTrial(M, step, i, n ? rng.fork('other' + n) : rng);
+      if (!t || used.indexOf(t.meta && t.meta.text) < 0) break;
+    }
+    if (t && t.meta) tut.byStep[i] = t.meta.text;
     if (t && t.question && t.question.slots && t.question.slots.length > 2) t.question.slots = t.question.slots.slice(0, 2);
     return t;
   };

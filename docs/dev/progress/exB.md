@@ -94,3 +94,29 @@ Open: index.html lacks js/ex/missions.js and voices-own.js until build-index rer
 - M7 (pause replays) · not applicable to Seek: the voice repeats by design and a pause only stops the scene.
 - index.html regenerated locally with node tools/build-index.mjs before the browser runs (left for the shell to commit).
 - Runs after the fixes: ex_b_tutorial 58/58, ex_b_layout --quick 62/62, ex_b_own 21/21, ex_b_map 15/15, ex_b_sound 12/12.
+
+## 2026-11-27 00:14 UTC — fix round 2 (docs/dev/reviews/FIX-ROUND-2.md)
+- FRESH-B C2 (Seek scoring) · fixed: the tutorial, the help and every search prompt state the rule ("stop with the
+  voice inside your ring (within N m), then tap its word; a scene counts when both are right"); the ring around your
+  dot is drawn stronger; feedback marks the two parts separately ("Found ✓ · Named ✕", data-found/data-named); a
+  location miss says how far the voice was and what radius counts; Results adds "Found the spot in a of n · named
+  the word in b of n · both in c" (results:news). Tutorial captions say the practice scene starts over (three tries).
+- ST-12 · fixed: a meeting never plays a call-sign phrase (manifest tag callsign); it plays the voice's intro, then
+  one sentence or phrase (Node check: 38 cast voices, 0 call-sign clips, 4–13 s) and offers only the new name.
+- P10 · fixed: Seek card and the turn30 mission say "could follow the talker with the noise about 3 dB louder".
+- A3 · fixed: Home's mission link is a secondary button (≥ 44 px; layout test checks it).
+- A7 · fixed: in short portrait screens Echo's picture stays in the tutorial; in feedback (3 questions or tutorial)
+  it gives way to the words, which sit right above the marked keys (no empty band; fits() now flags bands).
+- A1 · checked at 640×360 with the shell's working-tree landscape rules: Echo and Voices fit in every state; Seek
+  gets a wider room (two equal columns) and keeps its reveal beside the feedback. ex_b_layout now runs 640×360.
+- Voices tutorial · the meet steps say how to learn a voice (pitch, pace, voice quality; hear it again after the
+  name); meet prompts say how long to listen ("Listen for about N s, then tap the name").
+- Echo tutorial · each step plays a new message (practice steps never repeat the example's; Try again draws anew);
+  tested in ex_b_tutorial ("every tutorial step plays a new message").
+- Seek "finger" · device-neutral: "press on your dot (marked “you”) and drag"; keyboard line kept in the tutorial.
+- Voices repeats · not reproduced on current data (40 simulated players × 3 sets: no voice met twice, no unmet voice
+  offered). "You now know N voices" under "New voice" lines is game copy (js/game/record.js): request to game.
+- Voices answer position · no bias: 1,785 two-name who trials 886/899 (χ² 0.09, df 1); four names 76/79/90/100
+  (χ² 4.18, df 3). The tutorial's who step puts the answer second on purpose (practice answers in new keys).
+- Runs: ex_b_tutorial 61/61 (also --miss 68/68, --real echo 18/18), ex_b_layout --quick 99/99, ex_b_map 15/15,
+  ex_b_own 21/21, ex_b_sound 12/12; unit 220/220.
