@@ -46,3 +46,4 @@
 - 2026-11-26 23:13 UTC — Deviation from PLAN §6: French has one accented voice (ff_siwis), not two; natural non-native training talkers are in the 1.1 backlog.
 - 2026-11-26 23:37 UTC — Pages build becomes an installable PWA (manifest, icons, service worker with a content-hashed precache, whole-version updates offered between sets) and shows a one-time notice inside in-app browsers (Discord and similar; not the Claude app), because the announcement is posted on Discord and in-app browsers may drop storage and block downloads. The single file never registers a worker.
 - 2026-11-27 01:14 UTC — Version 1.0.0 for the release candidate (ns.js; the guide follows).
+- 2026-11-27 01:20 UTC — The release single file is committed at the repository root as earshot.html (built from the release commit, playtest off), so players can open or save it from Pages or GitHub without a manual Release upload; it is not precached by the service worker.

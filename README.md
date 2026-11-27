@@ -5,8 +5,8 @@ a voice smeared by distance and echo, and a voice that sounds unfamiliar. It als
 It runs in the browser, on phones and desktops, offline, and keeps all your data on your device.
 
 ## Play
-- Online: the GitHub Pages site of this repository (served from `main`).
-- Offline: download `earshot.html` from a release and open it in any modern browser (phone or desktop).
+- Online: https://mighty-iq.github.io/audio-encoding-trainer/ (installs to your home screen and opens offline after the first visit).
+- Offline file: `earshot.html` (one self-contained file; open it in any modern browser, phone or desktop).
 - Headphones help but are not required; only the 3D-direction levels need them.
 
 ## What you train
@@ -18,16 +18,18 @@ noises as you succeed. Each exercise names the carry-over bet it makes:
 |---|---|---|
 | Crowd | Follow one voice while others talk over it | Attention control and voice cues against competing talkers |
 | Far | Catch words across echoing rooms and halls | Adapting to rooms, trained across many rooms |
-| Strange voices | Accents, fast, whispered, phone-quality and robot-like speech | Variety that trains adapting to new voices |
+| Strange voices | Voices from other-language models reading English, fast, whispered, phone-quality and robot-like speech | Variety that trains adapting to new voices |
 | Repair | Rebuild words lost under bursts of noise | A general strategy: hold the sentence, then repair it |
 | Echo | Hear a message once in a busy place, answer after a pause | Listening under memory load, on real-life content |
 | Seek | Move through a noisy room to find a faint voice | Sound-guided movement and head-turn practice (new bet) |
 | Voices | Get to know voices, then pick your friend out of a crowd | Fast voice familiarity, with voices from your life (new bet) |
 | Missions | One real-world listening task a week | Explicit bridging to real conversations |
 
+Home → Exercises lists all eight: play a set of one (its tutorial first) or see how it works.
+
 ## See what carries over
 The Lab runs short checks with voices, rooms and materials you never train on — real recorded voices included —
-before training and then weekly, and reports your own trend with its margin of error. These numbers are personal
+in a five-block baseline that starts after your first session, then weekly, and reports your own trend with its margin of error. These numbers are personal
 progress measures, not clinical or normed scores. Earshot is not a hearing test; if you notice hearing changes, see
 an audiologist.
 
@@ -41,7 +43,7 @@ Everything stays in your browser. Backups and the optional community export carr
 type one) and no device, language or time-zone details unless you switch them on.
 
 ## Research
-Every design choice and the evidence behind it are explained in the player guide (PDF) and in `docs/research/`.
+Every design choice and the evidence behind it are explained in the player guide ([PDF](docs/Earshot-Guide.pdf)) and in `docs/research/`.
 
 ## Licences
 Code: MIT (`LICENSE`). Texts and guide: CC BY-SA 4.0 (`LICENSE-TEXTS.md`). Voices, recordings, noises, word lists and
