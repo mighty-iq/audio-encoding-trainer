@@ -63,3 +63,17 @@ real-world SNRs at parties; reverberation and distance tests; frozen babble; voc
     Torous et al. 2020; Baumel et al. 2019; Galak, Redden & Kruger 2009.
 11. Bridges: Gollwitzer & Sheeran 2006 (meta-analysis); Hickson, Worrall & Scarinci 2007 (ACE trial); lip-reading
     feedback papers in Am J Audiol 2021 (doi:10.1044/2021_AJA-21-00112; doi:10.1044/2021_AJA-21-00034).
+
+## Status after the 1.1 reading pass (2026-11-28 UTC; notes in docs/research/v1.1/R10, R11, R12)
+Read in full (or every section the design needs): Whitton et al. 2017; Brungart 2001; Darwin, Brungart & Simpson
+2003; Cameron & Dillon 2011; Wright & Sabin 2007; Nahum, Nelken & Ahissar 2010; Felty, Buchwald & Pisoni 2009 (R10);
+Kuai et al. 2005; Zhang et al. 2008 (results); Clopper, Pisoni & Tierney 2006; Agus, Thorpe & Pressnitzer 2010;
+Herzog et al. 2012; Holmes, Domingo & Johnsrude 2018 (methods and results); Zhang, Cheng & Zhang 2021 (moderator
+results); Gollwitzer & Sheeran 2006 (main results); Bieber & Gordon-Salant 2021 (R11).
+Still abstract only: Smits, Goverts & Festen 2013 (its 0.7 dB and one practice list confirmed); Yund & Woods 2010
+(its 2.7 vs 0.3 dB confirmed); Johnsrude et al. 2013; Silverman & Barasch 2023; Bai, Hew & Huang 2020; Sweetow &
+Sabes 2010; Hickson, Worrall & Scarinci 2007.
+Being read (R12): Wright et al. 2010 and 2015 (the daily amount and the listen-only rule in plan 1.1 B1 rest on
+them); Hickson et al. 2007 open copy; Oberfeld & Klöckner-Nowotny 2016; Reynard et al. 2022.
+Not attempted: Frémaux, Sprekeler & Gerstner 2010; Green et al. 2019; Long & Aleven 2017; Galak, Redden & Kruger 2009;
+Koivisto & Hamari 2019.
