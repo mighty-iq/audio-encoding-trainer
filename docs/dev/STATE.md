@@ -1,14 +1,15 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-27 12:00 UTC
+Updated: 2026-11-28 16:18 UTC
 
 ## Phase
-Released. Earshot 1.0.0 is on `main` (fast-forward to 0a0e7b8, 2026-11-27 ~11:58 UTC) with the owner's go-ahead; the
-owner skipped the release checklist and left any fixes for later. GitHub Pages switch-on could not be checked from the
-container (API and github.io refused); the owner has the taps. Next work: owner feedback, then the 1.1 backlog.
+1.1 — phase 1 (research and plan). Earshot 1.0.0 is released on `main` (c5fbb63). The owner asked (2026-11-28) for
+research into better progression, level tracking and other game features, and anti-strategy measures for more
+real-world transfer. Plan gate: decision board + short plan message, then wait for the owner's go.
 
-## Running subagents
-- None.
+## Running subagents (IDs in the lead's container notes)
+- R7 progression, R8 game features, R9 anti-strategy and transfer (web research, ≤ 12 searches each), R0 internal
+  audit (code, sims, reviews; no web) → docs/research/v1.1/*.md.
 
 ## Done since the last milestone
 - Fix round 2: engine (pool-matched foils, Repair without a central answer, Echo balance and variety, first-week
@@ -30,9 +31,10 @@ container (API and github.io refused); the owner has the taps. Next work: owner 
   fits 360×640. privacy_check clean on every push.
 
 ## Next three steps
-1. Owner: confirm Pages is on (Settings → Pages → Deploy from a branch → main, / (root)); post the announcement.
-2. Read playtest reports (db collection playtest) and any checklist answers (release checklist db answers/owner).
-3. Fix what the owner reports; then plan 1.1 from docs/dev/PLAN-v1.1.md.
+1. Collect R0, R7–R9; write docs/dev/PLAN-v1.1.md (full plan, milestones, acceptance checks) from the notes.
+2. Decision board (private artifact): feature cards with switches, decisions with recommendations preselected,
+   playable sketches of the 2–3 least certain mechanics, rank list, papers not opened, device probe.
+3. Plan message (5 parts) and stop for the owner's go.
 
 ## Open questions
 - Owner may rename the repo (Pages URL changes with it; the guide and announcement then need a rebuild).
