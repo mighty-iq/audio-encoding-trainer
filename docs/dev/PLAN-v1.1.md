@@ -1,7 +1,8 @@
 # Earshot 1.1 — plan (draft for the owner's go; times UTC)
 
 Status: draft 2026-11-28. Sources: docs/research/v1.1/R0 (internal audit), R7 (progression and variety dosing),
-R8 (game features), R9 (anti-strategy, transfer, variety). The 1.0 backlog is absorbed in §4.
+R8 (game features), R9 (anti-strategy, transfer, variety), R10 (seven core papers read in full, which corrected
+A1, B1, B2 and several claims), R11 (papers fetched as full text). The 1.0 backlog is absorbed in §4.
 
 ## 1. Concept
 Hear it, don't guess it — and see it grow. 1.0 trains the right situations, but the audit shows players can lean on
@@ -16,10 +17,16 @@ Earshot level built only from confirmed ability marks, never lost, with skill me
 ## 2. Features (each tagged with its bet; numbers are targets to verify in simulation and review)
 
 ### A. Hear, don't guess (anti-strategy, transfer)
-- A1 Fresh sound every trial (0 bytes): speech-shaped and modulated noise synthesised per trial (new seed), babble
-  built live from training clips (1–8 talkers, mixed sexes, random offsets), reversed-speech maskers, beds; masker
-  type logged and mixed (steady, modulated, 8-talker, 2-talker, one voice, environment). Target not always the
-  loudest; lead-ins vary. Bet: maskers learned as types, not samples (Agus 2010; Van Engen 2012; Brungart 2001).
+- A1 Fresh sound every trial (0 bytes). 1.0 already synthesises speech-shaped noise and builds babble live per
+  trial; what recurs is the recorded ambience (10-s loops), heard on every Far trial and in early Echo, and a babble
+  sample that recurs is learned within one sitting (≈ 10 points easier, gap growing; Felty 2009). So Far's and
+  early Echo's noise becomes a per-trial mix: live babble + room-coloured synthetic noise + the recorded loop at a
+  lower, jittered level from a random offset, spectral tilt jittered (±3 dB/octave); modulated and reversed-speech
+  maskers join the mix; masker type, bed id and offset are logged. Level roving: each other voice ±4 dB around its
+  planned level per trial; with one other voice, which voice is louder is drawn at random and the dial becomes the
+  size of the level difference (12 → 0 dB), because when every other voice sits at one level below the target,
+  "follow the quieter voice" wins (Brungart 2001: scores stop falling below 0 dB with a similar voice). Lead-ins
+  vary. Bet: maskers learned as types, not samples (Agus 2010; Van Engen 2012).
 - A2 Hear first, then choose: options appear only after the sound ends in every exercise; sound-alike options in
   Strange and Repair; Repair's missing word anywhere in the sentence (now always last, 156/156).
 - A3 Fresh items: least-heard-first sampling with a spacing window; a memory responder added to tests/sim; item
@@ -31,28 +38,53 @@ Earshot level built only from confirmed ability marks, never lost, with skill me
 - A5 Hear it again with the words: after every miss, the same mix replays with the words on screen (Davis 2005).
 - A6 "Not there" trials (rare, ≤ 5 %) and occasional uncertainty about where or who the target is (bet; Kidd 2005).
 - A7 Strategy spotting, never punishing: taps faster than the player's own guessing threshold are set aside, not
-  scored; error profiles (intrusions, sound-alikes, wrong voice) feed tips between sets and plateau reasons.
+  scored; error profiles (intrusions, sound-alikes, wrong voice) feed tips between sets and plateau reasons. An
+  "I didn't catch it" key in Crowd and Far replays the same mix once, a little easier, and counts a miss without a
+  guess (LiSN & Learn had such a key; its own effect is untested).
 
 ### B. Progress that is real (progression)
-- B1 Concentrated dose: a sitting trains ≤ 3 exercises with ≥ 2 sets each (≥ 40 trials), the others on other days;
-  6–8 listen-only items right after a set count as half-trials (Wright & Sabin 2007; Wright et al. 2015).
-- B2 Variety by readiness: blocked → announced alternation → random; the focus dial is held 5–6 trials; widening
-  only when thresholds are flat or improving and the switch cost is ≤ 0.05; variety is paid for with easier settings;
-  difficulty or variety rises, never both in one set (Nahum 2008/2010; Raviv 2022; Uchihara 2025).
+- B1 Concentrated dose: a sitting trains ≤ 3 exercises, ≥ 60 scored trials for the one at its edge and ≥ 40 for
+  the others, sets of one exercise within about 30 minutes, the rest on other days; the daily amount is a model
+  parameter. Learning builds between days once a per-day amount is reached, and trials per day matter more than the
+  total (Wright & Sabin 2007, principle only: its numbers are for tones); the 40–80 sentences and the listen-only
+  half-trials (6–8 items right after a set) rest on Wright et al. 2010 and 2015.
+- B2 Variety by readiness, counted in days: blocked → announced alternation after ≥ 2 training days on the
+  condition (≥ 40 trials as a floor) → random after ≥ 2 days of alternation; the alternation stage is not judged on
+  its first day (Nahum 2010: predictable alternation cost as much as random on day 1 and caught up by day 2). Strict
+  staging only where a fine cue decides the answer (spatial layout, small pitch gaps, sound-alike options); content,
+  talkers and rooms rove early, since random mixing did not slow general learning. Crowd with headphones holds the
+  spatial dial for whole sets with no scene rotation on the first ≥ 2 headphone days. The focus dial is held 5–6
+  trials (our choice; untested); widening only when thresholds are flat or improving and the switch cost is
+  ≤ 0.05; variety is paid for with easier settings; difficulty or variety rises, never both in one set (Nahum
+  2008/2010; Raviv 2022; Uchihara 2025).
 - B3 Mastery across days: a condition counts as mastered after ≥ 2 days and a night, then returns in 10–15 % of
   trials for ≥ 4 training days (Wright, Wilson & Sabin 2010).
 - B4 Plateau diagnosis before breakers: dose → schedule stage → anchors and listen-only → strategy → rest → switch the
   focus dial; at most one card per session; breakers get real levers (new material, a typed round, a new room set).
 - B5 Raise ceilings: when a dial sits at its maximum (Repair 66–78 % of edge trials by week 8), combine conditions.
-- B6 Calibration data: item, voice, condition, masker, planned accuracy and stage in every exported trial; offline item
-  calibration from pooled exports, shrunk toward current offsets (weight n/(n+100)).
-- B7 (optional bet) Seeded schedule assignment: blocked-first vs serial-first, recorded in the pooled export.
+- B6 Calibration data: item, voice, condition, masker, planned accuracy and stage in every exported trial, plus the
+  masker's words, bed id and offset, the target's level rank and the closest voice's pitch gap; offline item
+  calibration from pooled exports, shrunk toward current offsets (weight n/(n+100)); a pooled check of whether
+  accuracy rises with how often a bed has been heard.
+- B7 (optional bets) Seeded assignment, recorded in the pooled export: blocked-first vs serial-first, and 40 vs 80
+  scored trials per exercise per day (nobody has measured the daily amount for speech in noise).
+- B8 Keep it: in the one placebo-controlled game study with transfer, the gain was gone two months after play
+  stopped (Whitton 2017), so a finished season offers a lighter rhythm (two sittings a week) and a Lab re-check
+  after 4–6 weeks off.
+- B9 Honest guessing floor: in Crowd nearly every error is another voice's word (Brungart 2001; Darwin 2003), so a
+  slot whose options include k other voices' words has a floor of 1/(1 + k) (0.5 with one other voice), not 1/4;
+  tested in simulation first.
+- B10 Even steps on Crowd's voice ladder: step 1 (same sex) capped at 2–6 semitones, the near-twin's shift
+  direction drawn at random (Darwin 2003: below ≈ 2 st and a 13 % tract change two voices act as one talker).
 
 ### C. Levels and tracking (game)
 - C1 Earshot level: one number built only from confirmed ability marks (a mark counts once passed on two different
   days), never lost; a break widens an uncertainty band instead (Glicko-style). Levels never come from time spent.
 - C2 Skill meters per family with a "next mark" bar, marks measured against the player's own start (everyone can
-  earn them), an occasional "how sure were you?" tap (Long & Aleven 2013, 2017).
+  earn them), an occasional "how sure were you?" tap (Long & Aleven 2013, 2017). Every ~2 weeks a yardstick set per
+  exercise (fixed settings, fresh items) measures in-game growth apart from the adaptive track and feeds the marks
+  (Whitton 2017's fixed boards). In-game dB and Lab results stay apart: in LiSN & Learn the in-game gain was about
+  twice the gain on its nearest test.
 - C3 Honest start: the first week is "measuring your start"; personal bests and milestones only on the careful
   estimate (non-learners now get a PB in 67–98 % of sessions).
 - C4 Seasons of about six weeks as chapters: a goal the player picks, a season card at the end; nothing resets or
@@ -81,24 +113,39 @@ Earshot level built only from confirmed ability marks, never lost, with skill me
   at asking for repair (Gollwitzer & Sheeran 2006; communication-strategy courses).
 - D7 Conversation (new exercise): two or three talkers take turns in party noise; follow who is speaking and answer
   gist questions; typed answers at the top.
+- D8 Seek "Trace" board (bet): keep a finger on a hidden path along which the target voice is clearest, scored by
+  tracking error (Seek's meter); a ratchet lowers the noise ceiling after each finished board and paths gain
+  corners; the search board stays as the second game. Seek weeks for players who opt in, and the app says that
+  1.0's Seek dose is far below the study's (median 35 h in 30–60-minute sittings; transfer followed the tracing
+  game, which 1.0 lacks; Whitton 2017).
 
 ### E. Lab
-- E1 An open-set check (type the sentence, natural held-out voices); E2 Two voices gets new sentences each week;
-  E3 response time on correct trials as a listening-effort trend (same device only).
+- E1 An open-set check (type the sentence, natural held-out voices; the target's level rank roved from the start);
+  E2 Two voices gets new sentences each week, and pooled data show whether its thresholds sit below 0 dB, where the
+  quieter-voice cue could help; E3 response time on correct trials as a listening-effort trend (same device only);
+  E4 a headphone spatial-release check: our sentences and voices with two same-voice distracters together with the
+  target vs at ±90°, reported as the difference (difference scores barely move on retest; Cameron & Dillon 2011);
+  probes also score whole sentences, where the one controlled transfer appeared (Whitton 2017).
 
 ## 3. Milestones and acceptance checks
-- M0 (1.0.1, small): C9 claim fixes, options after the sound (A2 core), "hear it again with the words" (A5). Check:
-  unit + browser suites; fresh-player test of one exercise.
-- M1 Engine: B1–B5 with the sim learners extended (daily dose threshold, random-mix penalty, switch cost). Check:
-  sims compare 1.0 vs 1.1 schedules; shortcut and memory responders within chance + 0.05 per bin.
-- M2 Sound: A1 synthesised maskers and roving; D1 lazy packs. Check: levels within 0.5 dB of plan; first session
-  loads ≤ 4 MB on Pages; single file still offline-complete.
+- M0 (1.0.1, small): C9 claim fixes; Crowd with one other voice floored at 0 dB target-to-masker ratio (until A1's
+  roving lands) and the near-twin's direction drawn at random; guide fixes from the papers (Whitton's dose, what
+  improved and the fade; the 40-point case is the same talker, cited directly; Far's growth described as growth in
+  Earshot's rooms, with the Lab as the listening evidence); options after the sound (A2 core); "hear it again with
+  the words" (A5). Check: unit + browser suites; a quieter-voice responder within chance + 0.05 in Crowd; fresh-player
+  test of one exercise.
+- M1 Engine: B1–B5, B9, B10 with the sim learners extended (daily dose threshold, random-mix penalty, switch cost,
+  stage gates in days). Check: sims compare 1.0 vs 1.1 schedules; shortcut, memory and level responders within
+  chance + 0.05 per bin.
+- M2 Sound: A1 per-trial noise mixes and level roving; D1 lazy packs. Check: levels within 0.5 dB of plan; no bed
+  heard on more than its planned share of trials; first session loads ≤ 4 MB on Pages; single file still
+  offline-complete.
 - M3 Content: D2–D5 packs, D4 pools, D6 missions; licence ledger. Check: recogniser pass on every clip; budget.
 - M4 Answers: A4 typed answers (scorer with ≥ 200 test cases), A6 catch trials, A7 strategy spotting. Check: scorer
   agreement with hand-scored cases ≥ 95 %; phone typing fits 360×640 with the keyboard open.
-- M5 Game: C1–C8. Check: calibration sims (level overclaim ≤ 5 %, non-learner PBs ≤ 10 % of sessions); no counters
-  in a row anywhere; two-minute start unchanged.
-- M6 Conversation exercise (D7) and Lab E1–E3. Check: two-minute start on a fresh agent; Lab sims.
+- M5 Game: C1–C8, B8. Check: calibration sims (level overclaim ≤ 5 %, non-learner PBs ≤ 10 % of sessions); no
+  counters in a row anywhere; two-minute start unchanged.
+- M6 Conversation exercise (D7), Seek Trace (D8) and Lab E1–E4. Check: two-minute start on a fresh agent; Lab sims.
 - M7 Reviews (stimuli, play/a11y, fresh players, claims), fixes, guide 1.1, release.
 
 ## 4. Absorbed from the 1.0 backlog
