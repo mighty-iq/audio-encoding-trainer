@@ -22,10 +22,12 @@ Earshot level built only from confirmed ability marks, never lost, with skill me
   sample that recurs is learned within one sitting (≈ 10 points easier, gap growing; Felty 2009). So Far's and
   early Echo's noise becomes a per-trial mix: live babble + room-coloured synthetic noise + the recorded loop at a
   lower, jittered level from a random offset, spectral tilt jittered (±3 dB/octave); modulated and reversed-speech
-  maskers join the mix; masker type, bed id and offset are logged. Level roving: each other voice ±4 dB around its
-  planned level per trial; with one other voice, which voice is louder is drawn at random and the dial becomes the
-  size of the level difference (12 → 0 dB), because when every other voice sits at one level below the target,
-  "follow the quieter voice" wins (Brungart 2001: scores stop falling below 0 dB with a similar voice). A recurring
+  maskers join the mix; masker type, bed id and offset are logged. Level roving: in 1.0 every other voice sits at
+  one level, and Crowd's ratio usually settles below 0 dB (the model's starting estimate is −3 dB), where the target
+  is the quietest voice and "follow the quieter voice" wins (Brungart 2001: with a similar voice, scores stop falling below 0 dB). In 1.1 the target's
+  level rank among the voices is drawn at random each trial and enters the model as a trial feature; with one other
+  voice, which voice is louder is drawn at random and the dial becomes the size of the level difference
+  (12 → 0 dB); with more, each other voice is spread around the planned level (about ±4 dB). A recurring
   noise is recognised after about 4–10 hearings, without feedback, and remembered for weeks (Agus 2010), so no
   0.5–2-s stretch of a recorded bed is heard more than about 4 times per player per fortnight (needs D4's longer
   beds). Lead-ins vary. Bet: maskers learned as types, not samples (Agus 2010; Van Engen 2012).
