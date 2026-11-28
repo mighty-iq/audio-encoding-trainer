@@ -43,3 +43,23 @@ Reasons were mostly bot checks on PubMed Central and publisher sites, and a shar
 Audiovisual benefit and lipreading training; cochlear synaptopathy; cognitive-training meta-analyses for speech in
 noise; whispered, emotional and casual-speech learning; daily-puzzle share formats and current ear-training apps;
 real-world SNRs at parties; reverberation and distance tests; frozen babble; vocal effort versus distance.
+
+## Added for 1.1 (2026-11-28 UTC; from docs/research/v1.1/R7, R8, R9 — ranked by how much the 1.1 plan leans on them)
+1. Wright & Sabin 2007, Exp Brain Res 180:727–736 · doi:10.1007/s00221-007-0898-z · trials per day needed for learning
+   to build across days · sets the 1.1 session shape (≥ 2 sets per exercise per sitting).
+2. Kuai et al. 2005 (Nature Neuroscience) and Zhang et al. 2008 (PLoS Biology) · temporal patterning restores learning
+   under roving · the staged variety schedule (blocked → announced alternation → random).
+3. Nahum, Nelken & Ahissar 2010, Vision Research 50(4):391–401 · schedules that allow learning of fine cues · same.
+4. Felty, Buchwald & Pisoni 2009, JASA Express Letters · frozen vs varying babble · fresh noise every trial.
+5. Herzog et al. 2012, Vision Research 61:95–99; Frémaux, Sprekeler & Gerstner 2010, J Neurosci 30:13326–13337 ·
+   roving at equal difficulty · interleaved conditions planned at equal accuracy.
+6. Clopper, Pisoni & Tierney 2006, J Am Acad Audiol 17(5):331–349 · doi:10.3766/jaaa.17.5.4 · option count and
+   similarity in closed sets · sound-alike options and the typed top step.
+7. Agus, Thorpe & Pressnitzer 2010, Neuron 66(4):610–618 · doi:10.1016/j.neuron.2010.04.014 · noise memory.
+8. Yund & Woods 2010, Ear and Hearing · content vs procedural learning in repeated sentence tests.
+9. Zhang, Cheng & Zhang 2021, JSLHR 64(12):4802–4825 · talker-variability moderators.
+10. Game and adherence: Silverman & Barasch 2023 (doi:10.1093/jcr/ucac029); Bai, Hew & Huang 2020
+    (doi:10.1016/j.edurev.2020.100322); Koivisto & Hamari 2019; Long & Aleven 2017; Sweetow & Sabes 2010;
+    Torous et al. 2020; Baumel et al. 2019; Galak, Redden & Kruger 2009.
+11. Bridges: Gollwitzer & Sheeran 2006 (meta-analysis); Hickson, Worrall & Scarinci 2007 (ACE trial); lip-reading
+    feedback papers in Am J Audiol 2021 (doi:10.1044/2021_AJA-21-00112; doi:10.1044/2021_AJA-21-00034).
