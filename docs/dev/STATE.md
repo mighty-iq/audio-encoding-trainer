@@ -1,6 +1,6 @@
 # STATE (rewritten at every milestone; under 100 lines; times UTC)
 
-Updated: 2026-11-28 17:17 UTC
+Updated: 2026-11-28 18:12 UTC
 
 ## Phase
 1.1 — phase 1 (research and plan). Earshot 1.0.0 is released on `main` (c5fbb63). The owner asked (2026-11-28) for
@@ -8,9 +8,14 @@ research into better progression, level tracking and other game features, and an
 real-world transfer. Plan gate: decision board + short plan message, then wait for the owner's go.
 
 ## Running subagents
-- None. Research R0, R7, R8, R9 done (docs/research/v1.1/).
+- R12 reader: Wright et al. 2010 and 2015 in full (plan B1's daily amount and listen-only rule), Hickson 2007
+  effect sizes, Oberfeld 2016, Reynard 2022 → docs/research/v1.1/R12-papers-fetched.md (uncommitted until checked).
 
 ## Done since the last milestone
+- 1.1 research: R0, R7, R8, R9; R10 (seven core papers the owner supplied, read in full) and R11 (16 papers through
+  Scholar) corrected the plan (A1 retargeted to the recorded loops + level roving; B1 numbers; B2 in days, runs ≥ 5
+  with named conditions; B8–B10; C2 yardsticks; D8 Seek Trace; E4–E5); decision board 1.1 republished with a
+  "what the papers changed" list and the two Wright papers still being fetched.
 - Fix round 2: engine (pool-matched foils, Repair without a central answer, Echo balance and variety, first-week
   planner, session = ≥ 1 answered trial), stimuli (1,200 clips, 89 voices, 8.235 MB MP3; matrix 50/50 per talker),
   shell (download helper, sideways phones, failures move on, Back, Continue, answer keys, Exercises list, Path and
